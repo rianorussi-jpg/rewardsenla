@@ -112,14 +112,75 @@
     @media (max-width:640px){
       .wrap{width:min(100% - 28px,1160px)}.nav-inner{height:66px}.nav .btn{padding:11px 14px;font-size:13px}.brand span small{display:none}.hero{padding:48px 0 38px}.hero-grid{gap:28px}.hero p{font-size:16px}.hero-actions .btn{width:100%}.wallet-stage{min-height:390px;margin:-10px 0}.hero-wallet-image{width:min(112%,560px)}.section{padding:65px 0}.cards{grid-template-columns:1fr}.card{min-height:auto}.demo-copy{padding:28px}.demo-copy h3{font-size:32px}.demo-image{min-height:320px}.demo-stats{grid-template-columns:1fr}.how{grid-template-columns:1fr}.cta{padding-bottom:95px}.cta-box{padding:30px 24px}.cta-box h2{font-size:34px}.cta-box .btn{width:100%}.float-cta{display:block}footer{padding-bottom:100px}
     }
+
+
+    /* Header aligned with apps.enla */
+    .wrap{width:min(1180px,calc(100% - 40px));margin:auto}
+    .nav{
+      position:relative;
+      top:auto;
+      z-index:30;
+      width:min(1180px,calc(100% - 40px));
+      height:76px;
+      margin:auto;
+      display:flex;
+      align-items:center;
+      background:transparent;
+      border:0;
+      backdrop-filter:none;
+      -webkit-backdrop-filter:none;
+    }
+    .nav-inner{
+      width:100%;
+      height:76px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:28px;
+    }
+    .brand{
+      display:block;
+      font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+      font-weight:900;
+      font-size:27px;
+      letter-spacing:-1.2px;
+      line-height:1;
+      color:#0d1730;
+      white-space:nowrap;
+    }
+    .brand span{color:#4864f4}
+    .nav-links{display:flex;gap:30px;align-items:center;color:#5e6880;font-size:14px;font-weight:650}
+    .nav-links a:hover{color:#4d5ef3}
+    .nav .btn-primary{
+      border-radius:12px;
+      padding:11px 17px;
+      background:linear-gradient(135deg,#6947f6,#455af6);
+      color:#fff;
+      font-weight:800;
+      font-size:13px;
+      box-shadow:0 10px 24px rgba(76,74,246,.18);
+    }
+    .nav .btn-primary:hover{transform:none;box-shadow:0 10px 24px rgba(76,74,246,.18)}
+    .hero{padding-top:56px}
+    @media(max-width:980px){
+      .nav-links{display:none}
+      .hero{padding-top:45px}
+    }
+    @media(max-width:640px){
+      .wrap{width:min(100% - 26px,1180px)}
+      .nav{width:min(100% - 26px,1180px);height:68px}
+      .nav-inner{height:68px}
+      .brand{font-size:23px}
+      .nav .btn-primary{padding:10px 12px;font-size:13px}
+      .hero{padding-top:45px}
+    }
+
   </style>
 </head>
 <body>
   <nav class="nav">
     <div class="wrap nav-inner">
-      <a class="brand" href="#inicio" aria-label="rewards.enla inicio">
-        <span>rewards.enla</span>
-      </a>
+      <a class="brand" href="#inicio" aria-label="rewards.enla inicio">rewards.<span>enla</span></a>
       <div class="nav-links">
         <a href="#como-funciona">Cómo funciona</a>
         <a href="#beneficios">Beneficios</a>
