@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="theme-color" content="#0A0A0C" />
+  <meta name="description" content="Enla Rewards: crea tarjetas de lealtad para Apple Wallet y Google Wallet para tu negocio." />
+  <title>Enla Rewards — Lealtad en Apple Wallet y Google Wallet</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#08090c;
+      --panel:#111318;
+      --panel-2:#161922;
+      --text:#f6f7fb;
+      --muted:#a9afbd;
+      --line:rgba(255,255,255,.09);
+      --blue:#5b7cff;
+      --violet:#8c5cff;
+      --cyan:#3dd6e9;
+      --green:#73e6a6;
+      --shadow:0 30px 90px rgba(0,0,0,.42);
+      --radius:28px;
+    }
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{
+      margin:0;
+      font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+      background:
+        radial-gradient(900px 600px at 50% -10%,rgba(91,124,255,.22),transparent 60%),
+        radial-gradient(700px 500px at 100% 15%,rgba(140,92,255,.13),transparent 65%),
+        var(--bg);
+      color:var(--text);
+      overflow-x:hidden;
+    }
+    a{color:inherit;text-decoration:none}
+    button{font:inherit}
+    .wrap{width:min(1160px,calc(100% - 40px));margin:0 auto}
+    .nav{
+      position:sticky;top:0;z-index:30;
+      backdrop-filter:blur(18px);
+      background:rgba(8,9,12,.72);
+      border-bottom:1px solid rgba(255,255,255,.06)
+    }
+    .nav-inner{height:76px;display:flex;align-items:center;justify-content:space-between;gap:24px}
+    .brand{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:-.04em;font-size:22px}
+    .brand-mark{width:34px;height:34px;border-radius:11px;background:linear-gradient(135deg,var(--blue),var(--violet));display:grid;place-items:center;box-shadow:0 10px 30px rgba(91,124,255,.25)}
+    .brand-mark svg{width:20px;height:20px}
+    .brand span small{font-size:12px;font-weight:700;color:#aeb7ff;letter-spacing:.06em;text-transform:uppercase;margin-left:7px}
+    .nav-links{display:flex;align-items:center;gap:28px;color:#c4c9d4;font-size:14px}
+    .nav-links a:hover{color:white}
+    .btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;border:0;border-radius:14px;padding:14px 19px;font-weight:700;cursor:pointer;transition:.2s ease}
+    .btn-primary{background:linear-gradient(135deg,var(--blue),var(--violet));box-shadow:0 14px 35px rgba(91,124,255,.24)}
+    .btn-primary:hover{transform:translateY(-2px);box-shadow:0 18px 45px rgba(91,124,255,.32)}
+    .btn-secondary{background:rgba(255,255,255,.06);border:1px solid var(--line);color:white}
+    .btn-secondary:hover{background:rgba(255,255,255,.1)}
+    .hero{padding:92px 0 74px;position:relative}
+    .hero-grid{display:grid;grid-template-columns:1.03fr .97fr;align-items:center;gap:58px}
+    .eyebrow{display:inline-flex;align-items:center;gap:9px;padding:8px 12px;border:1px solid rgba(126,148,255,.25);background:rgba(91,124,255,.08);border-radius:999px;color:#c6ceff;font-size:13px;font-weight:700;margin-bottom:22px}
+    .pulse{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 0 6px rgba(115,230,166,.09)}
+    h1{font-size:clamp(48px,6vw,78px);line-height:.98;letter-spacing:-.065em;margin:0 0 24px;max-width:780px}
+    .gradient{background:linear-gradient(90deg,#fff 8%,#a7b3ff 56%,#a77cff);-webkit-background-clip:text;background-clip:text;color:transparent}
+    .hero p{font-size:19px;line-height:1.7;color:var(--muted);max-width:635px;margin:0 0 32px}
+    .hero-actions{display:flex;gap:12px;flex-wrap:wrap}
+    .micro{display:flex;align-items:center;gap:18px;margin-top:28px;color:#8f96a6;font-size:13px;flex-wrap:wrap}
+    .micro span{display:flex;align-items:center;gap:7px}
+    .micro svg{width:16px;height:16px;color:#9aa6ff}
+    .wallet-stage{position:relative;min-height:560px;display:grid;place-items:center}
+    .glow{position:absolute;width:420px;height:420px;border-radius:50%;background:radial-gradient(circle,rgba(91,124,255,.26),rgba(140,92,255,.08) 48%,transparent 70%);filter:blur(10px)}
+    .phone{position:absolute;width:280px;height:560px;border-radius:46px;background:#08090b;border:8px solid #22252c;box-shadow:var(--shadow);overflow:hidden}
+    .phone.left{transform:translate(-84px,14px) rotate(-5deg);z-index:3}
+    .phone.right{transform:translate(96px,-14px) rotate(5deg);z-index:2;background:#f7f7f8;color:#111}
+    .notch{position:absolute;top:12px;left:50%;transform:translateX(-50%);width:88px;height:23px;border-radius:18px;background:#020203;z-index:3}
+    .status{height:55px;padding:20px 18px 0;font-size:11px;font-weight:700;display:flex;justify-content:space-between}
+    .phone.right .status{color:#111}
+    .wallet-title{padding:10px 17px 15px;font-size:26px;font-weight:800;letter-spacing:-.04em}
+    .pass{margin:0 12px;border-radius:22px;padding:18px;background:linear-gradient(155deg,#11151f,#1c2131 54%,#252b42);border:1px solid rgba(255,255,255,.10);box-shadow:0 18px 50px rgba(0,0,0,.32);position:relative;overflow:hidden;color:white}
+    .pass:after{content:"";position:absolute;width:220px;height:220px;border-radius:50%;background:rgba(91,124,255,.22);right:-130px;top:-90px;filter:blur(4px)}
+    .pass-head{display:flex;justify-content:space-between;align-items:flex-start;position:relative;z-index:2}
+    .mini-logo{font-size:15px;font-weight:800;letter-spacing:-.04em}.mini-logo em{font-style:normal;color:#8ea2ff}
+    .pass small{color:#b8bfd0;font-size:9px}.pass h3{font-size:31px;margin:16px 0 4px;letter-spacing:-.06em}.pass .sub{font-size:11px;color:#c7ccda}
+    .dots{display:flex;gap:8px;margin:18px 0;position:relative;z-index:2}.dot{width:30px;height:30px;border-radius:50%;border:1px solid rgba(255,255,255,.18);display:grid;place-items:center;font-size:13px;background:rgba(255,255,255,.04)}.dot.on{background:linear-gradient(135deg,#6a83ff,#9b64ff);border-color:transparent}
+    .qr{width:76px;height:76px;border-radius:12px;background:
+      linear-gradient(90deg,#111 8px,transparent 8px) 0 0/16px 16px,
+      linear-gradient(#111 8px,transparent 8px) 0 0/16px 16px,#fff;position:absolute;right:17px;bottom:18px;border:7px solid #fff}
+    .code{font-size:10px;color:#d4d8e2;margin-top:52px}
+    .wallet-badge{position:absolute;right:-4px;bottom:65px;padding:10px 14px;border-radius:14px;background:#fff;color:#111;font-size:12px;font-weight:800;box-shadow:0 14px 38px rgba(0,0,0,.26);z-index:5}
+    .wallet-badge.google{right:auto;left:16px;bottom:20px}
+    .section{padding:90px 0}
+    .section-head{max-width:720px;margin:0 auto 48px;text-align:center}.section-head .tag{color:#9caae9;font-size:12px;font-weight:800;letter-spacing:.12em;text-transform:uppercase}.section-head h2{font-size:clamp(34px,4vw,54px);letter-spacing:-.055em;margin:11px 0 16px}.section-head p{color:var(--muted);font-size:17px;line-height:1.7;margin:0}
+    .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+    .card{background:linear-gradient(180deg,rgba(255,255,255,.055),rgba(255,255,255,.028));border:1px solid var(--line);border-radius:24px;padding:26px;min-height:245px}
+    .icon{width:48px;height:48px;border-radius:15px;display:grid;place-items:center;background:linear-gradient(135deg,rgba(91,124,255,.18),rgba(140,92,255,.18));border:1px solid rgba(130,142,255,.16);margin-bottom:26px}.icon svg{width:24px;height:24px}
+    .card h3{font-size:20px;letter-spacing:-.03em;margin:0 0 11px}.card p{margin:0;color:var(--muted);line-height:1.65;font-size:14px}
+    .demo{display:grid;grid-template-columns:1fr 1fr;gap:26px;align-items:stretch}
+    .demo-copy,.demo-image{background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.025));border:1px solid var(--line);border-radius:30px;overflow:hidden}
+    .demo-copy{padding:38px;display:flex;flex-direction:column;justify-content:center}.demo-copy .logo-line{display:flex;align-items:center;gap:12px;margin-bottom:28px}.demo-copy .logo-line img{width:112px;height:58px;object-fit:contain;background:#fff;border-radius:13px;padding:6px}.demo-copy h3{font-size:38px;line-height:1.05;letter-spacing:-.055em;margin:0 0 17px}.demo-copy p{color:var(--muted);line-height:1.7;margin:0 0 24px}.demo-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.stat{padding:15px;border-radius:16px;background:rgba(255,255,255,.045);border:1px solid var(--line)}.stat b{display:block;font-size:19px;margin-bottom:4px}.stat span{font-size:11px;color:#929aaa}
+    .demo-image{background:#fff;display:flex;align-items:center;justify-content:center;padding:18px;min-height:470px}.demo-image img{width:100%;height:100%;object-fit:contain;border-radius:19px}
+    .how{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;counter-reset:step}.step{position:relative;padding:25px 22px 26px;border-radius:22px;border:1px solid var(--line);background:rgba(255,255,255,.035)}.step:before{counter-increment:step;content:"0" counter(step);display:inline-flex;width:38px;height:38px;border-radius:12px;background:#171b27;align-items:center;justify-content:center;color:#a9b5ff;font-size:12px;font-weight:800;margin-bottom:35px}.step h4{font-size:17px;margin:0 0 9px}.step p{font-size:13px;line-height:1.6;color:var(--muted);margin:0}
+    .cta{padding:0 0 90px}.cta-box{border-radius:34px;padding:58px;background:
+      radial-gradient(650px 300px at 10% 0%,rgba(91,124,255,.29),transparent 70%),
+      radial-gradient(560px 300px at 100% 100%,rgba(140,92,255,.21),transparent 70%),
+      #11131a;border:1px solid rgba(150,160,255,.15);display:flex;align-items:center;justify-content:space-between;gap:40px}.cta-box h2{font-size:42px;letter-spacing:-.055em;margin:0 0 12px}.cta-box p{color:#adb4c4;max-width:650px;line-height:1.65;margin:0}
+    footer{padding:34px 0 48px;border-top:1px solid rgba(255,255,255,.06);color:#7f8797;font-size:13px}.footer-inner{display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap}.footer-links{display:flex;gap:18px}
+    .float-cta{display:none;position:fixed;left:16px;right:16px;bottom:16px;z-index:50}.float-cta .btn{width:100%;box-shadow:0 15px 50px rgba(0,0,0,.46)}
+    @media (max-width:980px){
+      .nav-links{display:none}.hero{padding-top:65px}.hero-grid{grid-template-columns:1fr}.hero-copy{text-align:center}.hero p{margin-left:auto;margin-right:auto}.hero-actions,.micro{justify-content:center}.wallet-stage{min-height:520px}.cards{grid-template-columns:1fr 1fr}.demo{grid-template-columns:1fr}.how{grid-template-columns:1fr 1fr}.cta-box{padding:42px;flex-direction:column;align-items:flex-start}
+    }
+    @media (max-width:640px){
+      .wrap{width:min(100% - 28px,1160px)}.nav-inner{height:66px}.nav .btn{padding:11px 14px;font-size:13px}.brand span small{display:none}.hero{padding:48px 0 38px}.hero-grid{gap:28px}.hero p{font-size:16px}.hero-actions .btn{width:100%}.wallet-stage{min-height:430px;transform:scale(.86);margin:-18px -32px}.phone{width:248px;height:500px}.phone.left{transform:translate(-69px,8px) rotate(-5deg)}.phone.right{transform:translate(74px,-8px) rotate(5deg)}.section{padding:65px 0}.cards{grid-template-columns:1fr}.card{min-height:auto}.demo-copy{padding:28px}.demo-copy h3{font-size:32px}.demo-image{min-height:320px}.demo-stats{grid-template-columns:1fr}.how{grid-template-columns:1fr}.cta{padding-bottom:95px}.cta-box{padding:30px 24px}.cta-box h2{font-size:34px}.cta-box .btn{width:100%}.float-cta{display:block}footer{padding-bottom:100px}
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <div class="wrap nav-inner">
+      <a class="brand" href="#inicio" aria-label="Enla Rewards inicio">
+        <span class="brand-mark"><svg viewBox="0 0 24 24" fill="none"><path d="M6.2 12.7 10 16.5 18 8.5" stroke="white" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        <span>enla<small>rewards</small></span>
+      </a>
+      <div class="nav-links">
+        <a href="#como-funciona">Cómo funciona</a>
+        <a href="#beneficios">Beneficios</a>
+        <a href="#demo">Ejemplo real</a>
+      </div>
+      <a class="btn btn-primary" href="https://wa.me/524412123348?text=Hola%2C%20quiero%20Enla%20Rewards%20para%20mi%20negocio" target="_blank" rel="noreferrer">Quiero Rewards</a>
+    </div>
+  </nav>
+
+  <main id="inicio">
+    <section class="hero">
+      <div class="wrap hero-grid">
+        <div class="hero-copy">
+          <div class="eyebrow"><span class="pulse"></span> Tarjetas de lealtad digitales</div>
+          <h1>Convierte clientes en <span class="gradient">clientes frecuentes.</span></h1>
+          <p>Crea una tarjeta Rewards para tu negocio que tus clientes puedan guardar en Apple Wallet o Google Wallet. Sin descargar apps, sin tarjetas físicas y con recompensas que se actualizan.</p>
+          <div class="hero-actions">
+            <a class="btn btn-primary" href="https://wa.me/524412123348?text=Hola%2C%20quiero%20cotizar%20Enla%20Rewards" target="_blank" rel="noreferrer">Crear mi tarjeta Rewards <span>→</span></a>
+            <a class="btn btn-secondary" href="#demo">Ver ejemplo</a>
+          </div>
+          <div class="micro">
+            <span><svg viewBox="0 0 24 24" fill="none"><path d="M12 3 5 6v5c0 4.7 3 8.2 7 10 4-1.8 7-5.3 7-10V6l-7-3Z" stroke="currentColor" stroke-width="1.8"/></svg> Sin app para el cliente</span>
+            <span><svg viewBox="0 0 24 24" fill="none"><path d="m5 12 4 4L19 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg> Apple + Google Wallet</span>
+          </div>
+        </div>
+
+        <div class="wallet-stage" aria-label="Vista previa de tarjetas Wallet">
+          <div class="glow"></div>
+          <div class="phone left">
+            <div class="notch"></div><div class="status"><span>9:41</span><span>●●●</span></div>
+            <div class="wallet-title">Wallet</div>
+            <div class="pass">
+              <div class="pass-head"><div class="mini-logo">TU <em>NEGOCIO</em></div><small>REWARDS</small></div>
+              <h3>3 de 6</h3><div class="sub">¡Te faltan 3 para tu recompensa!</div>
+              <div class="dots"><div class="dot on">✓</div><div class="dot on">✓</div><div class="dot on">✓</div><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+              <small>TU RECOMPENSA</small><div style="font-size:14px;font-weight:800;margin-top:5px">🎁 Premio gratis</div>
+              <div class="qr"></div><div class="code">ENLA • 4F7A21</div>
+            </div>
+            <div class="wallet-badge"> Apple Wallet</div>
+          </div>
+          <div class="phone right">
+            <div class="status"><span>9:41</span><span>●●●</span></div>
+            <div class="wallet-title" style="font-size:22px">Google Wallet</div>
+            <div class="pass" style="margin-top:6px">
+              <div class="pass-head"><div class="mini-logo">TU <em>NEGOCIO</em></div><small>REWARDS</small></div>
+              <h3>3 de 6</h3><div class="sub">Tu progreso se actualiza automáticamente</div>
+              <div class="dots"><div class="dot on">✓</div><div class="dot on">✓</div><div class="dot on">✓</div><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+              <small>TU RECOMPENSA</small><div style="font-size:14px;font-weight:800;margin-top:5px">🎁 Premio gratis</div>
+              <div class="qr"></div><div class="code">ENLA • 4F7A21</div>
+            </div>
+            <div class="wallet-badge google">Google Wallet</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="beneficios">
+      <div class="wrap">
+        <div class="section-head"><span class="tag">Todo en un solo sistema</span><h2>Lealtad sin fricción.</h2><p>Una experiencia sencilla para tus clientes y una herramienta fácil de operar para tu equipo.</p></div>
+        <div class="cards">
+          <article class="card"><div class="icon"><svg viewBox="0 0 24 24" fill="none"><path d="M7 3h10a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z" stroke="currentColor" stroke-width="1.8"/><path d="M10 18h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></div><h3>Directo a Wallet</h3><p>El cliente agrega su tarjeta a Apple Wallet o Google Wallet desde un enlace o QR. No necesita instalar ninguna app.</p></article>
+          <article class="card"><div class="icon"><svg viewBox="0 0 24 24" fill="none"><path d="M4 7h16v12H4zM7 4h10v3H7z" stroke="currentColor" stroke-width="1.8"/><path d="M8 12h8M8 15h5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></div><h3>Tu marca, tu diseño</h3><p>Logo, colores, recompensa y mensajes adaptados a tu negocio para que la tarjeta se sienta completamente tuya.</p></article>
+          <article class="card"><div class="icon"><svg viewBox="0 0 24 24" fill="none"><path d="M4 17 9 12l4 4 7-8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M15 8h5v5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></div><h3>Progreso visible</h3><p>Cada compra o visita aumenta el progreso. El cliente ve cuánto le falta para desbloquear su recompensa.</p></article>
+          <article class="card"><div class="icon"><svg viewBox="0 0 24 24" fill="none"><rect x="4" y="4" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.8"/><rect x="14" y="4" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.8"/><rect x="4" y="14" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.8"/><path d="M14 14h3v3h3v3h-6v-6Z" stroke="currentColor" stroke-width="1.8"/></svg></div><h3>QR único</h3><p>Cada tarjeta tiene un identificador único. Tu equipo lo escanea para registrar compras o canjear recompensas.</p></article>
+          <article class="card"><div class="icon"><svg viewBox="0 0 24 24" fill="none"><path d="M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z" stroke="currentColor" stroke-width="1.8"/><path d="M12 8v4l3 2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></div><h3>Historial y control</h3><p>Consulta movimientos, compras, recompensas y canjes desde el panel de administración del negocio.</p></article>
+          <article class="card"><div class="icon"><svg viewBox="0 0 24 24" fill="none"><path d="M5 8h14v11H5z" stroke="currentColor" stroke-width="1.8"/><path d="M8 8V5h8v3M8 12h8M8 15h5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></div><h3>Listo para crecer</h3><p>Ideal para restaurantes, cafeterías, barberías, salones, gimnasios y prácticamente cualquier negocio recurrente.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="demo">
+      <div class="wrap">
+        <div class="section-head"><span class="tag">Caso de ejemplo</span><h2>Así puede verse en tu negocio.</h2><p>La Bonelissa es nuestro ejemplo de una tarjeta de recompensas visual, clara y pensada para usarse desde el celular.</p></div>
+        <div class="demo">
+          <div class="demo-copy">
+            <div class="logo-line"><img src="assets/la-bonelissa-logo.jpg" alt="Logo de La Bonelissa"><span style="font-size:12px;color:#8f96a6">EJEMPLO<br><b style="color:white;font-size:14px">LA BONELISSA REWARDS</b></span></div>
+            <h3>Compra 6.<br>La siguiente va por la casa.</h3>
+            <p>El cliente guarda su tarjeta, muestra su QR en cada visita y su progreso se actualiza conforme acumula compras.</p>
+            <div class="demo-stats"><div class="stat"><b>3 / 6</b><span>Progreso actual</span></div><div class="stat"><b>1 QR</b><span>Por cliente</span></div><div class="stat"><b>Wallet</b><span>Apple + Google</span></div></div>
+          </div>
+          <div class="demo-image"><img src="assets/la-bonelissa-rewards.png" alt="Mockup de tarjeta La Bonelissa Rewards en Apple Wallet y Google Wallet"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="como-funciona">
+      <div class="wrap">
+        <div class="section-head"><span class="tag">Cómo funciona</span><h2>De cliente nuevo a cliente frecuente.</h2></div>
+        <div class="how">
+          <div class="step"><h4>Se registra</h4><p>El cliente abre tu enlace de Rewards desde un QR, redes sociales o tu sitio web.</p></div>
+          <div class="step"><h4>Agrega su tarjeta</h4><p>Guarda la tarjeta de tu negocio en Apple Wallet o Google Wallet.</p></div>
+          <div class="step"><h4>Acumula visitas</h4><p>Tu personal escanea el QR y registra cada compra o visita válida.</p></div>
+          <div class="step"><h4>Recibe su premio</h4><p>Al completar el objetivo, se desbloquea la recompensa y puede canjearla.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="cta">
+      <div class="wrap">
+        <div class="cta-box">
+          <div><h2>Tu programa de lealtad, en Wallet.</h2><p>Cuéntanos qué tipo de negocio tienes y qué recompensa quieres ofrecer. Nosotros nos encargamos del diseño y de dejar listo tu sistema Rewards.</p></div>
+          <a class="btn btn-primary" href="https://wa.me/524412123348?text=Hola%20Enla%2C%20quiero%20crear%20mi%20programa%20de%20Rewards" target="_blank" rel="noreferrer">Hablar por WhatsApp →</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap footer-inner"><div>© 2026 Enla Rewards · enla.mx</div><div class="footer-links"><a href="#inicio">Inicio</a><a href="#como-funciona">Cómo funciona</a><a href="https://enla.mx">Enla</a></div></div>
+  </footer>
+
+  <div class="float-cta"><a class="btn btn-primary" href="https://wa.me/524412123348?text=Hola%2C%20quiero%20Enla%20Rewards%20para%20mi%20negocio" target="_blank" rel="noreferrer">Quiero Rewards para mi negocio</a></div>
+</body>
+</html>
