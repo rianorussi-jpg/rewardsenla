@@ -1,7 +1,8 @@
 -- rewards.enla · Supabase schema
+-- Diseñado para convivir en la misma base de datos de EnlaceCorto: todas las tablas usan el prefijo rewards_.
 create extension if not exists pgcrypto;
 
-create table if not exists public.businesses (
+create table if not exists public.rewards_businesses (
   id uuid primary key default gen_random_uuid(),
   owner_id uuid not null unique references auth.users(id) on delete cascade,
   business_name text not null,
@@ -10,9 +11,9 @@ create table if not exists public.businesses (
   created_at timestamptz not null default now()
 );
 
-create table if not exists public.loyalty_programs (
+create table if not exists public.rewards_loyalty_programs (
   id uuid primary key default gen_random_uuid(),
-  business_id uuid not null unique references public.businesses(id) on delete cascade,
+  business_id uuid not null unique references public.rewards_businesses(id) on delete cascade,
   program_name text not null default 'Mi programa Rewards',
   display_name text,
   program_type text not null default 'stamps' check (program_type in ('stamps','points')),
@@ -31,10 +32,10 @@ create table if not exists public.loyalty_programs (
   updated_at timestamptz not null default now()
 );
 
-create table if not exists public.customers (
+create table if not exists public.rewards_customers (
   id uuid primary key default gen_random_uuid(),
-  business_id uuid not null references public.businesses(id) on delete cascade,
-  program_id uuid references public.loyalty_programs(id) on delete set null,
+  business_id uuid not null references public.rewards_businesses(id) on delete cascade,
+  program_id uuid references public.rewards_loyalty_programs(id) on delete set null,
   name text not null,
   email text,
   phone text,
@@ -45,11 +46,11 @@ create table if not exists public.customers (
   created_at timestamptz not null default now()
 );
 
-create table if not exists public.loyalty_transactions (
+create table if not exists public.rewards_loyalty_transactions (
   id uuid primary key default gen_random_uuid(),
-  business_id uuid not null references public.businesses(id) on delete cascade,
-  program_id uuid references public.loyalty_programs(id) on delete set null,
-  customer_id uuid not null references public.customers(id) on delete cascade,
+  business_id uuid not null references public.rewards_businesses(id) on delete cascade,
+  program_id uuid references public.rewards_loyalty_programs(id) on delete set null,
+  customer_id uuid not null references public.rewards_customers(id) on delete cascade,
   type text not null check(type in ('stamp','points','redeem','adjustment')),
   amount numeric not null default 1,
   note text,
@@ -57,28 +58,28 @@ create table if not exists public.loyalty_transactions (
   created_at timestamptz not null default now()
 );
 
-alter table public.businesses enable row level security;
-alter table public.loyalty_programs enable row level security;
-alter table public.customers enable row level security;
-alter table public.loyalty_transactions enable row level security;
+alter table public.rewards_businesses enable row level security;
+alter table public.rewards_loyalty_programs enable row level security;
+alter table public.rewards_customers enable row level security;
+alter table public.rewards_loyalty_transactions enable row level security;
 
-create policy "owner businesses" on public.businesses for all using (owner_id=auth.uid()) with check (owner_id=auth.uid());
-create policy "owner programs" on public.loyalty_programs for all using (business_id in (select id from public.businesses where owner_id=auth.uid())) with check (business_id in (select id from public.businesses where owner_id=auth.uid()));
-create policy "owner customers" on public.customers for all using (business_id in (select id from public.businesses where owner_id=auth.uid())) with check (business_id in (select id from public.businesses where owner_id=auth.uid()));
-create policy "owner transactions" on public.loyalty_transactions for all using (business_id in (select id from public.businesses where owner_id=auth.uid())) with check (business_id in (select id from public.businesses where owner_id=auth.uid()));
+create policy "rewards owner businesses" on public.rewards_businesses for all using (owner_id=auth.uid()) with check (owner_id=auth.uid());
+create policy "rewards owner programs" on public.rewards_loyalty_programs for all using (business_id in (select id from public.rewards_businesses where owner_id=auth.uid())) with check (business_id in (select id from public.rewards_businesses where owner_id=auth.uid()));
+create policy "rewards owner customers" on public.rewards_customers for all using (business_id in (select id from public.rewards_businesses where owner_id=auth.uid())) with check (business_id in (select id from public.rewards_businesses where owner_id=auth.uid()));
+create policy "rewards owner transactions" on public.rewards_loyalty_transactions for all using (business_id in (select id from public.rewards_businesses where owner_id=auth.uid())) with check (business_id in (select id from public.rewards_businesses where owner_id=auth.uid()));
 
 -- Crea automáticamente el negocio al registrarse.
-create or replace function public.handle_new_user() returns trigger language plpgsql security definer set search_path=public as $$
+create or replace function public.rewards_handle_new_user() returns trigger language plpgsql security definer set search_path=public as $$
 begin
-  insert into public.businesses(owner_id,business_name)
+  insert into public.rewards_businesses(owner_id,business_name)
   values(new.id, coalesce(new.raw_user_meta_data->>'business_name','Mi negocio'));
   return new;
 end;$$;
-drop trigger if exists on_auth_user_created on auth.users;
-create trigger on_auth_user_created after insert on auth.users for each row execute function public.handle_new_user();
+drop trigger if exists rewards_on_auth_user_created on auth.users;
+create trigger rewards_on_auth_user_created after insert on auth.users for each row execute function public.rewards_handle_new_user();
 
 -- Bucket público para logos
 insert into storage.buckets (id,name,public) values ('reward-logos','reward-logos',true) on conflict(id) do update set public=true;
-create policy "logo upload own folder" on storage.objects for insert to authenticated with check (bucket_id='reward-logos' and (storage.foldername(name))[1]=auth.uid()::text);
-create policy "logo update own folder" on storage.objects for update to authenticated using (bucket_id='reward-logos' and (storage.foldername(name))[1]=auth.uid()::text);
-create policy "logos public read" on storage.objects for select using (bucket_id='reward-logos');
+create policy "rewards logo upload own folder" on storage.objects for insert to authenticated with check (bucket_id='reward-logos' and (storage.foldername(name))[1]=auth.uid()::text);
+create policy "rewards logo update own folder" on storage.objects for update to authenticated using (bucket_id='reward-logos' and (storage.foldername(name))[1]=auth.uid()::text);
+create policy "rewards logos public read" on storage.objects for select using (bucket_id='reward-logos');
