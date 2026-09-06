@@ -143,9 +143,11 @@ Deno.serve(async (req) => {
     }
     const issuerName = String(program.display_name || business.business_name || "Enla Rewards").slice(0, 60);
     const programName = String(program.program_name || "Rewards").slice(0, 60);
-    const value = Math.max(0, Math.floor(Number(customer.current_value || 0)));
+    const rawValue = Math.max(0, Number(customer.current_value || 0));
+    const value = program.program_type === 'cashback' ? Math.round(rawValue * 100) / 100 : Math.floor(rawValue);
     const goal = Math.max(1, Math.floor(Number(program.goal_count || 6)));
-    const isPoints = program.program_type === "points";
+    const isCashback = program.program_type === "cashback";
+    const isVisits = program.program_type === "visits";
     const reward = String(program.reward_text || "Recompensa especial").slice(0, 90);
 
     const sourceLogo = await fetchImage(program.logo_url);
@@ -159,19 +161,11 @@ Deno.serve(async (req) => {
     const storeCard: Record<string, unknown> = {
       headerFields: [{
         key: "progress",
-        label: isPoints ? "PUNTOS" : "SELLOS",
-        value: isPoints ? String(value) : `${value} / ${goal}`,
+        label: isCashback ? "SALDO" : isVisits ? "VISITAS" : "SELLOS",
+        value: isCashback ? `$${Number(value).toFixed(2)}` : `${value} / ${goal}`,
       }],
-      primaryFields: isPoints ? [] : [{
-        key: "stamps",
-        label: "TUS SELLOS",
-        value: stampRow,
-      }],
-      secondaryFields: [{
-        key: "reward",
-        label: "RECOMPENSA",
-        value: reward,
-      }],
+      primaryFields: isCashback ? [{ key: "cashback", label: "DISPONIBLE PARA GASTAR", value: `$${Number(value).toFixed(2)} MXN` }] : isVisits ? [{ key: "visits", label: "TUS VISITAS", value: `${value} de ${goal}` }] : [{ key: "stamps", label: "TUS SELLOS", value: stampRow }],
+      secondaryFields: isCashback ? [{ key: 'cashbackInfo', label: 'CASHBACK', value: 'Úsalo total o parcialmente en el negocio' }] : [{ key: "reward", label: "RECOMPENSA", value: reward }],
       backFields: [
         { key: "program", label: "Programa", value: programName },
         { key: "promo", label: "Promoción", value: String(program.promo_text || `Acumula ${goal} y recibe tu recompensa.`) },

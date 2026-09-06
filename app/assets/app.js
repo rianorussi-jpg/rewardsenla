@@ -105,6 +105,25 @@ async function uploadLogo(file){
   return data.publicUrl;
 }
 
+async function uploadProgramMedia(file, kind='media'){
+  if(!file)return null;
+  ensureConfigured();
+  const u=await currentUser();
+  if(!u) throw new Error('No hay una sesión activa.');
+  const ext=(file.name.split('.').pop()||'jpg').toLowerCase();
+  const safeKind=String(kind||'media').replace(/[^a-z0-9_-]/gi,'-');
+  const path=`${u.id}/${safeKind}-${Date.now()}.${ext}`;
+  const {error}=await sb.storage.from('reward-logos').upload(path,file,{upsert:true,contentType:file.type||undefined});
+  if(error)throw error;
+  const {data}=sb.storage.from('reward-logos').getPublicUrl(path);
+  return data.publicUrl;
+}
+function loyaltyMeta(type='stamps'){
+  if(type==='cashback')return {singular:'saldo',plural:'cashback',action:'Agregar cashback',history:'Cashback',currency:true};
+  if(type==='visits')return {singular:'visita',plural:'visitas',action:'Registrar visita',history:'Visitas'};
+  return {singular:'sello',plural:'sellos',action:'Agregar sello',history:'Sellos'};
+}
+
 async function syncWallet(public_code){
   if(!public_code)return;
   try{const {error}=await sb.functions.invoke('wallet-sync',{body:{public_code}});if(error)console.warn('Wallet sync:',error)}catch(e){console.warn('Wallet sync:',e)}
@@ -112,6 +131,14 @@ async function syncWallet(public_code){
 async function addStamp(customerId){
   ensureConfigured();
   const {data,error}=await sb.rpc('rewards_add_stamp',{p_customer_id:customerId});
+  if(error)throw error;
+  const row=Array.isArray(data)?data[0]:data;
+  await syncWallet(row?.public_code);
+  return row;
+}
+async function spendCashback(customerId, amount){
+  ensureConfigured();
+  const {data,error}=await sb.rpc('rewards_spend_cashback',{p_customer_id:customerId,p_amount:Number(amount)});
   if(error)throw error;
   const row=Array.isArray(data)?data[0]:data;
   await syncWallet(row?.public_code);
@@ -128,4 +155,4 @@ async function redeemReward(customerId){
 
 function navActive(){const p=location.pathname.split('/').pop();$$('.nav-item').forEach(a=>{if(a.getAttribute('href')?.endsWith(p))a.classList.add('active')})}
 
-window.ENLA={version:'20260905-1',sb,configured,configError,ensureConfigured,currentUser,requireAuth,getBusiness,getProgram,saveProgram,uploadLogo,bindShell,navActive,msg,initials,syncWallet,addStamp,redeemReward};
+window.ENLA={version:'20260906-cashback1',sb,configured,configError,ensureConfigured,currentUser,requireAuth,getBusiness,getProgram,saveProgram,uploadLogo,uploadProgramMedia,loyaltyMeta,bindShell,navActive,msg,initials,syncWallet,addStamp,redeemReward,spendCashback};

@@ -143,8 +143,15 @@ Deno.serve(async (req) => {
         contentDescription: { defaultValue: { language: "es", value: `Logo de ${issuerName}` } },
       };
     }
+    if (program.central_image_url) {
+      loyaltyClass.heroImage = {
+        sourceUri: { uri: program.central_image_url },
+        contentDescription: { defaultValue: { language: "es", value: `Promoción de ${issuerName}` } },
+      };
+    }
 
-    const value = Math.max(0, Math.floor(Number(customer.current_value || 0)));
+    const rawValue = Math.max(0, Number(customer.current_value || 0));
+    const value = program.program_type === 'cashback' ? Math.round(rawValue * 100) / 100 : Math.floor(rawValue);
     const loyaltyObject: any = {
       id: objectId,
       classId,
@@ -152,8 +159,8 @@ Deno.serve(async (req) => {
       accountId: customer.public_code,
       accountName: customer.name,
       loyaltyPoints: {
-        label: program.program_type === "points" ? "Puntos" : "Sellos",
-        balance: { int: value },
+        label: program.program_type === "cashback" ? "Saldo MXN" : program.program_type === "visits" ? "Visitas" : "Sellos",
+        balance: program.program_type === 'cashback' ? { double: value } : { int: value },
       },
       barcode: {
         type: "QR_CODE",
@@ -162,7 +169,7 @@ Deno.serve(async (req) => {
       },
       textModulesData: [
         { id: "promo", header: "Promoción", body: program.promo_text || `Acumula ${program.goal_count || 6} y recibe tu recompensa.` },
-        { id: "reward", header: "Recompensa", body: program.reward_text || "Recompensa especial" },
+        program.program_type === 'cashback' ? { id: 'reward', header: 'Tu cashback', body: `Tienes $${Number(value).toFixed(2)} MXN para gastar en el negocio.` } : { id: "reward", header: "Recompensa", body: program.reward_text || "Recompensa especial" },
       ],
       hexBackgroundColor: color,
     };
