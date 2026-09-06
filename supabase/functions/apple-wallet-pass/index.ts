@@ -236,7 +236,7 @@ Deno.serve(async (req) => {
       primaryFields: isCashback
         ? []
         : isVisits
-          ? [{ key: "visits", label: inactive ? "ESTADO" : "PAQUETE", value: inactive ? "INACTIVA" : `${goal} visitas incluidas` }]
+          ? (strip1x ? [] : [{ key: "visits", label: inactive ? "ESTADO" : "PAQUETE", value: inactive ? "INACTIVA" : `${goal} visitas incluidas` }])
           : customStampStrip1x ? [] : [{ key: "stamps", label: "TUS SELLOS", value: stampRow }],
       secondaryFields: isCashback
         ? (String(program.promo_text || "").trim() ? [{ key: "promoFront", label: "PROMOCIÓN", value: String(program.promo_text).slice(0, 90) }] : [])
@@ -245,6 +245,7 @@ Deno.serve(async (req) => {
           : [{ key: "reward", label: "RECOMPENSA", value: reward }],
       backFields: [
         { key: "program", label: "Programa", value: programName },
+        ...(isVisits ? [{ key: "visitsPackage", label: "Paquete", value: inactive ? "Tarjeta inactiva" : `${goal} visitas incluidas` }] : []),
         { key: "promo", label: "Información", value: String(program.promo_text || (isVisits ? `Incluye ${goal} visitas por ciclo.` : isCashback ? "Acumula saldo y úsalo en futuras compras." : `Acumula ${goal} sellos y recibe tu recompensa.`)) },
         { key: "code", label: "Código de cliente", value: customer.public_code },
         { key: "powered", label: "Tecnología", value: "Powered by rewards.enla.mx" },
