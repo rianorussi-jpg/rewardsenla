@@ -100,6 +100,13 @@ async function saveProgram(p, programId=null){
     if(error)throw error;
     return data;
   }
+  // Cada tarjeta necesita un public_slug único para su QR público.
+  // Lo generamos en cliente y la base también tiene un default como respaldo.
+  if(!payload.public_slug){
+    const raw=(globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`)
+      .replace(/[^a-zA-Z0-9]/g,'').toLowerCase();
+    payload.public_slug=raw.slice(0,16);
+  }
   const {data,error}=await sb.from('rewards_loyalty_programs').insert(payload).select().single();
   if(error)throw error;
   return data;
