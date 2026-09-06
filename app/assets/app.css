@@ -57,3 +57,7 @@
 
 /* 2026-09-06 visits-as-package + custom stamp images */
 .stamp-upload-grid .dropzone{min-height:150px}.stamp-upload-preview{width:72px;height:72px;object-fit:contain;border-radius:16px;background:#f7f8fb;border:1px solid var(--line);padding:6px;margin-top:10px}.stamp img{width:26px;height:26px;object-fit:contain;display:block}.visit-remaining{display:flex;align-items:baseline;gap:8px;margin-top:18px}.visit-remaining strong{font-size:48px;line-height:1}.visit-status-inactive{opacity:.65;filter:grayscale(.25)}.visit-actions{display:flex;gap:8px;flex-wrap:wrap}.badge.red{background:#fef3f2;color:#b42318}.badge.blue{background:#eef4ff;color:#3538cd}
+
+/* 2026-09-06 custom stamp crop editor */
+.crop-viewport.crop-square{width:min(430px,100%);aspect-ratio:1/1;margin:0 auto;border-radius:18px;background:repeating-conic-gradient(#f4f4f5 0 25%,#fff 0 50%) 50%/22px 22px}
+.stamp-adjust{margin-top:10px;width:100%}.stamp-upload-grid .dropzone{display:flex;flex-direction:column;align-items:flex-start}.stamp-upload-preview{object-fit:contain;background:transparent}

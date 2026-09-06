@@ -107,20 +107,32 @@ function blendHex(a?: string, b?: string, t = 0.35) {
 async function makeStampStripPng(filled: Uint8Array, empty: Uint8Array, value: number, goal: number, width: number, height: number) {
   try {
     const canvas = new Jimp(width, height, 0x00000000);
-    const count = Math.min(Math.max(goal, 1), 10);
-    const iconSize = Math.floor(Math.min(height * 0.55, width / (count + 1.5)));
-    const gap = Math.floor((width - count * iconSize) / (count + 1));
-    const y = Math.floor((height - iconSize) / 2);
+    const count = Math.min(Math.max(Math.floor(goal), 1), 10);
+    // Apple Wallet ofrece una franja baja y ancha. Con 6-10 sellos se ve mucho mejor
+    // en dos renglones (máximo 5 por fila) que encoger los 10 en una sola línea.
+    const rows = count > 5 ? 2 : 1;
+    const cols = rows === 2 ? 5 : count;
+    const outerX = Math.round(width * 0.055);
+    const outerY = Math.round(height * (rows === 2 ? 0.08 : 0.18));
+    const cellW = (width - outerX * 2) / cols;
+    const cellH = (height - outerY * 2) / rows;
+    const iconSize = Math.max(14, Math.floor(Math.min(cellW * 0.66, cellH * 0.72)));
     const filledImg = await Jimp.read(Buffer.from(filled));
     const emptyImg = await Jimp.read(Buffer.from(empty));
     filledImg.contain(iconSize, iconSize); emptyImg.contain(iconSize, iconSize);
     for (let i = 0; i < count; i++) {
+      const row = rows === 2 ? Math.floor(i / 5) : 0;
+      const col = rows === 2 ? i % 5 : i;
+      const itemsThisRow = rows === 2 && row === 1 ? count - 5 : cols;
+      const rowOffset = rows === 2 && row === 1 && itemsThisRow < 5 ? ((5 - itemsThisRow) * cellW) / 2 : 0;
+      const x = Math.round(outerX + rowOffset + col * cellW + (cellW - iconSize) / 2);
+      const y = Math.round(outerY + row * cellH + (cellH - iconSize) / 2);
       const src = i < value ? filledImg : emptyImg;
-      canvas.composite(src.clone(), gap + i * (iconSize + gap), y);
+      canvas.composite(src.clone(), x, y);
     }
     return new Uint8Array(await canvas.getBufferAsync(Jimp.MIME_PNG));
   } catch (e) {
-    console.warn("No se pudo generar la fila de sellos personalizada", e);
+    console.warn("No se pudo generar la cuadrícula de sellos personalizada", e);
     return null;
   }
 }
