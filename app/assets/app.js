@@ -104,6 +104,28 @@ async function uploadLogo(file){
   const {data}=sb.storage.from('reward-logos').getPublicUrl(path);
   return data.publicUrl;
 }
+
+async function syncWallet(public_code){
+  if(!public_code)return;
+  try{const {error}=await sb.functions.invoke('wallet-sync',{body:{public_code}});if(error)console.warn('Wallet sync:',error)}catch(e){console.warn('Wallet sync:',e)}
+}
+async function addStamp(customerId){
+  ensureConfigured();
+  const {data,error}=await sb.rpc('rewards_add_stamp',{p_customer_id:customerId});
+  if(error)throw error;
+  const row=Array.isArray(data)?data[0]:data;
+  await syncWallet(row?.public_code);
+  return row;
+}
+async function redeemReward(customerId){
+  ensureConfigured();
+  const {data,error}=await sb.rpc('rewards_redeem_reward',{p_customer_id:customerId});
+  if(error)throw error;
+  const row=Array.isArray(data)?data[0]:data;
+  await syncWallet(row?.public_code);
+  return row;
+}
+
 function navActive(){const p=location.pathname.split('/').pop();$$('.nav-item').forEach(a=>{if(a.getAttribute('href')?.endsWith(p))a.classList.add('active')})}
 
-window.ENLA={version:'20260905-1',sb,configured,configError,ensureConfigured,currentUser,requireAuth,getBusiness,getProgram,saveProgram,uploadLogo,bindShell,navActive,msg,initials};
+window.ENLA={version:'20260905-1',sb,configured,configError,ensureConfigured,currentUser,requireAuth,getBusiness,getProgram,saveProgram,uploadLogo,bindShell,navActive,msg,initials,syncWallet,addStamp,redeemReward};
