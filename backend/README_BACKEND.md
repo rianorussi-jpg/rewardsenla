@@ -46,7 +46,7 @@ El panel ya guarda `rewards_businesses.slug`. La siguiente pieza de producción 
 - Añade rate limiting a registro público y escaneo.
 - Registra cada cambio de puntos/sellos en `rewards_loyalty_transactions`.
 - Para evitar fraude, idealmente el incremento de sellos se hace vía una función RPC/Edge Function que valide que el usuario pertenece al negocio, en vez de actualizar `rewards_customers.current_value` directamente desde el navegador.
-- Antes de producción, reemplaza la actualización directa de sellos del demo por esa función segura.
+- Antes de producción, reemplaza la actualización directa de sellos por esa función segura.
 
-## 6) Modo demo incluido
-Mientras `app/assets/config.js` tenga los placeholders, el frontend funciona en modo demo usando localStorage. Sirve para revisar diseño y flujo sin conectar Supabase. En cuanto pongas las credenciales reales, cambia automáticamente a Supabase.
+## 6) Sin modo demo
+El frontend requiere Supabase para funcionar. Si `app/assets/config.js` no tiene credenciales válidas o Supabase devuelve un error, el sistema muestra ese error y no crea cuentas ni datos locales. No existe fallback a `localStorage`.
