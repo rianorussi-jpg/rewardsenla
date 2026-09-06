@@ -50,3 +50,8 @@ El panel ya guarda `rewards_businesses.slug`. La siguiente pieza de producción 
 
 ## 6) Sin modo demo
 El frontend requiere Supabase para funcionar. Si `app/assets/config.js` no tiene credenciales válidas o Supabase devuelve un error, el sistema muestra ese error y no crea cuentas ni datos locales. No existe fallback a `localStorage`.
+
+## QR público y auto-registro
+Después del schema inicial, ejecuta `backend/002-public-qr.sql` en Supabase > SQL Editor. Este archivo crea RPCs `security definer` para que una persona sin cuenta pueda consultar únicamente la información pública del programa, registrarse y abrir su tarjeta sin desactivar RLS ni dar acceso público directo a las tablas.
+
+Flujo: Panel > Clientes > QR para unirse → `/join.html?b=slug` → alta en `rewards_customers` → `/card.html?c=CODIGO` → QR único → Panel > Escanear.
