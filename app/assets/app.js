@@ -106,4 +106,4 @@ async function uploadLogo(file){
 }
 function navActive(){const p=location.pathname.split('/').pop();$$('.nav-item').forEach(a=>{if(a.getAttribute('href')?.endsWith(p))a.classList.add('active')})}
 
-window.ENLA={sb,configured,configError,ensureConfigured,currentUser,requireAuth,getBusiness,getProgram,saveProgram,uploadLogo,bindShell,navActive,msg,initials};
+window.ENLA={version:'20260905-1',sb,configured,configError,ensureConfigured,currentUser,requireAuth,getBusiness,getProgram,saveProgram,uploadLogo,bindShell,navActive,msg,initials};
