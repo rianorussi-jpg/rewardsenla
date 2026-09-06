@@ -1,6 +1,8 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import forge from "npm:node-forge@1.3.1";
 import { zipSync, strToU8 } from "npm:fflate@0.8.2";
+import Jimp from "npm:jimp@0.22.12";
+import { Buffer } from "node:buffer";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -22,9 +24,7 @@ function b64ToU8(s: string) {
 function u8ToBinary(bytes: Uint8Array) {
   let out = "";
   const chunk = 0x8000;
-  for (let i = 0; i < bytes.length; i += chunk) {
-    out += String.fromCharCode(...bytes.subarray(i, i + chunk));
-  }
+  for (let i = 0; i < bytes.length; i += chunk) out += String.fromCharCode(...bytes.subarray(i, i + chunk));
   return out;
 }
 
@@ -58,7 +58,7 @@ function parseP12(base64: string, password: string) {
   const key = keyBags.find((b: any) => b.key)?.key;
   const certs = certBags.map((b: any) => b.cert).filter(Boolean);
   const leaf = certs.find((c: any) => String(c.subject.getField("CN")?.value || "").includes("Pass Type ID")) || certs[0];
-  if (!key || !leaf) throw new Error("No se pudo extraer la clave privada o el certificado del P12. Revisa APPLE_PASS_CERTIFICATE_BASE64 y su contraseña.");
+  if (!key || !leaf) throw new Error("No se pudo extraer la clave privada o el certificado del P12. Revisa los secretos de Apple.");
   return { key, leaf };
 }
 
@@ -70,17 +70,27 @@ async function fetchWWDRG4() {
   return forge.pki.certificateFromAsn1(asn1);
 }
 
-async function optionalPng(url?: string | null) {
+async function fetchImage(url?: string | null) {
   if (!url) return null;
   try {
     const r = await fetch(url);
     if (!r.ok) return null;
-    const ct = (r.headers.get("content-type") || "").toLowerCase();
-    if (!ct.includes("image/png")) return null;
     const bytes = new Uint8Array(await r.arrayBuffer());
-    if (bytes.length > 2_000_000) return null;
+    if (!bytes.length || bytes.length > 5_000_000) return null;
     return bytes;
   } catch {
+    return null;
+  }
+}
+
+async function makeLogoPng(source: Uint8Array, width: number, height: number) {
+  try {
+    const img = await Jimp.read(Buffer.from(source));
+    img.contain(width, height, Jimp.HORIZONTAL_ALIGN_CENTER | Jimp.VERTICAL_ALIGN_MIDDLE);
+    const out = await img.getBufferAsync(Jimp.MIME_PNG);
+    return new Uint8Array(out);
+  } catch (e) {
+    console.warn("No se pudo convertir el logo a PNG", e);
     return null;
   }
 }
@@ -106,7 +116,7 @@ Deno.serve(async (req) => {
     const admin = createClient(SUPABASE_URL, SERVICE_ROLE, { auth: { persistSession: false } });
     const { data: customer, error: customerError } = await admin
       .from("rewards_customers")
-      .select("id,business_id,program_id,name,public_code,current_value,apple_serial_number")
+      .select("id,business_id,program_id,name,public_code,current_value,apple_serial_number,apple_auth_token,apple_updated_at")
       .eq("public_code", code)
       .maybeSingle();
     if (customerError) throw customerError;
@@ -121,13 +131,54 @@ Deno.serve(async (req) => {
     if (!program.apple_enabled) return new Response(JSON.stringify({ error: "Este negocio tiene Apple Wallet desactivado." }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
     const serial = customer.apple_serial_number || String(customer.id);
+    let authToken = customer.apple_auth_token as string | null;
+    if (!authToken) {
+      const bytes = crypto.getRandomValues(new Uint8Array(32));
+      authToken = Array.from(bytes, b => b.toString(16).padStart(2, "0")).join("");
+      const nowTag = Date.now();
+      const { error: tokenError } = await admin.from("rewards_customers")
+        .update({ apple_auth_token: authToken, apple_updated_at: nowTag, apple_serial_number: serial })
+        .eq("id", customer.id);
+      if (tokenError) throw tokenError;
+    }
     const issuerName = String(program.display_name || business.business_name || "Enla Rewards").slice(0, 60);
     const programName = String(program.program_name || "Rewards").slice(0, 60);
     const value = Math.max(0, Math.floor(Number(customer.current_value || 0)));
     const goal = Math.max(1, Math.floor(Number(program.goal_count || 6)));
     const isPoints = program.program_type === "points";
-    const progressValue = isPoints ? String(value) : `${value} / ${goal}`;
-    const progressLabel = isPoints ? "PUNTOS" : "SELLOS";
+    const reward = String(program.reward_text || "Recompensa especial").slice(0, 90);
+
+    const sourceLogo = await fetchImage(program.logo_url);
+    const logo1x = sourceLogo ? await makeLogoPng(sourceLogo, 160, 50) : null;
+    const logo2x = sourceLogo ? await makeLogoPng(sourceLogo, 320, 100) : null;
+
+    const stampIcon = String(program.stamp_icon || "⭐");
+    const visibleGoal = Math.min(goal, 10);
+    const stampRow = Array.from({ length: visibleGoal }, (_, i) => i < value ? stampIcon : "○").join("  ") + (goal > 10 ? `  ···  ${value}/${goal}` : "");
+
+    const storeCard: Record<string, unknown> = {
+      headerFields: [{
+        key: "progress",
+        label: isPoints ? "PUNTOS" : "SELLOS",
+        value: isPoints ? String(value) : `${value} / ${goal}`,
+      }],
+      primaryFields: isPoints ? [] : [{
+        key: "stamps",
+        label: "TUS SELLOS",
+        value: stampRow,
+      }],
+      secondaryFields: [{
+        key: "reward",
+        label: "RECOMPENSA",
+        value: reward,
+      }],
+      backFields: [
+        { key: "program", label: "Programa", value: programName },
+        { key: "promo", label: "Promoción", value: String(program.promo_text || `Acumula ${goal} y recibe tu recompensa.`) },
+        { key: "code", label: "Código de cliente", value: customer.public_code },
+        { key: "powered", label: "Tecnología", value: "Powered by rewards.enla.mx" },
+      ],
+    };
 
     const passJson: Record<string, unknown> = {
       formatVersion: 1,
@@ -136,27 +187,19 @@ Deno.serve(async (req) => {
       teamIdentifier: TEAM_ID,
       organizationName: issuerName,
       description: `${programName} de ${issuerName}`,
-      logoText: issuerName,
+      logoText: logo1x ? "" : issuerName,
       foregroundColor: "rgb(255, 255, 255)",
       labelColor: "rgb(255, 255, 255)",
       backgroundColor: rgb(program.primary_color),
+      webServiceURL: `${SUPABASE_URL}/functions/v1/apple-wallet-webservice`,
+      authenticationToken: authToken,
       barcodes: [{
         format: "PKBarcodeFormatQR",
         message: customer.public_code,
         messageEncoding: "iso-8859-1",
         altText: customer.public_code,
       }],
-      storeCard: {
-        headerFields: [{ key: "program", label: "PROGRAMA", value: programName }],
-        primaryFields: [{ key: "progress", label: progressLabel, value: progressValue }],
-        secondaryFields: [{ key: "customer", label: "CLIENTE", value: customer.name }],
-        auxiliaryFields: [{ key: "reward", label: "RECOMPENSA", value: String(program.reward_text || "Recompensa especial") }],
-        backFields: [
-          { key: "promo", label: "Promoción", value: String(program.promo_text || `Acumula ${goal} y recibe tu recompensa.`) },
-          { key: "code", label: "Código de cliente", value: customer.public_code },
-          { key: "powered", label: "Tecnología", value: "Powered by rewards.enla.mx" },
-        ],
-      },
+      storeCard,
     };
 
     const files: Record<string, Uint8Array> = {
@@ -164,9 +207,8 @@ Deno.serve(async (req) => {
       "icon.png": b64ToU8(ICON_1X),
       "icon@2x.png": b64ToU8(ICON_2X),
     };
-
-    const logo = await optionalPng(program.logo_url);
-    if (logo) files["logo.png"] = logo;
+    if (logo1x) files["logo.png"] = logo1x;
+    if (logo2x) files["logo@2x.png"] = logo2x;
 
     const manifest: Record<string, string> = {};
     for (const [name, bytes] of Object.entries(files)) manifest[name] = sha1Hex(bytes);
@@ -193,9 +235,7 @@ Deno.serve(async (req) => {
     files["signature"] = binaryToU8(forge.asn1.toDer(p7.toAsn1()).getBytes());
 
     const pkpass = zipSync(files, { level: 6 });
-    if (!customer.apple_serial_number) {
-      await admin.from("rewards_customers").update({ apple_serial_number: serial }).eq("id", customer.id);
-    }
+    if (!customer.apple_serial_number) await admin.from("rewards_customers").update({ apple_serial_number: serial }).eq("id", customer.id);
 
     const safeName = `${issuerName}-${customer.name}`.replace(/[^A-Za-z0-9._-]+/g, "-").slice(0, 80) || "enla-rewards";
     return new Response(pkpass, {
