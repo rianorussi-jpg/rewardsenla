@@ -68,23 +68,35 @@ async function getBusiness(){
   if(error)throw error;
   return data;
 }
-async function getProgram(){
+async function getPrograms(){
+  ensureConfigured();
+  const b=await getBusiness();
+  if(!b)return [];
+  const {data,error}=await sb.from('rewards_loyalty_programs').select('*').eq('business_id',b.id).order('created_at',{ascending:false});
+  if(error)throw error;
+  return data||[];
+}
+async function getProgram(id=null){
   ensureConfigured();
   const b=await getBusiness();
   if(!b)return null;
-  const {data,error}=await sb.from('rewards_loyalty_programs').select('*').eq('business_id',b.id).maybeSingle();
+  let q=sb.from('rewards_loyalty_programs').select('*').eq('business_id',b.id);
+  if(id) q=q.eq('id',id);
+  else q=q.order('created_at',{ascending:false}).limit(1);
+  const {data,error}=await q.maybeSingle();
   if(error)throw error;
   return data;
 }
-async function saveProgram(p){
+async function saveProgram(p, programId=null){
   ensureConfigured();
   const b=await getBusiness();
-  if(!b)throw new Error('No se encontró el negocio asociado a esta cuenta. Revisa el trigger rewards_on_auth_user_created.');
+  if(!b)throw new Error('No se encontró el negocio asociado a esta cuenta.');
   const payload={...p,business_id:b.id};
   delete payload.id;
-  const existing=await getProgram();
-  if(existing){
-    const {data,error}=await sb.from('rewards_loyalty_programs').update(payload).eq('id',existing.id).select().single();
+  if(programId){
+    // El tipo queda bloqueado después de crear la tarjeta.
+    delete payload.program_type;
+    const {data,error}=await sb.from('rewards_loyalty_programs').update(payload).eq('id',programId).eq('business_id',b.id).select().single();
     if(error)throw error;
     return data;
   }
@@ -155,4 +167,4 @@ async function redeemReward(customerId){
 
 function navActive(){const p=location.pathname.split('/').pop();$$('.nav-item').forEach(a=>{if(a.getAttribute('href')?.endsWith(p))a.classList.add('active')})}
 
-window.ENLA={version:'20260906-cashback1',sb,configured,configError,ensureConfigured,currentUser,requireAuth,getBusiness,getProgram,saveProgram,uploadLogo,uploadProgramMedia,loyaltyMeta,bindShell,navActive,msg,initials,syncWallet,addStamp,redeemReward,spendCashback};
+window.ENLA={version:'20260906-multicards1',sb,configured,configError,ensureConfigured,currentUser,requireAuth,getBusiness,getPrograms,getProgram,saveProgram,uploadLogo,uploadProgramMedia,loyaltyMeta,bindShell,navActive,msg,initials,syncWallet,addStamp,redeemReward,spendCashback};
