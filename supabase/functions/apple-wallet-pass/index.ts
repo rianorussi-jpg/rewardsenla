@@ -87,21 +87,22 @@ async function fetchImage(url?: string | null) {
 async function makeStripPng(source: Uint8Array, width: number, height: number) {
   try {
     const src = await Jimp.read(Buffer.from(source));
-    // Apple Wallet espera el strip en una proporción fija. En lugar de recortarlo,
-    // lo contenemos dentro del lienzo para que la imagen promocional siempre se vea completa.
-    const canvas = new Jimp(width, height, 0xffffffff);
-    const innerW = Math.max(1, width - Math.round(width * 0.04));
-    const innerH = Math.max(1, height - Math.round(height * 0.10));
-    src.contain(innerW, innerH, Jimp.HORIZONTAL_ALIGN_CENTER | Jimp.VERTICAL_ALIGN_MIDDLE);
-    const x = Math.round((width - src.bitmap.width) / 2);
-    const y = Math.round((height - src.bitmap.height) / 2);
-    canvas.composite(src, x, y);
-    const out = await canvas.getBufferAsync(Jimp.MIME_PNG);
+    // La web ya guarda la imagen recortada en la proporción exacta del strip de Wallet.
+    // Aquí usamos COVER para llenar el ancho completo y evitar márgenes blancos.
+    src.cover(width, height, Jimp.HORIZONTAL_ALIGN_CENTER | Jimp.VERTICAL_ALIGN_MIDDLE);
+    const out = await src.getBufferAsync(Jimp.MIME_PNG);
     return new Uint8Array(out);
   } catch (e) {
     console.warn("No se pudo preparar la imagen promocional para Apple Wallet", e);
     return null;
   }
+}
+function blendHex(a?: string, b?: string, t = 0.35) {
+  const valid = (x?: string) => /^#[0-9a-fA-F]{6}$/.test(x || "") ? String(x) : "#4b63f3";
+  const aa=valid(a), bb=valid(b || a); const an=parseInt(aa.slice(1),16), bn=parseInt(bb.slice(1),16);
+  const ar=(an>>16)&255, ag=(an>>8)&255, ab=an&255, br=(bn>>16)&255, bg=(bn>>8)&255, bbv=bn&255;
+  const mix=(x:number,y:number)=>Math.round(x+(y-x)*t);
+  return `#${mix(ar,br).toString(16).padStart(2,'0')}${mix(ag,bg).toString(16).padStart(2,'0')}${mix(ab,bbv).toString(16).padStart(2,'0')}`;
 }
 async function makeLogoPng(source: Uint8Array, width: number, height: number) {
   try {
@@ -222,7 +223,7 @@ Deno.serve(async (req) => {
       logoText: logo1x ? "" : issuerName,
       foregroundColor: "rgb(255, 255, 255)",
       labelColor: "rgb(255, 255, 255)",
-      backgroundColor: rgb(program.primary_color),
+      backgroundColor: rgb(program.card_style === "classic" ? program.primary_color : blendHex(program.primary_color, program.secondary_color, 0.38)),
       webServiceURL: `${SUPABASE_URL}/functions/v1/apple-wallet-webservice`,
       authenticationToken: authToken,
       barcodes: [{

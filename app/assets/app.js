@@ -174,4 +174,4 @@ async function redeemReward(customerId){
 
 function navActive(){const p=location.pathname.split('/').pop();$$('.nav-item').forEach(a=>{if(a.getAttribute('href')?.endsWith(p))a.classList.add('active')})}
 
-window.ENLA={version:'20260906-multicards1',sb,configured,configError,ensureConfigured,currentUser,requireAuth,getBusiness,getPrograms,getProgram,saveProgram,uploadLogo,uploadProgramMedia,loyaltyMeta,bindShell,navActive,msg,initials,syncWallet,addStamp,redeemReward,spendCashback};
+window.ENLA={version:'20260906-cropwallet1',sb,configured,configError,ensureConfigured,currentUser,requireAuth,getBusiness,getPrograms,getProgram,saveProgram,uploadLogo,uploadProgramMedia,loyaltyMeta,bindShell,navActive,msg,initials,syncWallet,addStamp,redeemReward,spendCashback};
