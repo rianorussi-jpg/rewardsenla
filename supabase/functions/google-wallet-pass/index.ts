@@ -163,7 +163,7 @@ Deno.serve(async (req) => {
         balance: program.program_type === 'cashback' ? { double: value } : { int: value },
       },
       barcode: {
-        type: "QR_CODE",
+        type: program.barcode_format === "code128" ? "CODE_128" : "QR_CODE",
         value: customer.public_code,
         alternateText: customer.public_code,
       },

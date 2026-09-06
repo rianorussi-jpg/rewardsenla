@@ -112,11 +112,11 @@ async function makeStampStripPng(filled: Uint8Array, empty: Uint8Array, value: n
     // en dos renglones (máximo 5 por fila) que encoger los 10 en una sola línea.
     const rows = count > 5 ? 2 : 1;
     const cols = rows === 2 ? 5 : count;
-    const outerX = Math.round(width * 0.055);
+    const outerX = Math.round(width * 0.12);
     const outerY = Math.round(height * (rows === 2 ? 0.08 : 0.18));
     const cellW = (width - outerX * 2) / cols;
     const cellH = (height - outerY * 2) / rows;
-    const iconSize = Math.max(14, Math.floor(Math.min(cellW * 0.66, cellH * 0.72)));
+    const iconSize = Math.max(14, Math.floor(Math.min(cellW * 0.60, cellH * 0.68)));
     const filledImg = await Jimp.read(Buffer.from(filled));
     const emptyImg = await Jimp.read(Buffer.from(empty));
     filledImg.contain(iconSize, iconSize); emptyImg.contain(iconSize, iconSize);
@@ -265,7 +265,7 @@ Deno.serve(async (req) => {
       webServiceURL: `${SUPABASE_URL}/functions/v1/apple-wallet-webservice`,
       authenticationToken: authToken,
       barcodes: [{
-        format: "PKBarcodeFormatQR",
+        format: program.barcode_format === "code128" ? "PKBarcodeFormatCode128" : "PKBarcodeFormatQR",
         message: customer.public_code,
         messageEncoding: "iso-8859-1",
         altText: customer.public_code,

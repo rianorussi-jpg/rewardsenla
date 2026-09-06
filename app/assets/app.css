@@ -61,3 +61,14 @@
 /* 2026-09-06 custom stamp crop editor */
 .crop-viewport.crop-square{width:min(430px,100%);aspect-ratio:1/1;margin:0 auto;border-radius:18px;background:repeating-conic-gradient(#f4f4f5 0 25%,#fff 0 50%) 50%/22px 22px}
 .stamp-adjust{margin-top:10px;width:100%}.stamp-upload-grid .dropzone{display:flex;flex-direction:column;align-items:flex-start}.stamp-upload-preview{object-fit:contain;background:transparent}
+
+/* QR / barcode selector */
+.barcode-choice{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.barcode-option{appearance:none;border:1px solid #dfe3ef;background:#fff;border-radius:16px;padding:14px 16px;display:flex;gap:12px;align-items:center;text-align:left;cursor:pointer;transition:.18s ease;color:#182033}
+.barcode-option:hover{border-color:#8c8df7;transform:translateY(-1px);box-shadow:0 8px 22px rgba(69,72,160,.08)}
+.barcode-option.selected{border:2px solid #5a5cf4;background:#f4f4ff;box-shadow:0 8px 22px rgba(90,92,244,.12)}
+.barcode-choice-icon{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;background:#eef0ff;color:#4e51e8;font-size:25px;font-weight:800;flex:0 0 auto}
+.barcode-option span:last-child{display:flex;flex-direction:column;gap:3px}.barcode-option small{color:#727a90;font-weight:500;line-height:1.35}
+.customer-barcode-wrap{background:#fff;border-radius:14px;padding:12px 14px;margin:28px auto 0;max-width:330px;text-align:center;overflow:hidden}
+.customer-barcode-wrap svg{max-width:100%;height:auto}
+@media(max-width:650px){.barcode-choice{grid-template-columns:1fr}}
