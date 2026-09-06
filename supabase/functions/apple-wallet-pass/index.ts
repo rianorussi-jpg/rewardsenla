@@ -241,8 +241,11 @@ Deno.serve(async (req) => {
       secondaryFields: isCashback
         ? (String(program.promo_text || "").trim() ? [{ key: "promoFront", label: "PROMOCIÓN", value: String(program.promo_text).slice(0, 90) }] : [])
         : isVisits
-          ? [{ key: "visitInfo", label: "USO", value: inactive ? "Esta tarjeta está desactivada" : "Cada acceso descuenta 1 visita" }]
+          ? [{ key: "visitPackage", label: inactive ? "ESTADO" : "PAQUETE", value: inactive ? "Tarjeta inactiva" : `${goal} visitas incluidas` }]
           : [{ key: "reward", label: "RECOMPENSA", value: reward }],
+      auxiliaryFields: isVisits
+        ? [{ key: "customerName", label: "CLIENTE", value: String(customer.name || "Cliente") }]
+        : [],
       backFields: [
         { key: "program", label: "Programa", value: programName },
         ...(isVisits ? [{ key: "visitsPackage", label: "Paquete", value: inactive ? "Tarjeta inactiva" : `${goal} visitas incluidas` }] : []),
