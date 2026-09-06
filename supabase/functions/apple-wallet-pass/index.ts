@@ -83,6 +83,26 @@ async function fetchImage(url?: string | null) {
   }
 }
 
+
+async function makeStripPng(source: Uint8Array, width: number, height: number) {
+  try {
+    const src = await Jimp.read(Buffer.from(source));
+    // Apple Wallet espera el strip en una proporción fija. En lugar de recortarlo,
+    // lo contenemos dentro del lienzo para que la imagen promocional siempre se vea completa.
+    const canvas = new Jimp(width, height, 0xffffffff);
+    const innerW = Math.max(1, width - Math.round(width * 0.04));
+    const innerH = Math.max(1, height - Math.round(height * 0.10));
+    src.contain(innerW, innerH, Jimp.HORIZONTAL_ALIGN_CENTER | Jimp.VERTICAL_ALIGN_MIDDLE);
+    const x = Math.round((width - src.bitmap.width) / 2);
+    const y = Math.round((height - src.bitmap.height) / 2);
+    canvas.composite(src, x, y);
+    const out = await canvas.getBufferAsync(Jimp.MIME_PNG);
+    return new Uint8Array(out);
+  } catch (e) {
+    console.warn("No se pudo preparar la imagen promocional para Apple Wallet", e);
+    return null;
+  }
+}
 async function makeLogoPng(source: Uint8Array, width: number, height: number) {
   try {
     const img = await Jimp.read(Buffer.from(source));
@@ -154,6 +174,14 @@ Deno.serve(async (req) => {
     const logo1x = sourceLogo ? await makeLogoPng(sourceLogo, 160, 50) : null;
     const logo2x = sourceLogo ? await makeLogoPng(sourceLogo, 320, 100) : null;
 
+    // Imagen central/promocional configurada por el negocio.
+    // Se genera en los tamaños nativos del strip de Store Card para evitar el crop agresivo
+    // que se producía al enviar imágenes con proporciones arbitrarias.
+    const sourcePromo = await fetchImage(program.central_image_url);
+    const strip1x = sourcePromo ? await makeStripPng(sourcePromo, 375, 123) : null;
+    const strip2x = sourcePromo ? await makeStripPng(sourcePromo, 750, 246) : null;
+    const strip3x = sourcePromo ? await makeStripPng(sourcePromo, 1125, 369) : null;
+
     const stampIcon = String(program.stamp_icon || "⭐");
     const visibleGoal = Math.min(goal, 10);
     const stampRow = Array.from({ length: visibleGoal }, (_, i) => i < value ? stampIcon : "○").join("  ") + (goal > 10 ? `  ···  ${value}/${goal}` : "");
@@ -164,11 +192,21 @@ Deno.serve(async (req) => {
         label: isCashback ? "SALDO" : isVisits ? "VISITAS" : "SELLOS",
         value: isCashback ? `$${Number(value).toFixed(2)}` : `${value} / ${goal}`,
       }],
-      primaryFields: isCashback ? [{ key: "cashback", label: "DISPONIBLE PARA GASTAR", value: `$${Number(value).toFixed(2)} MXN` }] : isVisits ? [{ key: "visits", label: "TUS VISITAS", value: `${value} de ${goal}` }] : [{ key: "stamps", label: "TUS SELLOS", value: stampRow }],
-      secondaryFields: isCashback ? [{ key: 'cashbackInfo', label: 'CASHBACK', value: 'Úsalo total o parcialmente en el negocio' }] : [{ key: "reward", label: "RECOMPENSA", value: reward }],
+      // En Cashback evitamos repetir "saldo disponible". El saldo ya vive en el header.
+      // Si existe una imagen promocional, Apple la muestra como strip central.
+      primaryFields: isCashback
+        ? []
+        : isVisits
+          ? [{ key: "visits", label: "TUS VISITAS", value: `${value} de ${goal}` }]
+          : [{ key: "stamps", label: "TUS SELLOS", value: stampRow }],
+      secondaryFields: isCashback
+        ? (String(program.promo_text || "").trim()
+            ? [{ key: "promoFront", label: "PROMOCIÓN", value: String(program.promo_text).slice(0, 90) }]
+            : [])
+        : [{ key: "reward", label: "RECOMPENSA", value: reward }],
       backFields: [
         { key: "program", label: "Programa", value: programName },
-        { key: "promo", label: "Promoción", value: String(program.promo_text || `Acumula ${goal} y recibe tu recompensa.`) },
+        { key: "promo", label: "Promoción", value: String(program.promo_text || (isCashback ? "Acumula saldo y úsalo en futuras compras." : `Acumula ${goal} y recibe tu recompensa.`)) },
         { key: "code", label: "Código de cliente", value: customer.public_code },
         { key: "powered", label: "Tecnología", value: "Powered by rewards.enla.mx" },
       ],
@@ -203,6 +241,9 @@ Deno.serve(async (req) => {
     };
     if (logo1x) files["logo.png"] = logo1x;
     if (logo2x) files["logo@2x.png"] = logo2x;
+    if (strip1x) files["strip.png"] = strip1x;
+    if (strip2x) files["strip@2x.png"] = strip2x;
+    if (strip3x) files["strip@3x.png"] = strip3x;
 
     const manifest: Record<string, string> = {};
     for (const [name, bytes] of Object.entries(files)) manifest[name] = sha1Hex(bytes);
