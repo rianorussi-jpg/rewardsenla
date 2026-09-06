@@ -139,7 +139,7 @@ async function uploadProgramMedia(file, kind='media'){
 }
 function loyaltyMeta(type='stamps'){
   if(type==='cashback')return {singular:'saldo',plural:'cashback',action:'Agregar cashback',history:'Cashback',currency:true};
-  if(type==='visits')return {singular:'visita',plural:'visitas',action:'Registrar visita',history:'Visitas'};
+  if(type==='visits')return {singular:'visita',plural:'visitas restantes',action:'Usar visita',history:'Uso de visita'};
   return {singular:'sello',plural:'sellos',action:'Agregar sello',history:'Sellos'};
 }
 
@@ -150,6 +150,31 @@ async function syncWallet(public_code){
 async function addStamp(customerId){
   ensureConfigured();
   const {data,error}=await sb.rpc('rewards_add_stamp',{p_customer_id:customerId});
+  if(error)throw error;
+  const row=Array.isArray(data)?data[0]:data;
+  await syncWallet(row?.public_code);
+  return row;
+}
+
+async function useVisit(customerId){
+  ensureConfigured();
+  const {data,error}=await sb.rpc('rewards_use_visit',{p_customer_id:customerId});
+  if(error)throw error;
+  const row=Array.isArray(data)?data[0]:data;
+  await syncWallet(row?.public_code);
+  return row;
+}
+async function renewVisits(customerId){
+  ensureConfigured();
+  const {data,error}=await sb.rpc('rewards_renew_visits',{p_customer_id:customerId});
+  if(error)throw error;
+  const row=Array.isArray(data)?data[0]:data;
+  await syncWallet(row?.public_code);
+  return row;
+}
+async function deactivateVisitCard(customerId){
+  ensureConfigured();
+  const {data,error}=await sb.rpc('rewards_deactivate_visit_card',{p_customer_id:customerId});
   if(error)throw error;
   const row=Array.isArray(data)?data[0]:data;
   await syncWallet(row?.public_code);
@@ -174,4 +199,4 @@ async function redeemReward(customerId){
 
 function navActive(){const p=location.pathname.split('/').pop();$$('.nav-item').forEach(a=>{if(a.getAttribute('href')?.endsWith(p))a.classList.add('active')})}
 
-window.ENLA={version:'20260906-cropwallet1',sb,configured,configError,ensureConfigured,currentUser,requireAuth,getBusiness,getPrograms,getProgram,saveProgram,uploadLogo,uploadProgramMedia,loyaltyMeta,bindShell,navActive,msg,initials,syncWallet,addStamp,redeemReward,spendCashback};
+window.ENLA={version:'20260906-visits2',sb,configured,configError,ensureConfigured,currentUser,requireAuth,getBusiness,getPrograms,getProgram,saveProgram,uploadLogo,uploadProgramMedia,loyaltyMeta,bindShell,navActive,msg,initials,syncWallet,addStamp,useVisit,renewVisits,deactivateVisitCard,redeemReward,spendCashback};

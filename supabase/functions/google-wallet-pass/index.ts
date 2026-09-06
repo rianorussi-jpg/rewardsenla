@@ -108,7 +108,7 @@ Deno.serve(async (req) => {
     const admin = createClient(SUPABASE_URL, SERVICE_ROLE, { auth: { persistSession: false } });
     const { data: customer, error: customerError } = await admin
       .from("rewards_customers")
-      .select("id,business_id,program_id,name,public_code,current_value,google_object_id")
+      .select("id,business_id,program_id,name,public_code,current_value,status,google_object_id")
       .eq("public_code", code)
       .maybeSingle();
     if (customerError) throw customerError;
@@ -143,7 +143,7 @@ Deno.serve(async (req) => {
         contentDescription: { defaultValue: { language: "es", value: `Logo de ${issuerName}` } },
       };
     }
-    if (program.central_image_url) {
+    if (program.program_type !== "stamps" && program.central_image_url) {
       loyaltyClass.heroImage = {
         sourceUri: { uri: program.central_image_url },
         contentDescription: { defaultValue: { language: "es", value: `Promoción de ${issuerName}` } },
@@ -155,11 +155,11 @@ Deno.serve(async (req) => {
     const loyaltyObject: any = {
       id: objectId,
       classId,
-      state: "ACTIVE",
+      state: customer.status === "inactive" ? "INACTIVE" : "ACTIVE",
       accountId: customer.public_code,
       accountName: customer.name,
       loyaltyPoints: {
-        label: program.program_type === "cashback" ? "Saldo MXN" : program.program_type === "visits" ? "Visitas" : "Sellos",
+        label: program.program_type === "cashback" ? "Saldo" : program.program_type === "visits" ? "Visitas restantes" : "Sellos",
         balance: program.program_type === 'cashback' ? { double: value } : { int: value },
       },
       barcode: {
@@ -168,8 +168,12 @@ Deno.serve(async (req) => {
         alternateText: customer.public_code,
       },
       textModulesData: [
-        { id: "promo", header: "Promoción", body: program.promo_text || `Acumula ${program.goal_count || 6} y recibe tu recompensa.` },
-        program.program_type === 'cashback' ? { id: 'reward', header: 'Tu cashback', body: `Tienes $${Number(value).toFixed(2)} MXN para gastar en el negocio.` } : { id: "reward", header: "Recompensa", body: program.reward_text || "Recompensa especial" },
+        { id: "promo", header: program.program_type === "visits" ? "Paquete" : "Promoción", body: program.promo_text || (program.program_type === "visits" ? `Incluye ${program.goal_count || 8} visitas. Cada acceso descuenta 1.` : `Acumula ${program.goal_count || 6} y recibe tu recompensa.`) },
+        program.program_type === 'cashback'
+          ? { id: 'reward', header: 'Saldo', body: `$${Number(value).toFixed(2)}` }
+          : program.program_type === 'visits'
+            ? { id: 'visits', header: customer.status === 'inactive' ? 'Estado' : 'Visitas restantes', body: customer.status === 'inactive' ? 'Tarjeta inactiva' : `${value} de ${program.goal_count || 8}` }
+            : { id: "reward", header: "Recompensa", body: program.reward_text || "Recompensa especial" },
       ],
       hexBackgroundColor: color,
     };

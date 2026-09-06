@@ -104,6 +104,27 @@ function blendHex(a?: string, b?: string, t = 0.35) {
   const mix=(x:number,y:number)=>Math.round(x+(y-x)*t);
   return `#${mix(ar,br).toString(16).padStart(2,'0')}${mix(ag,bg).toString(16).padStart(2,'0')}${mix(ab,bbv).toString(16).padStart(2,'0')}`;
 }
+async function makeStampStripPng(filled: Uint8Array, empty: Uint8Array, value: number, goal: number, width: number, height: number) {
+  try {
+    const canvas = new Jimp(width, height, 0x00000000);
+    const count = Math.min(Math.max(goal, 1), 10);
+    const iconSize = Math.floor(Math.min(height * 0.55, width / (count + 1.5)));
+    const gap = Math.floor((width - count * iconSize) / (count + 1));
+    const y = Math.floor((height - iconSize) / 2);
+    const filledImg = await Jimp.read(Buffer.from(filled));
+    const emptyImg = await Jimp.read(Buffer.from(empty));
+    filledImg.contain(iconSize, iconSize); emptyImg.contain(iconSize, iconSize);
+    for (let i = 0; i < count; i++) {
+      const src = i < value ? filledImg : emptyImg;
+      canvas.composite(src.clone(), gap + i * (iconSize + gap), y);
+    }
+    return new Uint8Array(await canvas.getBufferAsync(Jimp.MIME_PNG));
+  } catch (e) {
+    console.warn("No se pudo generar la fila de sellos personalizada", e);
+    return null;
+  }
+}
+
 async function makeLogoPng(source: Uint8Array, width: number, height: number) {
   try {
     const img = await Jimp.read(Buffer.from(source));
@@ -137,7 +158,7 @@ Deno.serve(async (req) => {
     const admin = createClient(SUPABASE_URL, SERVICE_ROLE, { auth: { persistSession: false } });
     const { data: customer, error: customerError } = await admin
       .from("rewards_customers")
-      .select("id,business_id,program_id,name,public_code,current_value,apple_serial_number,apple_auth_token,apple_updated_at")
+      .select("id,business_id,program_id,name,public_code,current_value,status,apple_serial_number,apple_auth_token,apple_updated_at")
       .eq("public_code", code)
       .maybeSingle();
     if (customerError) throw customerError;
@@ -178,36 +199,41 @@ Deno.serve(async (req) => {
     // Imagen central/promocional configurada por el negocio.
     // Se genera en los tamaños nativos del strip de Store Card para evitar el crop agresivo
     // que se producía al enviar imágenes con proporciones arbitrarias.
-    const sourcePromo = await fetchImage(program.central_image_url);
+    const sourcePromo = program.program_type === "stamps" ? null : await fetchImage(program.central_image_url);
     const strip1x = sourcePromo ? await makeStripPng(sourcePromo, 375, 123) : null;
     const strip2x = sourcePromo ? await makeStripPng(sourcePromo, 750, 246) : null;
     const strip3x = sourcePromo ? await makeStripPng(sourcePromo, 1125, 369) : null;
+
+    const sourceStampFilled = program.program_type === "stamps" ? await fetchImage(program.stamp_filled_image_url) : null;
+    const sourceStampEmpty = program.program_type === "stamps" ? await fetchImage(program.stamp_empty_image_url) : null;
+    const customStampStrip1x = sourceStampFilled && sourceStampEmpty ? await makeStampStripPng(sourceStampFilled, sourceStampEmpty, value, goal, 375, 123) : null;
+    const customStampStrip2x = sourceStampFilled && sourceStampEmpty ? await makeStampStripPng(sourceStampFilled, sourceStampEmpty, value, goal, 750, 246) : null;
+    const customStampStrip3x = sourceStampFilled && sourceStampEmpty ? await makeStampStripPng(sourceStampFilled, sourceStampEmpty, value, goal, 1125, 369) : null;
 
     const stampIcon = String(program.stamp_icon || "⭐");
     const visibleGoal = Math.min(goal, 10);
     const stampRow = Array.from({ length: visibleGoal }, (_, i) => i < value ? stampIcon : "○").join("  ") + (goal > 10 ? `  ···  ${value}/${goal}` : "");
 
+    const inactive = customer.status === "inactive";
     const storeCard: Record<string, unknown> = {
       headerFields: [{
         key: "progress",
-        label: isCashback ? "SALDO" : isVisits ? "VISITAS" : "SELLOS",
-        value: isCashback ? `$${Number(value).toFixed(2)}` : `${value} / ${goal}`,
+        label: isCashback ? "SALDO" : isVisits ? "VISITAS RESTANTES" : "SELLOS",
+        value: isCashback ? `$${Number(value).toFixed(2)}` : isVisits ? `${value}` : `${value} / ${goal}`,
       }],
-      // En Cashback evitamos repetir "saldo disponible". El saldo ya vive en el header.
-      // Si existe una imagen promocional, Apple la muestra como strip central.
       primaryFields: isCashback
         ? []
         : isVisits
-          ? [{ key: "visits", label: "TUS VISITAS", value: `${value} de ${goal}` }]
-          : [{ key: "stamps", label: "TUS SELLOS", value: stampRow }],
+          ? [{ key: "visits", label: inactive ? "ESTADO" : "PAQUETE", value: inactive ? "INACTIVA" : `${goal} visitas incluidas` }]
+          : customStampStrip1x ? [] : [{ key: "stamps", label: "TUS SELLOS", value: stampRow }],
       secondaryFields: isCashback
-        ? (String(program.promo_text || "").trim()
-            ? [{ key: "promoFront", label: "PROMOCIÓN", value: String(program.promo_text).slice(0, 90) }]
-            : [])
-        : [{ key: "reward", label: "RECOMPENSA", value: reward }],
+        ? (String(program.promo_text || "").trim() ? [{ key: "promoFront", label: "PROMOCIÓN", value: String(program.promo_text).slice(0, 90) }] : [])
+        : isVisits
+          ? [{ key: "visitInfo", label: "USO", value: inactive ? "Esta tarjeta está desactivada" : "Cada acceso descuenta 1 visita" }]
+          : [{ key: "reward", label: "RECOMPENSA", value: reward }],
       backFields: [
         { key: "program", label: "Programa", value: programName },
-        { key: "promo", label: "Promoción", value: String(program.promo_text || (isCashback ? "Acumula saldo y úsalo en futuras compras." : `Acumula ${goal} y recibe tu recompensa.`)) },
+        { key: "promo", label: "Información", value: String(program.promo_text || (isVisits ? `Incluye ${goal} visitas por ciclo.` : isCashback ? "Acumula saldo y úsalo en futuras compras." : `Acumula ${goal} sellos y recibe tu recompensa.`)) },
         { key: "code", label: "Código de cliente", value: customer.public_code },
         { key: "powered", label: "Tecnología", value: "Powered by rewards.enla.mx" },
       ],
@@ -242,9 +268,9 @@ Deno.serve(async (req) => {
     };
     if (logo1x) files["logo.png"] = logo1x;
     if (logo2x) files["logo@2x.png"] = logo2x;
-    if (strip1x) files["strip.png"] = strip1x;
-    if (strip2x) files["strip@2x.png"] = strip2x;
-    if (strip3x) files["strip@3x.png"] = strip3x;
+    if (customStampStrip1x) files["strip.png"] = customStampStrip1x; else if (strip1x) files["strip.png"] = strip1x;
+    if (customStampStrip2x) files["strip@2x.png"] = customStampStrip2x; else if (strip2x) files["strip@2x.png"] = strip2x;
+    if (customStampStrip3x) files["strip@3x.png"] = customStampStrip3x; else if (strip3x) files["strip@3x.png"] = strip3x;
 
     const manifest: Record<string, string> = {};
     for (const [name, bytes] of Object.entries(files)) manifest[name] = sha1Hex(bytes);
