@@ -170,7 +170,7 @@ Deno.serve(async (req) => {
     const admin = createClient(SUPABASE_URL, SERVICE_ROLE, { auth: { persistSession: false } });
     const { data: customer, error: customerError } = await admin
       .from("rewards_customers")
-      .select("id,business_id,program_id,name,public_code,current_value,status,apple_serial_number,apple_auth_token,apple_updated_at")
+      .select("id,business_id,program_id,name,public_code,current_value,status,photo_url,expires_at,last_access_state,apple_serial_number,apple_auth_token,apple_updated_at")
       .eq("public_code", code)
       .maybeSingle();
     if (customerError) throw customerError;
@@ -202,6 +202,7 @@ Deno.serve(async (req) => {
     const goal = Math.max(1, Math.floor(Number(program.goal_count || 6)));
     const isCashback = program.program_type === "cashback";
     const isVisits = program.program_type === "visits";
+    const isAccess = program.program_type === "access";
     const reward = String(program.reward_text || "Recompensa especial").slice(0, 90);
 
     const sourceLogo = await fetchImage(program.logo_url);
@@ -227,7 +228,21 @@ Deno.serve(async (req) => {
     const stampRow = Array.from({ length: visibleGoal }, (_, i) => i < value ? stampIcon : "○").join("  ") + (goal > 10 ? `  ···  ${value}/${goal}` : "");
 
     const inactive = customer.status === "inactive";
-    const storeCard: Record<string, unknown> = {
+    const expiry = customer.expires_at ? new Date(customer.expires_at) : null;
+    const expired = isAccess && (!expiry || expiry.getTime() < Date.now());
+    const expiryText = expiry ? expiry.toLocaleDateString("es-MX", { day: "2-digit", month: "short", year: "numeric" }).toUpperCase() : "—";
+    const storeCard: Record<string, unknown> = isAccess ? {
+      headerFields: [{ key: "expiry", label: "VENCIMIENTO", value: expiryText }],
+      primaryFields: strip1x ? [] : [{ key: "service", label: "SERVICIO", value: String(program.service_name || programName).slice(0, 80) }],
+      secondaryFields: [{ key: "service2", label: "SERVICIO", value: String(program.service_name || programName).slice(0, 80) }],
+      auxiliaryFields: [{ key: "customerName", label: "CLIENTE", value: String(customer.name || "Cliente") }],
+      backFields: [
+        { key: "status", label: "Estado", value: inactive ? "Inactiva" : expired ? "Vencida" : "Activa" },
+        { key: "mode", label: "Control", value: program.access_mode === "entry_exit" ? "Entrada / salida" : "Acceso ilimitado durante la vigencia" },
+        { key: "code", label: "Código", value: customer.public_code },
+        { key: "powered", label: "Tecnología", value: "Powered by rewards.enla.mx" },
+      ],
+    } : {
       headerFields: [{
         key: "progress",
         label: isCashback ? "SALDO" : isVisits ? "VISITAS RESTANTES" : "SELLOS",
@@ -261,7 +276,7 @@ Deno.serve(async (req) => {
       serialNumber: serial,
       teamIdentifier: TEAM_ID,
       organizationName: issuerName,
-      description: `${programName} de ${issuerName}`,
+      description: isAccess ? `${program.service_name || programName} · ${customer.name}` : `${programName} de ${issuerName}`,
       logoText: logo1x ? "" : issuerName,
       foregroundColor: "rgb(255, 255, 255)",
       labelColor: "rgb(255, 255, 255)",

@@ -163,6 +163,7 @@ async function uploadProgramMedia(file, kind='media'){
 function loyaltyMeta(type='stamps'){
   if(type==='cashback')return {singular:'saldo',plural:'cashback',action:'Agregar cashback',history:'Cashback',currency:true};
   if(type==='visits')return {singular:'visita',plural:'visitas restantes',action:'Usar visita',history:'Uso de visita'};
+  if(type==='access')return {singular:'acceso',plural:'accesos',action:'Registrar acceso',history:'Accesos'};
   return {singular:'sello',plural:'sellos',action:'Agregar sello',history:'Sellos'};
 }
 
@@ -203,6 +204,26 @@ async function deactivateVisitCard(customerId){
   await syncWallet(row?.public_code);
   return row;
 }
+
+async function markAccess(customerId, action='entry'){
+  ensureConfigured();
+  const {data,error}=await sb.rpc('rewards_mark_access',{p_customer_id:customerId,p_action:action});
+  if(error)throw error;
+  const row=Array.isArray(data)?data[0]:data;
+  await syncWallet(row?.public_code);
+  return row;
+}
+async function renewAccess(customerId, days=null){
+  ensureConfigured();
+  const args={p_customer_id:customerId};
+  if(days)args.p_days=Number(days);
+  const {data,error}=await sb.rpc('rewards_renew_access',{...args});
+  if(error)throw error;
+  const row=Array.isArray(data)?data[0]:data;
+  await syncWallet(row?.public_code);
+  return row;
+}
+
 async function spendCashback(customerId, amount){
   ensureConfigured();
   const {data,error}=await sb.rpc('rewards_spend_cashback',{p_customer_id:customerId,p_amount:Number(amount)});
@@ -243,4 +264,4 @@ async function redeemReward(customerId){
 
 function navActive(){buildNav()}
 
-window.ENLA={version:'20260906-scope2',sb,configured,configError,ensureConfigured,currentUser,requireAuth,getBusiness,getPrograms,getProgram,saveProgram,uploadLogo,uploadProgramMedia,loyaltyMeta,bindShell,navActive,msg,initials,syncWallet,addStamp,useVisit,renewVisits,deactivateVisitCard,redeemReward,spendCashback,addCashbackAmount,setCashbackBalance,programContext};
+window.ENLA={version:'20260906-scope2',sb,configured,configError,ensureConfigured,currentUser,requireAuth,getBusiness,getPrograms,getProgram,saveProgram,uploadLogo,uploadProgramMedia,loyaltyMeta,bindShell,navActive,msg,initials,syncWallet,addStamp,useVisit,renewVisits,deactivateVisitCard,redeemReward,spendCashback,addCashbackAmount,setCashbackBalance,markAccess,renewAccess,programContext};

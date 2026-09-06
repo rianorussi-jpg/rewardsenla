@@ -108,7 +108,7 @@ Deno.serve(async (req) => {
     const admin = createClient(SUPABASE_URL, SERVICE_ROLE, { auth: { persistSession: false } });
     const { data: customer, error: customerError } = await admin
       .from("rewards_customers")
-      .select("id,business_id,program_id,name,public_code,current_value,status,google_object_id")
+      .select("id,business_id,program_id,name,public_code,current_value,status,photo_url,expires_at,last_access_state,google_object_id")
       .eq("public_code", code)
       .maybeSingle();
     if (customerError) throw customerError;
@@ -124,7 +124,7 @@ Deno.serve(async (req) => {
 
     const safeBusinessId = String(business.id).replace(/[^A-Za-z0-9._-]/g, "_");
     const safeCustomerId = String(customer.id).replace(/[^A-Za-z0-9._-]/g, "_");
-    const classId = `${ISSUER_ID}.rewards_${safeBusinessId}`;
+    const classId = program.program_type === "access" ? `${ISSUER_ID}.access_${safeBusinessId}_${String(program.id).replace(/[^A-Za-z0-9._-]/g, "_")}` : `${ISSUER_ID}.rewards_${safeBusinessId}`;
     const objectId = `${ISSUER_ID}.customer_${safeCustomerId}`;
     const color = /^#[0-9a-fA-F]{6}$/.test(program.primary_color || "") ? program.primary_color : "#4b63f3";
     const issuerName = String(program.display_name || business.business_name || "Enla Rewards").slice(0, 60);
@@ -152,23 +152,25 @@ Deno.serve(async (req) => {
 
     const rawValue = Math.max(0, Number(customer.current_value || 0));
     const value = program.program_type === 'cashback' ? Math.round(rawValue * 100) / 100 : Math.floor(rawValue);
+    const isAccess = program.program_type === "access";
+    const expiryText = customer.expires_at ? new Date(customer.expires_at).toLocaleDateString("es-MX", { day: "2-digit", month: "short", year: "numeric" }) : "—";
     const loyaltyObject: any = {
       id: objectId,
       classId,
       state: customer.status === "inactive" ? "INACTIVE" : "ACTIVE",
       accountId: customer.public_code,
       accountName: customer.name,
-      loyaltyPoints: {
-        label: program.program_type === "cashback" ? "Saldo" : program.program_type === "visits" ? "Visitas restantes" : "Sellos",
-        balance: program.program_type === 'cashback' ? { double: value } : { int: value },
-      },
       barcode: {
         type: program.barcode_format === "code128" ? "CODE_128" : "QR_CODE",
         value: customer.public_code,
         alternateText: customer.public_code,
       },
-      textModulesData: [
-        { id: "promo", header: program.program_type === "visits" ? "Paquete" : "Promoción", body: program.promo_text || (program.program_type === "visits" ? `Incluye ${program.goal_count || 8} visitas. Cada acceso descuenta 1.` : `Acumula ${program.goal_count || 6} y recibe tu recompensa.`) },
+      textModulesData: isAccess ? [
+        { id: "service", header: "Servicio", body: String(program.service_name || programName) },
+        { id: "expires", header: "Vencimiento", body: expiryText },
+        { id: "customer", header: "Cliente", body: customer.name },
+      ] : [
+        { id: "promo", header: program.program_type === "visits" ? "Paquete" : "Promoción", body: program.promo_text || (program.program_type === "visits" ? `Incluye ${program.goal_count || 8} visitas.` : `Acumula ${program.goal_count || 6} y recibe tu recompensa.`) },
         program.program_type === 'cashback'
           ? { id: 'reward', header: 'Saldo', body: `$${Number(value).toFixed(2)}` }
           : program.program_type === 'visits'
@@ -176,6 +178,10 @@ Deno.serve(async (req) => {
             : { id: "reward", header: "Recompensa", body: program.reward_text || "Recompensa especial" },
       ],
       hexBackgroundColor: color,
+    };
+    if (!isAccess) loyaltyObject.loyaltyPoints = {
+      label: program.program_type === "cashback" ? "Saldo" : program.program_type === "visits" ? "Visitas restantes" : "Sellos",
+      balance: program.program_type === 'cashback' ? { double: value } : { int: value },
     };
 
     const token = await getGoogleAccessToken(SERVICE_EMAIL, PRIVATE_KEY);
