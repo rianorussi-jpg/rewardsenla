@@ -93,22 +93,15 @@ async function getBusiness(){
 }
 async function getPrograms(){
   ensureConfigured();
-  const b=await getBusiness();
-  if(!b)return [];
-  const {data,error}=await sb.from('rewards_loyalty_programs').select('*').eq('business_id',b.id).order('created_at',{ascending:false});
-  if(error)throw error;
-  return data||[];
+  const b=await getBusiness().catch(()=>null);
+  if(b){const {data,error}=await sb.from('rewards_loyalty_programs').select('*').eq('business_id',b.id).order('created_at',{ascending:false});if(!error)return data||[];}
+  const st=await sb.rpc('rewards_staff_programs'); if(st.error)throw st.error; return st.data||[];
 }
 async function getProgram(id=null){
   ensureConfigured();
-  const b=await getBusiness();
-  if(!b)return null;
-  let q=sb.from('rewards_loyalty_programs').select('*').eq('business_id',b.id);
-  if(id) q=q.eq('id',id);
-  else q=q.order('created_at',{ascending:false}).limit(1);
-  const {data,error}=await q.maybeSingle();
-  if(error)throw error;
-  return data;
+  const b=await getBusiness().catch(()=>null);
+  if(b){let q=sb.from('rewards_loyalty_programs').select('*').eq('business_id',b.id);if(id)q=q.eq('id',id);else q=q.order('created_at',{ascending:false}).limit(1);const {data,error}=await q.maybeSingle();if(!error&&data)return data;}
+  const st=await sb.rpc('rewards_staff_programs');if(st.error)throw st.error;const arr=st.data||[];return id?arr.find(x=>x.id===id)||null:arr[0]||null;
 }
 async function saveProgram(p, programId=null){
   ensureConfigured();
@@ -262,6 +255,10 @@ async function redeemReward(customerId){
   return row;
 }
 
+async function setAccessExpiry(customerId,expiresAt){ensureConfigured();const {data,error}=await sb.rpc('rewards_set_access_expiry',{p_customer_id:customerId,p_expires_at:expiresAt});if(error)throw error;const r=Array.isArray(data)?data[0]:data;await syncWallet(r?.public_code);return r}
+async function setAccessStatus(customerId,status){ensureConfigured();const {data,error}=await sb.rpc('rewards_set_access_status',{p_customer_id:customerId,p_status:status});if(error)throw error;const r=Array.isArray(data)?data[0]:data;await syncWallet(r?.public_code);return r}
+async function staffScanAction(customerId,action,amount=null){ensureConfigured();const {data,error}=await sb.rpc('rewards_staff_scan_action',{p_customer_id:customerId,p_action:action,p_amount:amount});if(error)throw error;const r=Array.isArray(data)?data[0]:data;await syncWallet(r?.public_code);return r}
+async function isProgramStaff(programId){ensureConfigured();const {data,error}=await sb.rpc('rewards_is_program_staff',{p_program:programId});if(error)return false;return !!data}
 function navActive(){buildNav()}
 
-window.ENLA={version:'20260906-scope2',sb,configured,configError,ensureConfigured,currentUser,requireAuth,getBusiness,getPrograms,getProgram,saveProgram,uploadLogo,uploadProgramMedia,loyaltyMeta,bindShell,navActive,msg,initials,syncWallet,addStamp,useVisit,renewVisits,deactivateVisitCard,redeemReward,spendCashback,addCashbackAmount,setCashbackBalance,markAccess,renewAccess,programContext};
+window.ENLA={version:'20260906-scope2',sb,configured,configError,ensureConfigured,currentUser,requireAuth,getBusiness,getPrograms,getProgram,saveProgram,uploadLogo,uploadProgramMedia,loyaltyMeta,bindShell,navActive,msg,initials,syncWallet,addStamp,useVisit,renewVisits,deactivateVisitCard,redeemReward,spendCashback,addCashbackAmount,setCashbackBalance,markAccess,renewAccess,setAccessExpiry,setAccessStatus,staffScanAction,isProgramStaff,programContext};
