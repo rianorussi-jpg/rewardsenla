@@ -57,6 +57,7 @@ const NAV_ICONS={
   cards:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M7 8h10M7 12h6"/></svg>',
   scan:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3"/><path d="M8 12h8"/></svg>',
   history:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 8v5l3 2"/></svg>',
+  billing:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M3 10h18M7 15h4"/></svg>',
   settings:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1l2-1.5-2-3.4-2.4 1a7 7 0 0 0-1.7-1L14.5 3h-5l-.4 3.1a7 7 0 0 0-1.7 1l-2.4-1-2 3.4L5 11a7 7 0 0 0 0 2l-2 1.5 2 3.4 2.4-1a7 7 0 0 0 1.7 1l.4 3.1h5l.4-3.1a7 7 0 0 0 1.7-1l2.4 1 2-3.4-2-1.5a7 7 0 0 0 .1-1Z"/></svg>',
   overview:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 13h6V4H4v9Zm10 7h6V11h-6v9ZM4 20h6v-3H4v3Zm10-13h6V4h-6v3Z"/></svg>',
   customers:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3 19c.5-4 2.5-6 6-6s5.5 2 6 6M17 8a2.5 2.5 0 0 1 0 5M16 14c2.8.2 4.3 1.8 4.8 5"/></svg>',
@@ -73,7 +74,7 @@ function buildNav(){
   if(pid){
     nav.innerHTML=`<div class="nav-caption">Tarjeta seleccionada</div>${navLink('overview','Resumen',`/app/card-detail.html?id=${pid}`,page==='card-detail.html')}${navLink('customers','Clientes',`/app/customers.html?program=${pid}`,page==='customers.html')}${navLink('scan','Escanear',`/app/scan.html?program=${pid}`,page==='scan.html')}${navLink('bell','Notificaciones',`/app/notifications.html?program=${pid}`,page==='notifications.html')}${navLink('activity','Actividad',`/app/history.html?program=${pid}`,page==='history.html')}${navLink('edit','Ajustes de tarjeta',`/app/program.html?id=${pid}`,page==='program.html')}<div class="nav-divider"></div>${navLink('back','Mis tarjetas','/app/dashboard.html',false)}`;
   }else{
-    nav.innerHTML=`${navLink('cards','Mis tarjetas','/app/dashboard.html',page==='dashboard.html')}${navLink('scan','Escanear','/app/scan.html',page==='scan.html')}${navLink('history','Historial','/app/history.html',page==='history.html')}<div class="nav-divider"></div>${navLink('settings','Ajustes de cuenta','/app/settings.html',page==='settings.html')}`;
+    nav.innerHTML=`${navLink('cards','Mis tarjetas','/app/dashboard.html',page==='dashboard.html')}${navLink('scan','Escanear','/app/scan.html',page==='scan.html')}${navLink('history','Historial','/app/history.html',page==='history.html')}<div class="nav-divider"></div>${navLink('billing','Plan y facturación','/app/billing.html',page==='billing.html')}${navLink('settings','Ajustes de cuenta','/app/settings.html',page==='settings.html')}`;
   }
 }
 function bindShell(){
@@ -339,6 +340,12 @@ async function syncProgramWallets(programId){
   return codes.length;
 }
 
+
+async function getBilling(){ensureConfigured();const {data,error}=await sb.rpc('rewards_my_billing');if(error)throw error;return Array.isArray(data)?data[0]:data}
+async function startCheckout(plan){ensureConfigured();const {data,error}=await sb.functions.invoke('create-checkout-session',{body:{plan}});if(error)throw error;if(data?.error)throw new Error(data.error);if(!data?.url)throw new Error('Stripe no devolvió la página de pago.');location.href=data.url}
+async function openBillingPortal(){ensureConfigured();const {data,error}=await sb.functions.invoke('create-customer-portal',{body:{}});if(error)throw error;if(data?.error)throw new Error(data.error);location.href=data.url}
+async function publishProgram(programId){ensureConfigured();const {data,error}=await sb.rpc('rewards_publish_program',{p_program_id:programId});if(error)throw error;return data}
+
 function navActive(){buildNav()}
 
-window.ENLA={version:'20260906-notifyfix2',sb,configured,configError,ensureConfigured,currentUser,requireAuth,getBusiness,getOwnedPrograms,getStaffPrograms,getPrograms,getProgram,getAccessProfile,saveProgram,uploadLogo,uploadProgramMedia,loyaltyMeta,bindShell,navActive,msg,initials,syncWallet,addStamp,useVisit,renewVisits,deactivateVisitCard,redeemReward,spendCashback,addCashbackAmount,setCashbackBalance,markAccess,renewAccess,setAccessExpiry,setAccessStatus,staffScanAction,isProgramStaff,sendWalletNotification,syncProgramWallets,programContext};
+window.ENLA={version:'20260907-billing1',sb,configured,configError,ensureConfigured,currentUser,requireAuth,getBusiness,getOwnedPrograms,getStaffPrograms,getPrograms,getProgram,getAccessProfile,saveProgram,uploadLogo,uploadProgramMedia,loyaltyMeta,bindShell,navActive,msg,initials,syncWallet,addStamp,useVisit,renewVisits,deactivateVisitCard,redeemReward,spendCashback,addCashbackAmount,setCashbackBalance,markAccess,renewAccess,setAccessExpiry,setAccessStatus,staffScanAction,isProgramStaff,sendWalletNotification,syncProgramWallets,programContext,getBilling,startCheckout,openBillingPortal,publishProgram};
