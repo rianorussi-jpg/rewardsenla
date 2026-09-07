@@ -342,10 +342,19 @@ async function syncProgramWallets(programId){
 
 
 async function getBilling(){ensureConfigured();const {data,error}=await sb.rpc('rewards_my_billing');if(error)throw error;return Array.isArray(data)?data[0]:data}
-async function startCheckout(plan){ensureConfigured();const {data,error}=await sb.functions.invoke('create-checkout-session',{body:{plan}});if(error)throw error;if(data?.error)throw new Error(data.error);if(!data?.url)throw new Error('Stripe no devolvió la página de pago.');location.href=data.url}
+async function startCheckout(plan,publishProgramId=null){ensureConfigured();const {data,error}=await sb.functions.invoke('create-checkout-session',{body:{plan,publishProgramId}});if(error)throw error;if(data?.error)throw new Error(data.error);if(data?.updated)return data;if(!data?.url)throw new Error('Stripe no devolvió la página de pago.');location.href=data.url;return data}
 async function openBillingPortal(){ensureConfigured();const {data,error}=await sb.functions.invoke('create-customer-portal',{body:{}});if(error)throw error;if(data?.error)throw new Error(data.error);location.href=data.url}
+async function getPublicationOverview(programId=null){ensureConfigured();const {data,error}=await sb.rpc('rewards_publication_overview',{p_program_id:programId||null});if(error)throw error;return Array.isArray(data)?data[0]:data}
 async function publishProgram(programId){ensureConfigured();const {data,error}=await sb.rpc('rewards_publish_program',{p_program_id:programId});if(error)throw error;return data}
+async function unpublishProgram(programId){ensureConfigured();const {data,error}=await sb.rpc('rewards_unpublish_program',{p_program_id:programId});if(error)throw error;return data}
+async function smartPublish(programId){
+  const o=await getPublicationOverview(programId);
+  if(o?.can_publish){await publishProgram(programId);return {published:true,overview:o}}
+  const reason=encodeURIComponent(o?.reason||'plan_required');
+  location.href=`/app/billing.html?publish=${encodeURIComponent(programId)}&reason=${reason}`;
+  return {published:false,overview:o};
+}
 
 function navActive(){buildNav()}
 
-window.ENLA={version:'20260907-billing1',sb,configured,configError,ensureConfigured,currentUser,requireAuth,getBusiness,getOwnedPrograms,getStaffPrograms,getPrograms,getProgram,getAccessProfile,saveProgram,uploadLogo,uploadProgramMedia,loyaltyMeta,bindShell,navActive,msg,initials,syncWallet,addStamp,useVisit,renewVisits,deactivateVisitCard,redeemReward,spendCashback,addCashbackAmount,setCashbackBalance,markAccess,renewAccess,setAccessExpiry,setAccessStatus,staffScanAction,isProgramStaff,sendWalletNotification,syncProgramWallets,programContext,getBilling,startCheckout,openBillingPortal,publishProgram};
+window.ENLA={version:'20260907-publish2',sb,configured,configError,ensureConfigured,currentUser,requireAuth,getBusiness,getOwnedPrograms,getStaffPrograms,getPrograms,getProgram,getAccessProfile,saveProgram,uploadLogo,uploadProgramMedia,loyaltyMeta,bindShell,navActive,msg,initials,syncWallet,addStamp,useVisit,renewVisits,deactivateVisitCard,redeemReward,spendCashback,addCashbackAmount,setCashbackBalance,markAccess,renewAccess,setAccessExpiry,setAccessStatus,staffScanAction,isProgramStaff,sendWalletNotification,syncProgramWallets,programContext,getBilling,startCheckout,openBillingPortal,getPublicationOverview,publishProgram,unpublishProgram,smartPublish};
