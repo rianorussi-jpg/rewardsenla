@@ -77,6 +77,17 @@ function buildNav(){
 }
 function bindShell(){
   buildNav();
+  // Si la cuenta solo es empleado invitado, simplifica el menú a las funciones operativas.
+  (async()=>{try{
+    const u=await currentUser(); if(!u)return;
+    const profile=await getAccessProfile();
+    if(profile.isStaffOnly){
+      const nav=$('.nav-list'); if(nav){
+        const page=location.pathname.split('/').pop(),pid=programContext();
+        nav.innerHTML=`${navLink('cards','Mis tarjetas','/app/dashboard.html',page==='dashboard.html')}${navLink('scan','Escanear',pid?`/app/scan.html?program=${pid}`:'/app/scan.html',page==='scan.html')}`;
+      }
+    }
+  }catch(_e){}})();
   const menu=$('#mobileMenu'),side=$('.sidebar'),ov=$('.overlay');
   if(menu)menu.onclick=()=>{side.classList.add('open');ov.classList.add('show')};
   if(ov)ov.onclick=()=>{side.classList.remove('open');ov.classList.remove('show')};
@@ -91,17 +102,38 @@ async function getBusiness(){
   if(error)throw error;
   return data;
 }
-async function getPrograms(){
+async function getOwnedPrograms(){
   ensureConfigured();
   const b=await getBusiness().catch(()=>null);
-  if(b){const {data,error}=await sb.from('rewards_loyalty_programs').select('*').eq('business_id',b.id).order('created_at',{ascending:false});if(!error)return data||[];}
-  const st=await sb.rpc('rewards_staff_programs'); if(st.error)throw st.error; return st.data||[];
+  if(!b)return [];
+  const {data,error}=await sb.from('rewards_loyalty_programs').select('*').eq('business_id',b.id).order('created_at',{ascending:false});
+  if(error)throw error;
+  return data||[];
+}
+async function getStaffPrograms(){
+  ensureConfigured();
+  // Vincula invitaciones hechas por email con la cuenta autenticada, incluso si la cuenta se creó después de la invitación.
+  try{await sb.rpc('rewards_claim_staff_assignments')}catch(_e){}
+  const {data,error}=await sb.rpc('rewards_staff_programs');
+  if(error)throw error;
+  return data||[];
+}
+async function getPrograms(){
+  ensureConfigured();
+  const [owned,staff]=await Promise.all([getOwnedPrograms().catch(()=>[]),getStaffPrograms().catch(e=>{throw e})]);
+  const map=new Map();
+  for(const p of owned)map.set(p.id,{...p,_access_role:'owner'});
+  for(const p of staff)if(!map.has(p.id))map.set(p.id,{...p,_access_role:'staff'});
+  return [...map.values()];
 }
 async function getProgram(id=null){
   ensureConfigured();
-  const b=await getBusiness().catch(()=>null);
-  if(b){let q=sb.from('rewards_loyalty_programs').select('*').eq('business_id',b.id);if(id)q=q.eq('id',id);else q=q.order('created_at',{ascending:false}).limit(1);const {data,error}=await q.maybeSingle();if(!error&&data)return data;}
-  const st=await sb.rpc('rewards_staff_programs');if(st.error)throw st.error;const arr=st.data||[];return id?arr.find(x=>x.id===id)||null:arr[0]||null;
+  const programs=await getPrograms();
+  return id?programs.find(x=>x.id===id)||null:programs[0]||null;
+}
+async function getAccessProfile(){
+  const [owned,staff]=await Promise.all([getOwnedPrograms().catch(()=>[]),getStaffPrograms().catch(()=>[])]);
+  return {owned,staff,isStaffOnly:owned.length===0&&staff.length>0,isOwner:owned.length>0};
 }
 async function saveProgram(p, programId=null){
   ensureConfigured();
@@ -261,4 +293,4 @@ async function staffScanAction(customerId,action,amount=null){ensureConfigured()
 async function isProgramStaff(programId){ensureConfigured();const {data,error}=await sb.rpc('rewards_is_program_staff',{p_program:programId});if(error)return false;return !!data}
 function navActive(){buildNav()}
 
-window.ENLA={version:'20260906-scope2',sb,configured,configError,ensureConfigured,currentUser,requireAuth,getBusiness,getPrograms,getProgram,saveProgram,uploadLogo,uploadProgramMedia,loyaltyMeta,bindShell,navActive,msg,initials,syncWallet,addStamp,useVisit,renewVisits,deactivateVisitCard,redeemReward,spendCashback,addCashbackAmount,setCashbackBalance,markAccess,renewAccess,setAccessExpiry,setAccessStatus,staffScanAction,isProgramStaff,programContext};
+window.ENLA={version:'20260906-stafffix2',sb,configured,configError,ensureConfigured,currentUser,requireAuth,getBusiness,getOwnedPrograms,getStaffPrograms,getPrograms,getProgram,getAccessProfile,saveProgram,uploadLogo,uploadProgramMedia,loyaltyMeta,bindShell,navActive,msg,initials,syncWallet,addStamp,useVisit,renewVisits,deactivateVisitCard,redeemReward,spendCashback,addCashbackAmount,setCashbackBalance,markAccess,renewAccess,setAccessExpiry,setAccessStatus,staffScanAction,isProgramStaff,programContext};
