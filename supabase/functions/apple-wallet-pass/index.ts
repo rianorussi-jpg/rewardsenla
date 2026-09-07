@@ -229,13 +229,23 @@ Deno.serve(async (req) => {
 
     const walletNotice = String(customer.wallet_notification_message || "").trim();
     const walletNoticeNonce = String(customer.wallet_notification_nonce || "").trim();
+    const invisibleNonce = (nonce: string) => {
+      const hex = nonce.replace(/[^0-9a-f]/gi, "").slice(0, 32);
+      let out = "";
+      for (const ch of hex) {
+        const n = parseInt(ch, 16);
+        if (Number.isNaN(n)) continue;
+        for (let bit = 3; bit >= 0; bit--) out += ((n >> bit) & 1) ? "\u200C" : "\u200B";
+      }
+      return out;
+    };
     const noticeBackField = walletNotice && walletNoticeNonce ? {
       key: "walletNotice",
       label: "ÚLTIMA NOTIFICACIÓN",
-      value: customer.wallet_notification_sent_at
-        ? new Date(customer.wallet_notification_sent_at).toLocaleString("es-MX")
-        : walletNoticeNonce.slice(0, 10),
-      changeMessage: walletNotice.slice(0, 180),
+      // Apple solo muestra una alerta de cambio cuando el field cambia y changeMessage contiene %@.
+      // El nonce invisible fuerza un valor distinto incluso si el negocio repite el mismo texto.
+      value: `${walletNotice}${invisibleNonce(walletNoticeNonce)}`,
+      changeMessage: "%@",
     } : null;
 
     const inactive = customer.status === "inactive";

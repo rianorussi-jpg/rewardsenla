@@ -194,8 +194,12 @@ function loyaltyMeta(type='stamps'){
 }
 
 async function syncWallet(public_code){
-  if(!public_code)return;
-  try{const {error}=await sb.functions.invoke('wallet-sync',{body:{public_code}});if(error)console.warn('Wallet sync:',error)}catch(e){console.warn('Wallet sync:',e)}
+  if(!public_code)return {ok:false,error:'Falta código de cliente.'};
+  try{
+    const {data,error}=await sb.functions.invoke('wallet-sync',{body:{public_code}});
+    if(error){console.warn('Wallet sync:',error);return {ok:false,error:error.message||String(error)}}
+    return {ok:true,data};
+  }catch(e){console.warn('Wallet sync:',e);return {ok:false,error:e?.message||String(e)}}
 }
 async function addStamp(customerId){
   ensureConfigured();
@@ -307,12 +311,21 @@ async function sendWalletNotification(programId,message,customerId=null){
   for(let i=0;i<codes.length;i+=batchSize){
     const batch=codes.slice(i,i+batchSize);
     const settled=await Promise.allSettled(batch.map(async code=>{
-      await syncWallet(code);
-      return code;
+      const sync=await syncWallet(code);
+      return {code,sync};
     }));
     results.push(...settled);
   }
-  return {count:codes.length,results};
+  let applePushed=0,appleFailed=0,appleConfigured=0,appleRegistered=0;
+  for(const item of results){
+    if(item.status!=='fulfilled')continue;
+    const a=item.value?.sync?.data?.apple;
+    if(a?.configured)appleConfigured++;
+    applePushed+=Number(a?.pushed||0);
+    appleFailed+=Number(a?.failed||0);
+    if(Number(a?.registrations||0)>0)appleRegistered++;
+  }
+  return {count:codes.length,results,applePushed,appleFailed,appleConfigured,appleRegistered};
 }
 async function syncProgramWallets(programId){
   ensureConfigured();
@@ -328,4 +341,4 @@ async function syncProgramWallets(programId){
 
 function navActive(){buildNav()}
 
-window.ENLA={version:'20260906-geonotify1',sb,configured,configError,ensureConfigured,currentUser,requireAuth,getBusiness,getOwnedPrograms,getStaffPrograms,getPrograms,getProgram,getAccessProfile,saveProgram,uploadLogo,uploadProgramMedia,loyaltyMeta,bindShell,navActive,msg,initials,syncWallet,addStamp,useVisit,renewVisits,deactivateVisitCard,redeemReward,spendCashback,addCashbackAmount,setCashbackBalance,markAccess,renewAccess,setAccessExpiry,setAccessStatus,staffScanAction,isProgramStaff,sendWalletNotification,syncProgramWallets,programContext};
+window.ENLA={version:'20260906-notifyfix2',sb,configured,configError,ensureConfigured,currentUser,requireAuth,getBusiness,getOwnedPrograms,getStaffPrograms,getPrograms,getProgram,getAccessProfile,saveProgram,uploadLogo,uploadProgramMedia,loyaltyMeta,bindShell,navActive,msg,initials,syncWallet,addStamp,useVisit,renewVisits,deactivateVisitCard,redeemReward,spendCashback,addCashbackAmount,setCashbackBalance,markAccess,renewAccess,setAccessExpiry,setAccessStatus,staffScanAction,isProgramStaff,sendWalletNotification,syncProgramWallets,programContext};

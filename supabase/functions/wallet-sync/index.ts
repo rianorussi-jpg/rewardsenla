@@ -57,7 +57,7 @@ Deno.serve(async (req) => {
     if (cError) throw cError;
     if (!customer) return json({ error: "El cliente no pertenece a tu negocio." }, 404);
 
-    const result: any = { google: null, apple: { pushed: 0, failed: 0, configured: false } };
+    const result: any = { google: null, apple: { pushed: 0, failed: 0, configured: false, registrations: 0, errors: [] as any[] } };
 
     // Google Wallet: la función existente hace PATCH del LoyaltyObject.
     try {
@@ -79,6 +79,7 @@ Deno.serve(async (req) => {
       const { data: regs, error: regError } = await admin.from("rewards_apple_registrations")
         .select("id,push_token").eq("customer_id", customer.id);
       if (regError) throw regError;
+      result.apple.registrations = regs?.length || 0;
       if (regs?.length) {
         const jwt = await apnsJwt(TEAM_ID, KEY_ID, APNS_KEY);
         for (const reg of regs) {
@@ -97,6 +98,7 @@ Deno.serve(async (req) => {
             else {
               result.apple.failed++;
               const body = await push.text();
+              result.apple.errors.push({ status: push.status, body });
               if (push.status === 410 || body.includes("BadDeviceToken") || body.includes("Unregistered")) {
                 await admin.from("rewards_apple_registrations").delete().eq("id", reg.id);
               }
