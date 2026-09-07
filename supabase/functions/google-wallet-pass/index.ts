@@ -108,7 +108,7 @@ Deno.serve(async (req) => {
     const admin = createClient(SUPABASE_URL, SERVICE_ROLE, { auth: { persistSession: false } });
     const { data: customer, error: customerError } = await admin
       .from("rewards_customers")
-      .select("id,business_id,program_id,name,public_code,current_value,status,photo_url,expires_at,last_access_state,google_object_id")
+      .select("id,business_id,program_id,name,public_code,current_value,status,photo_url,expires_at,last_access_state,google_object_id,wallet_notification_message,wallet_notification_nonce,wallet_notification_sent_at,google_notification_sent_nonce")
       .eq("public_code", code)
       .maybeSingle();
     if (customerError) throw customerError;
@@ -179,6 +179,21 @@ Deno.serve(async (req) => {
       ],
       hexBackgroundColor: color,
     };
+    if (program.geo_enabled && Number.isFinite(Number(program.geo_latitude)) && Number.isFinite(Number(program.geo_longitude))) {
+      loyaltyObject.merchantLocations = [{
+        latitude: Number(program.geo_latitude),
+        longitude: Number(program.geo_longitude),
+      }];
+    }
+    if (program.geo_enabled && String(program.geo_message || "").trim()) {
+      loyaltyObject.textModulesData = [
+        ...(loyaltyObject.textModulesData || []),
+        { id: "nearby_message", header: "CERCA DEL NEGOCIO", body: String(program.geo_message).slice(0, 180) },
+      ];
+    }
+    const walletNotice = String(customer.wallet_notification_message || "").trim();
+    const walletNoticeNonce = String(customer.wallet_notification_nonce || "").trim();
+
     if (!isAccess) loyaltyObject.loyaltyPoints = {
       label: program.program_type === "cashback" ? "Saldo" : program.program_type === "visits" ? "Visitas restantes" : "Sellos",
       balance: program.program_type === 'cashback' ? { double: value } : { int: value },
@@ -209,9 +224,33 @@ Deno.serve(async (req) => {
       if (!patched.ok) throw new Error(`Google Wallet object update: ${patched.data?.error?.message || patched.status}`);
     }
 
+    let notifiedNonce: string | null = null;
+    if (walletNotice && walletNoticeNonce && customer.google_notification_sent_nonce !== walletNoticeNonce) {
+      const messageId = `msg_${walletNoticeNonce.replace(/[^A-Za-z0-9_-]/g, "_").slice(0, 80)}`;
+      const notified = await googleRequest(`loyaltyObject/${encodeURIComponent(objectId)}/addMessage`, token, {
+        method: "POST",
+        body: JSON.stringify({
+          message: {
+            header: programName,
+            body: walletNotice.slice(0, 180),
+            id: messageId,
+            messageType: "TEXT_AND_NOTIFY",
+          },
+        }),
+      });
+      if (!notified.ok) {
+        console.warn("Google Wallet notification:", notified.data?.error?.message || notified.status);
+      } else {
+        notifiedNonce = walletNoticeNonce;
+      }
+    }
+
     await Promise.all([
       admin.from("rewards_loyalty_programs").update({ google_class_id: classId }).eq("id", program.id),
-      admin.from("rewards_customers").update({ google_object_id: objectId }).eq("id", customer.id),
+      admin.from("rewards_customers").update({
+        google_object_id: objectId,
+        ...(notifiedNonce ? { google_notification_sent_nonce: notifiedNonce } : {}),
+      }).eq("id", customer.id),
     ]);
 
     const now = Math.floor(Date.now() / 1000);

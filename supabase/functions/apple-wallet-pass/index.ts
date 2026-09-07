@@ -170,7 +170,7 @@ Deno.serve(async (req) => {
     const admin = createClient(SUPABASE_URL, SERVICE_ROLE, { auth: { persistSession: false } });
     const { data: customer, error: customerError } = await admin
       .from("rewards_customers")
-      .select("id,business_id,program_id,name,public_code,current_value,status,photo_url,expires_at,last_access_state,apple_serial_number,apple_auth_token,apple_updated_at")
+      .select("id,business_id,program_id,name,public_code,current_value,status,photo_url,expires_at,last_access_state,apple_serial_number,apple_auth_token,apple_updated_at,wallet_notification_message,wallet_notification_nonce,wallet_notification_sent_at")
       .eq("public_code", code)
       .maybeSingle();
     if (customerError) throw customerError;
@@ -227,6 +227,17 @@ Deno.serve(async (req) => {
     const visibleGoal = Math.min(goal, 10);
     const stampRow = Array.from({ length: visibleGoal }, (_, i) => i < value ? stampIcon : "○").join("  ") + (goal > 10 ? `  ···  ${value}/${goal}` : "");
 
+    const walletNotice = String(customer.wallet_notification_message || "").trim();
+    const walletNoticeNonce = String(customer.wallet_notification_nonce || "").trim();
+    const noticeBackField = walletNotice && walletNoticeNonce ? {
+      key: "walletNotice",
+      label: "ÚLTIMA NOTIFICACIÓN",
+      value: customer.wallet_notification_sent_at
+        ? new Date(customer.wallet_notification_sent_at).toLocaleString("es-MX")
+        : walletNoticeNonce.slice(0, 10),
+      changeMessage: walletNotice.slice(0, 180),
+    } : null;
+
     const inactive = customer.status === "inactive";
     const expiry = customer.expires_at ? new Date(customer.expires_at) : null;
     const expired = isAccess && (!expiry || expiry.getTime() < Date.now());
@@ -240,6 +251,7 @@ Deno.serve(async (req) => {
         { key: "status", label: "Estado", value: inactive ? "Inactiva" : expired ? "Vencida" : "Activa" },
         { key: "mode", label: "Control", value: program.access_mode === "entry_exit" ? "Entrada / salida" : "Acceso ilimitado durante la vigencia" },
         { key: "code", label: "Código", value: customer.public_code },
+        ...(noticeBackField ? [noticeBackField] : []),
         { key: "powered", label: "Tecnología", value: "Powered by rewards.enla.mx" },
       ],
     } : {
@@ -266,6 +278,7 @@ Deno.serve(async (req) => {
         ...(isVisits ? [{ key: "visitsPackage", label: "Paquete", value: inactive ? "Tarjeta inactiva" : `${goal} visitas incluidas` }] : []),
         { key: "promo", label: "Información", value: String(program.promo_text || (isVisits ? `Incluye ${goal} visitas por ciclo.` : isCashback ? "Acumula saldo y úsalo en futuras compras." : `Acumula ${goal} sellos y recibe tu recompensa.`)) },
         { key: "code", label: "Código de cliente", value: customer.public_code },
+        ...(noticeBackField ? [noticeBackField] : []),
         { key: "powered", label: "Tecnología", value: "Powered by rewards.enla.mx" },
       ],
     };
@@ -283,6 +296,14 @@ Deno.serve(async (req) => {
       backgroundColor: rgb(program.card_style === "classic" ? program.primary_color : blendHex(program.primary_color, program.secondary_color, 0.38)),
       webServiceURL: `${SUPABASE_URL}/functions/v1/apple-wallet-webservice`,
       authenticationToken: authToken,
+      ...(program.geo_enabled && Number.isFinite(Number(program.geo_latitude)) && Number.isFinite(Number(program.geo_longitude)) ? {
+        locations: [{
+          latitude: Number(program.geo_latitude),
+          longitude: Number(program.geo_longitude),
+          relevantText: String(program.geo_message || `Estás cerca de ${issuerName}`).slice(0, 180),
+        }],
+        maxDistance: 200,
+      } : {}),
       barcodes: [{
         format: program.barcode_format === "code128" ? "PKBarcodeFormatCode128" : "PKBarcodeFormatQR",
         message: customer.public_code,

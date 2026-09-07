@@ -62,7 +62,8 @@ const NAV_ICONS={
   customers:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3 19c.5-4 2.5-6 6-6s5.5 2 6 6M17 8a2.5 2.5 0 0 1 0 5M16 14c2.8.2 4.3 1.8 4.8 5"/></svg>',
   activity:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 18V9M10 18V5M16 18v-7M22 18V3"/></svg>',
   edit:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 16-.7 4.7L8 20l10.5-10.5-4-4L4 16Z"/><path d="m13.5 6.5 4 4"/></svg>',
-  back:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>'
+  back:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>',
+  bell:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg>'
 };
 function navLink(icon,label,href,active=false){return `<a class="nav-item${active?' active':''}" href="${href}"><span class="nav-icon">${NAV_ICONS[icon]||''}</span><span>${label}</span></a>`}
 function programContext(){const q=new URLSearchParams(location.search),page=location.pathname.split('/').pop();return q.get('program')||(['card-detail.html','program.html'].includes(page)?q.get('id'):null)||null}
@@ -70,7 +71,7 @@ function buildNav(){
   const nav=$('.nav-list'); if(!nav)return;
   const page=location.pathname.split('/').pop(), pid=programContext();
   if(pid){
-    nav.innerHTML=`<div class="nav-caption">Tarjeta seleccionada</div>${navLink('overview','Resumen',`/app/card-detail.html?id=${pid}`,page==='card-detail.html')}${navLink('customers','Clientes',`/app/customers.html?program=${pid}`,page==='customers.html')}${navLink('scan','Escanear',`/app/scan.html?program=${pid}`,page==='scan.html')}${navLink('activity','Actividad',`/app/history.html?program=${pid}`,page==='history.html')}${navLink('edit','Ajustes de tarjeta',`/app/program.html?id=${pid}`,page==='program.html')}<div class="nav-divider"></div>${navLink('back','Mis tarjetas','/app/dashboard.html',false)}`;
+    nav.innerHTML=`<div class="nav-caption">Tarjeta seleccionada</div>${navLink('overview','Resumen',`/app/card-detail.html?id=${pid}`,page==='card-detail.html')}${navLink('customers','Clientes',`/app/customers.html?program=${pid}`,page==='customers.html')}${navLink('scan','Escanear',`/app/scan.html?program=${pid}`,page==='scan.html')}${navLink('bell','Notificaciones',`/app/notifications.html?program=${pid}`,page==='notifications.html')}${navLink('activity','Actividad',`/app/history.html?program=${pid}`,page==='history.html')}${navLink('edit','Ajustes de tarjeta',`/app/program.html?id=${pid}`,page==='program.html')}<div class="nav-divider"></div>${navLink('back','Mis tarjetas','/app/dashboard.html',false)}`;
   }else{
     nav.innerHTML=`${navLink('cards','Mis tarjetas','/app/dashboard.html',page==='dashboard.html')}${navLink('scan','Escanear','/app/scan.html',page==='scan.html')}${navLink('history','Historial','/app/history.html',page==='history.html')}<div class="nav-divider"></div>${navLink('settings','Ajustes de cuenta','/app/settings.html',page==='settings.html')}`;
   }
@@ -291,6 +292,40 @@ async function setAccessExpiry(customerId,expiresAt){ensureConfigured();const {d
 async function setAccessStatus(customerId,status){ensureConfigured();const {data,error}=await sb.rpc('rewards_set_access_status',{p_customer_id:customerId,p_status:status});if(error)throw error;const r=Array.isArray(data)?data[0]:data;await syncWallet(r?.public_code);return r}
 async function staffScanAction(customerId,action,amount=null){ensureConfigured();const {data,error}=await sb.rpc('rewards_staff_scan_action',{p_customer_id:customerId,p_action:action,p_amount:amount});if(error)throw error;const r=Array.isArray(data)?data[0]:data;await syncWallet(r?.public_code);return r}
 async function isProgramStaff(programId){ensureConfigured();const {data,error}=await sb.rpc('rewards_is_program_staff',{p_program:programId});if(error)return false;return !!data}
+
+async function sendWalletNotification(programId,message,customerId=null){
+  ensureConfigured();
+  const {data,error}=await sb.rpc('rewards_send_wallet_notification',{
+    p_program_id:programId,
+    p_message:String(message||'').trim(),
+    p_customer_id:customerId||null
+  });
+  if(error)throw error;
+  const codes=(data||[]).map(x=>x.public_code).filter(Boolean);
+  const results=[];
+  const batchSize=6;
+  for(let i=0;i<codes.length;i+=batchSize){
+    const batch=codes.slice(i,i+batchSize);
+    const settled=await Promise.allSettled(batch.map(async code=>{
+      await syncWallet(code);
+      return code;
+    }));
+    results.push(...settled);
+  }
+  return {count:codes.length,results};
+}
+async function syncProgramWallets(programId){
+  ensureConfigured();
+  const {data,error}=await sb.rpc('rewards_program_customer_codes',{p_program_id:programId});
+  if(error)throw error;
+  const codes=(data||[]).map(x=>x.public_code).filter(Boolean);
+  const batchSize=6;
+  for(let i=0;i<codes.length;i+=batchSize){
+    await Promise.allSettled(codes.slice(i,i+batchSize).map(code=>syncWallet(code)));
+  }
+  return codes.length;
+}
+
 function navActive(){buildNav()}
 
-window.ENLA={version:'20260906-stafffix2',sb,configured,configError,ensureConfigured,currentUser,requireAuth,getBusiness,getOwnedPrograms,getStaffPrograms,getPrograms,getProgram,getAccessProfile,saveProgram,uploadLogo,uploadProgramMedia,loyaltyMeta,bindShell,navActive,msg,initials,syncWallet,addStamp,useVisit,renewVisits,deactivateVisitCard,redeemReward,spendCashback,addCashbackAmount,setCashbackBalance,markAccess,renewAccess,setAccessExpiry,setAccessStatus,staffScanAction,isProgramStaff,programContext};
+window.ENLA={version:'20260906-geonotify1',sb,configured,configError,ensureConfigured,currentUser,requireAuth,getBusiness,getOwnedPrograms,getStaffPrograms,getPrograms,getProgram,getAccessProfile,saveProgram,uploadLogo,uploadProgramMedia,loyaltyMeta,bindShell,navActive,msg,initials,syncWallet,addStamp,useVisit,renewVisits,deactivateVisitCard,redeemReward,spendCashback,addCashbackAmount,setCashbackBalance,markAccess,renewAccess,setAccessExpiry,setAccessStatus,staffScanAction,isProgramStaff,sendWalletNotification,syncProgramWallets,programContext};
