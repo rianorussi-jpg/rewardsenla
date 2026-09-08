@@ -151,6 +151,9 @@
     .brand span{color:#4864f4}
     .nav-links{display:flex;gap:30px;align-items:center;color:#5e6880;font-size:14px;font-weight:650}
     .nav-links a:hover{color:#4d5ef3}
+    .nav-actions{display:flex;align-items:center;gap:10px}
+    .nav-login{color:#5e6880;font-size:14px;font-weight:650;white-space:nowrap}
+    .nav-login:hover{color:#4d5ef3}
     .nav .btn-primary{
       border-radius:12px;
       padding:11px 17px;
@@ -185,9 +188,11 @@
         <a href="https://enla.mx">Inicio</a>
         <a href="https://apps.enla.mx">Apps</a>
         <a href="#inicio">Rewards</a>
-        <a href="/app/login.html">Iniciar sesión</a>
       </div>
-      <a class="btn btn-primary" href="/app/register.html">Crear mi Rewards</a>
+      <div class="nav-actions">
+        <a class="nav-login" href="/app/login.html">Iniciar sesión</a>
+        <a class="btn btn-primary" href="/app/register.html">Crear mi Rewards</a>
+      </div>
     </div>
   </nav>
 
