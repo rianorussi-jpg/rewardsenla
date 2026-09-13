@@ -20,7 +20,7 @@ const programs=[...programMap.values()];
 const [b,billing,statsRes]=await Promise.all([
   ENLA.getBusiness().catch(()=>null),
   profile.isStaffOnly?Promise.resolve(null):ENLA.getBilling().catch(()=>null),
-  profile.owned?.length?ENLA.sb.rpc('rewards_program_dashboard_stats').catch(()=>({data:[]})):Promise.resolve({data:[]})
+  profile.owned?.length?Promise.resolve(ENLA.sb.rpc('rewards_program_dashboard_stats')).catch(()=>({data:[]})):Promise.resolve({data:[]})
 ]);
 
 if(billing?.plan==='trial'){document.querySelector('#billingBanner').innerHTML='<div class="trial-banner"><div><b>Modo prueba</b><span>Puedes crear hasta 15 tarjetas en borrador y probar con máximo 3 clientes. Contrata un plan cuando quieras publicar.</span></div><a class="btn btn-primary btn-sm" href="/app/billing.html">Ver planes</a></div>'}
