@@ -83,8 +83,9 @@
     .btn-dark{background:#121a31;color:#fff;box-shadow:0 12px 28px rgba(17,24,47,.18)}
     .btn-dark:hover{transform:translateY(-2px)}
 
-    .mobile-toggle{display:none;border:0;background:#fff;width:42px;height:42px;border-radius:12px;box-shadow:0 6px 18px rgba(35,43,84,.08);cursor:pointer}
-    .mobile-toggle span{display:block;width:18px;height:2px;background:#17203b;margin:4px auto;border-radius:4px}
+    .mobile-toggle{display:none;border:1px solid #e5e8f0;background:#fff;width:40px;height:40px;border-radius:12px;box-shadow:0 6px 18px rgba(35,43,84,.07);cursor:pointer;padding:0}
+    .mobile-toggle span{display:block;width:17px;height:1.8px;background:#17203b;margin:0;border-radius:999px;transition:.2s ease}
+    .mobile-menu{display:none}
 
     /* HERO */
     .hero{padding:82px 0 70px;position:relative}
@@ -143,6 +144,14 @@
     .marquee-track{display:flex;width:max-content;gap:20px;animation:marquee 34s linear infinite;will-change:transform}
     .marquee:hover .marquee-track{animation-play-state:paused}
     @keyframes marquee{from{transform:translateX(0)}to{transform:translateX(calc(-50% - 10px))}}
+
+    .example-card{
+      width:380px;height:245px;flex:none;border-radius:26px;padding:12px;
+      background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);
+      box-shadow:0 24px 50px rgba(0,0,0,.24);overflow:hidden;
+      display:flex;align-items:center;justify-content:center;
+    }
+    .example-card img{width:100%;height:100%;object-fit:contain;display:block;border-radius:18px}
 
     .wallet-card{width:330px;min-height:212px;border-radius:25px;padding:20px;position:relative;overflow:hidden;box-shadow:0 23px 45px rgba(0,0,0,.24);border:1px solid rgba(255,255,255,.12);flex:none}
     .wallet-card:after{content:"";position:absolute;width:210px;height:210px;border-radius:50%;right:-115px;top:-110px;background:rgba(255,255,255,.11);filter:blur(2px)}
@@ -229,7 +238,7 @@
       .benefit-grid{grid-template-columns:1fr}.pricing-grid{grid-template-columns:repeat(2,1fr);gap:16px}.price-card.featured{transform:none}.usecases{grid-template-columns:repeat(3,1fr)}
     }
     @media(max-width:820px){
-      .nav-links{display:none}.mobile-toggle{display:grid;place-items:center}.nav-actions .nav-login{display:none}.nav-inner{position:relative}
+      .nav-links{display:none}.mobile-toggle{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px}.nav-actions .nav-login{display:none}.nav-inner{position:relative}
       .mobile-menu{position:absolute;left:0;right:0;top:65px;background:#fff;border:1px solid var(--line);border-radius:18px;padding:10px;box-shadow:var(--shadow);display:none}.mobile-menu.open{display:grid}.mobile-menu a{padding:12px;border-radius:11px;color:#59637a;font-size:13px;font-weight:700}.mobile-menu a:hover{background:#f6f7fb;color:#3848d5}
       .steps{grid-template-columns:1fr 1fr}.footer-grid{grid-template-columns:1fr 1fr}.footer-grid>div:first-child{grid-column:1/-1}
     }
@@ -237,7 +246,7 @@
       .wrap{width:min(100% - 26px,1180px)}.nav-inner{height:66px}.brand{font-size:22px}.nav-actions .btn{padding:0 13px;min-height:41px;font-size:12px}
       .hero{padding:48px 0 44px}.hero-copy>p{font-size:16px;line-height:1.65}.hero-actions .btn{width:100%}.hero-points{gap:10px 15px}.wallet-stage{min-height:350px;margin-top:4px}.hero-wallet-image{width:116%;max-width:none}.hero-float{display:none}
       .section{padding:68px 0}.section-head{margin-bottom:35px}.section-head h2{font-size:38px}.section-head p{font-size:14px}
-      .type-grid{grid-template-columns:1fr}.type-card{padding:22px}.showcase-section{padding:68px 0}.wallet-card{width:285px;min-height:196px}.wc-title{font-size:24px}.marquee-track{animation-duration:28s}
+      .type-grid{grid-template-columns:1fr}.type-card{padding:22px}.showcase-section{padding:68px 0}.wallet-card{width:285px;min-height:196px}.wc-title{font-size:24px}.example-card{width:300px;height:195px;padding:9px;border-radius:21px}.example-card img{border-radius:14px}.marquee-track{animation-duration:28s}
       .benefit-main{padding:27px}.benefit-main h3{font-size:31px}.check-grid{grid-template-columns:1fr}.benefit-side{grid-template-columns:1fr}.steps{grid-template-columns:1fr}.pricing-section{padding:68px 0}.pricing-grid{grid-template-columns:1fr}.price-card{min-height:0}.usecases{grid-template-columns:repeat(2,1fr)}
       .cta{padding-bottom:95px}.cta-box{padding:34px 25px;flex-direction:column;align-items:flex-start}.cta-box .btn{width:100%}.footer-grid{grid-template-columns:1fr;gap:28px}.footer-grid>div:first-child{grid-column:auto}.float-cta{display:block}footer{padding-bottom:95px}
     }
@@ -354,23 +363,22 @@
       <div class="marquee-wrap" aria-label="Ejemplos deslizantes de tarjetas Rewards">
         <div class="marquee">
           <div class="marquee-track">
-            <article class="wallet-card purple"><div class="wc-top"><div class="wc-brand">CAFÉ LUMA<small>Rewards</small></div><div class="wc-value"><small>Sellos</small><b>4 / 6</b></div></div><div class="wc-title">Tu próximo café va por la casa.</div><div class="wc-sub">Completa 6 compras y recibe 1 bebida gratis.</div><div class="stamp-row"><span class="stamp on">✓</span><span class="stamp on">✓</span><span class="stamp on">✓</span><span class="stamp on">✓</span><span class="stamp"></span><span class="stamp"></span></div><div class="wc-bottom"><span class="wc-name">SOFÍA M.</span><span class="fake-code"></span></div></article>
-            <article class="wallet-card blue"><div class="wc-top"><div class="wc-brand">NOVA BARBER<small>Cashback</small></div><div class="wc-value"><small>Saldo</small><b>$185</b></div></div><div class="wc-title">Tu estilo también te recompensa.</div><div class="wc-sub">Usa tu saldo en tu próxima visita.</div><div class="wc-bottom" style="margin-top:55px"><span class="wc-name">DIEGO R.</span><span class="fake-code"></span></div></article>
-            <article class="wallet-card rose"><div class="wc-top"><div class="wc-brand">ALMA STUDIO<small>Paquete</small></div><div class="wc-value"><small>Restantes</small><b>7</b></div></div><div class="wc-title">Pilates · 10 sesiones.</div><div class="wc-sub">Tu paquete sigue contigo, estés donde estés.</div><div class="wc-bottom" style="margin-top:55px"><span class="wc-name">FERNANDA C.</span><span class="fake-code"></span></div></article>
-            <article class="wallet-card green"><div class="wc-top"><div class="wc-brand">CLUB 24<small>Membresía</small></div><div class="wc-value"><small>Vigencia</small><b>31 OCT</b></div></div><div class="wc-title">Acceso activo.</div><div class="wc-sub">Plan mensual · acceso ilimitado.</div><div class="wc-bottom" style="margin-top:55px"><span class="wc-name">MATEO G.</span><span class="fake-code"></span></div></article>
-            <article class="wallet-card black"><div class="wc-top"><div class="wc-brand">KURO SUSHI<small>Rewards</small></div><div class="wc-value"><small>Sellos</small><b>8 / 10</b></div></div><div class="wc-title">Dos visitas más.</div><div class="wc-sub">Completa tu tarjeta y desbloquea tu rollo favorito.</div><div class="stamp-row"><span class="stamp on">✓</span><span class="stamp on">✓</span><span class="stamp on">✓</span><span class="stamp on">✓</span><span class="stamp on">✓</span><span class="stamp on">✓</span></div><div class="wc-bottom"><span class="wc-name">ANDREA L.</span><span class="fake-code"></span></div></article>
-            <article class="wallet-card orange"><div class="wc-top"><div class="wc-brand">BRASA<small>Cashback</small></div><div class="wc-value"><small>Saldo</small><b>$320</b></div></div><div class="wc-title">Vuelve y úsalo cuando quieras.</div><div class="wc-sub">Saldo disponible para tu siguiente consumo.</div><div class="wc-bottom" style="margin-top:55px"><span class="wc-name">CARLOS P.</span><span class="fake-code"></span></div></article>
-            <article class="wallet-card teal"><div class="wc-top"><div class="wc-brand">AQUA CLUB<small>Visitas</small></div><div class="wc-value"><small>Restantes</small><b>12</b></div></div><div class="wc-title">Natación · paquete 20.</div><div class="wc-sub">Escanea al entrar y lleva el control automáticamente.</div><div class="wc-bottom" style="margin-top:55px"><span class="wc-name">PAOLA S.</span><span class="fake-code"></span></div></article>
-            <article class="wallet-card gold"><div class="wc-top"><div class="wc-brand">ATELIER<small>VIP</small></div><div class="wc-value"><small>Nivel</small><b>GOLD</b></div></div><div class="wc-title">Tu membresía premium.</div><div class="wc-sub">Beneficios exclusivos y acceso preferente.</div><div class="wc-bottom" style="margin-top:55px"><span class="wc-name">RENATA V.</span><span class="fake-code"></span></div></article>
-
-            <article class="wallet-card purple" aria-hidden="true"><div class="wc-top"><div class="wc-brand">CAFÉ LUMA<small>Rewards</small></div><div class="wc-value"><small>Sellos</small><b>4 / 6</b></div></div><div class="wc-title">Tu próximo café va por la casa.</div><div class="wc-sub">Completa 6 compras y recibe 1 bebida gratis.</div><div class="stamp-row"><span class="stamp on">✓</span><span class="stamp on">✓</span><span class="stamp on">✓</span><span class="stamp on">✓</span><span class="stamp"></span><span class="stamp"></span></div><div class="wc-bottom"><span class="wc-name">SOFÍA M.</span><span class="fake-code"></span></div></article>
-            <article class="wallet-card blue" aria-hidden="true"><div class="wc-top"><div class="wc-brand">NOVA BARBER<small>Cashback</small></div><div class="wc-value"><small>Saldo</small><b>$185</b></div></div><div class="wc-title">Tu estilo también te recompensa.</div><div class="wc-sub">Usa tu saldo en tu próxima visita.</div><div class="wc-bottom" style="margin-top:55px"><span class="wc-name">DIEGO R.</span><span class="fake-code"></span></div></article>
-            <article class="wallet-card rose" aria-hidden="true"><div class="wc-top"><div class="wc-brand">ALMA STUDIO<small>Paquete</small></div><div class="wc-value"><small>Restantes</small><b>7</b></div></div><div class="wc-title">Pilates · 10 sesiones.</div><div class="wc-sub">Tu paquete sigue contigo, estés donde estés.</div><div class="wc-bottom" style="margin-top:55px"><span class="wc-name">FERNANDA C.</span><span class="fake-code"></span></div></article>
-            <article class="wallet-card green" aria-hidden="true"><div class="wc-top"><div class="wc-brand">CLUB 24<small>Membresía</small></div><div class="wc-value"><small>Vigencia</small><b>31 OCT</b></div></div><div class="wc-title">Acceso activo.</div><div class="wc-sub">Plan mensual · acceso ilimitado.</div><div class="wc-bottom" style="margin-top:55px"><span class="wc-name">MATEO G.</span><span class="fake-code"></span></div></article>
-            <article class="wallet-card black" aria-hidden="true"><div class="wc-top"><div class="wc-brand">KURO SUSHI<small>Rewards</small></div><div class="wc-value"><small>Sellos</small><b>8 / 10</b></div></div><div class="wc-title">Dos visitas más.</div><div class="wc-sub">Completa tu tarjeta y desbloquea tu rollo favorito.</div><div class="stamp-row"><span class="stamp on">✓</span><span class="stamp on">✓</span><span class="stamp on">✓</span><span class="stamp on">✓</span><span class="stamp on">✓</span><span class="stamp on">✓</span></div><div class="wc-bottom"><span class="wc-name">ANDREA L.</span><span class="fake-code"></span></div></article>
-            <article class="wallet-card orange" aria-hidden="true"><div class="wc-top"><div class="wc-brand">BRASA<small>Cashback</small></div><div class="wc-value"><small>Saldo</small><b>$320</b></div></div><div class="wc-title">Vuelve y úsalo cuando quieras.</div><div class="wc-sub">Saldo disponible para tu siguiente consumo.</div><div class="wc-bottom" style="margin-top:55px"><span class="wc-name">CARLOS P.</span><span class="fake-code"></span></div></article>
-            <article class="wallet-card teal" aria-hidden="true"><div class="wc-top"><div class="wc-brand">AQUA CLUB<small>Visitas</small></div><div class="wc-value"><small>Restantes</small><b>12</b></div></div><div class="wc-title">Natación · paquete 20.</div><div class="wc-sub">Escanea al entrar y lleva el control automáticamente.</div><div class="wc-bottom" style="margin-top:55px"><span class="wc-name">PAOLA S.</span><span class="fake-code"></span></div></article>
-            <article class="wallet-card gold" aria-hidden="true"><div class="wc-top"><div class="wc-brand">ATELIER<small>VIP</small></div><div class="wc-value"><small>Nivel</small><b>GOLD</b></div></div><div class="wc-title">Tu membresía premium.</div><div class="wc-sub">Beneficios exclusivos y acceso preferente.</div><div class="wc-bottom" style="margin-top:55px"><span class="wc-name">RENATA V.</span><span class="fake-code"></span></div></article>
+            <div class="example-card"><img src="/assets/ejemplo1.png" alt="Ejemplo 1 de tarjeta Rewards Enla"></div>
+            <div class="example-card"><img src="/assets/ejemplo2.png" alt="Ejemplo 2 de tarjeta Rewards Enla" loading="lazy"></div>
+            <div class="example-card"><img src="/assets/ejemplo3.png" alt="Ejemplo 3 de tarjeta Rewards Enla" loading="lazy"></div>
+            <div class="example-card"><img src="/assets/ejemplo4.png" alt="Ejemplo 4 de tarjeta Rewards Enla" loading="lazy"></div>
+            <div class="example-card"><img src="/assets/ejemplo5.png" alt="Ejemplo 5 de tarjeta Rewards Enla" loading="lazy"></div>
+            <div class="example-card"><img src="/assets/ejemplo6.png" alt="Ejemplo 6 de tarjeta Rewards Enla" loading="lazy"></div>
+            <div class="example-card"><img src="/assets/ejemplo7.png" alt="Ejemplo 7 de tarjeta Rewards Enla" loading="lazy"></div>
+            <div class="example-card"><img src="/assets/ejemplo8.png" alt="Ejemplo 8 de tarjeta Rewards Enla" loading="lazy"></div>
+            <div class="example-card" aria-hidden="true"><img src="/assets/ejemplo1.png" alt="Ejemplo 1 de tarjeta Rewards Enla" loading="lazy"></div>
+            <div class="example-card" aria-hidden="true"><img src="/assets/ejemplo2.png" alt="Ejemplo 2 de tarjeta Rewards Enla" loading="lazy"></div>
+            <div class="example-card" aria-hidden="true"><img src="/assets/ejemplo3.png" alt="Ejemplo 3 de tarjeta Rewards Enla" loading="lazy"></div>
+            <div class="example-card" aria-hidden="true"><img src="/assets/ejemplo4.png" alt="Ejemplo 4 de tarjeta Rewards Enla" loading="lazy"></div>
+            <div class="example-card" aria-hidden="true"><img src="/assets/ejemplo5.png" alt="Ejemplo 5 de tarjeta Rewards Enla" loading="lazy"></div>
+            <div class="example-card" aria-hidden="true"><img src="/assets/ejemplo6.png" alt="Ejemplo 6 de tarjeta Rewards Enla" loading="lazy"></div>
+            <div class="example-card" aria-hidden="true"><img src="/assets/ejemplo7.png" alt="Ejemplo 7 de tarjeta Rewards Enla" loading="lazy"></div>
+            <div class="example-card" aria-hidden="true"><img src="/assets/ejemplo8.png" alt="Ejemplo 8 de tarjeta Rewards Enla" loading="lazy"></div>
           </div>
         </div>
       </div>
