@@ -36,7 +36,7 @@
     }
 
     *{box-sizing:border-box}
-    html{scroll-behavior:smooth;scroll-padding-top:88px}
+    html{scroll-behavior:smooth;scroll-padding-top:88px;max-width:100%;overflow-x:hidden}
     body{
       margin:0;
       font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
@@ -46,11 +46,15 @@
         radial-gradient(700px 500px at 105% 13%,rgba(155,92,255,.09),transparent 70%),
         var(--bg);
       overflow-x:hidden;
+      max-width:100%;
+      position:relative;
+      overscroll-behavior-x:none;
       -webkit-font-smoothing:antialiased;
     }
     a{color:inherit;text-decoration:none}
     button{font:inherit}
     img{max-width:100%}
+    main,section,nav,footer{max-width:100%}
     .wrap{width:min(1180px,calc(100% - 40px));margin:0 auto}
 
     /* NAV */
@@ -136,11 +140,11 @@
     .showcase-section .section-head{position:relative;z-index:2}
     .showcase-section .tag{color:#a9b1ff}
     .showcase-section .section-head p{color:#aeb6c9}
-    .marquee-wrap{position:relative;margin-top:46px}
+    .marquee-wrap{position:relative;margin-top:46px;width:100%;max-width:100vw;overflow:hidden}
     .marquee-wrap:before,.marquee-wrap:after{content:"";position:absolute;top:0;bottom:0;width:110px;z-index:5;pointer-events:none}
     .marquee-wrap:before{left:0;background:linear-gradient(90deg,#11182f,transparent)}
     .marquee-wrap:after{right:0;background:linear-gradient(-90deg,#11182f,transparent)}
-    .marquee{overflow:hidden;padding:16px 0 24px}
+    .marquee{width:100%;max-width:100vw;overflow:hidden;padding:16px 0 24px}
     .marquee-track{display:flex;width:max-content;gap:20px;animation:marquee 34s linear infinite;will-change:transform}
     .marquee:hover .marquee-track{animation-play-state:paused}
     @keyframes marquee{from{transform:translateX(0)}to{transform:translateX(calc(-50% - 10px))}}
@@ -242,6 +246,10 @@
       .steps{grid-template-columns:1fr 1fr}.footer-grid{grid-template-columns:1fr 1fr}.footer-grid>div:first-child{grid-column:1/-1}
     }
     @media(max-width:640px){
+      html,body{width:100%;max-width:100%;overflow-x:hidden}
+      body{touch-action:pan-y}
+      .wallet-stage{overflow:hidden;max-width:100vw}
+      .showcase-section,.marquee-wrap,.marquee{width:100%;max-width:100vw;overflow:hidden}
       .wrap{width:min(100% - 26px,1180px)}.nav-inner{height:66px}.brand{font-size:22px}.nav-actions .btn{padding:0 13px;min-height:41px;font-size:12px}
       .hero{padding:48px 0 44px}.hero-copy>p{font-size:16px;line-height:1.65}.hero-actions .btn{width:100%}.hero-points{gap:10px 15px}.wallet-stage{min-height:350px;margin-top:4px}.hero-wallet-image{width:116%;max-width:none}.hero-float{display:none}
       .section{padding:68px 0}.section-head{margin-bottom:35px}.section-head h2{font-size:38px}.section-head p{font-size:14px}
@@ -319,6 +327,37 @@
       </div>
     </div>
 
+    <section class="showcase-section" id="ejemplos">
+      <div class="section-head wrap">
+        <span class="tag">Ejemplos de tarjetas</span>
+        <h2>Tu marca, siempre en el celular de tus clientes.</h2>
+        <p>Personaliza colores, nombre, recompensas, imágenes y la información que verá cada cliente. Estos son algunos ejemplos del tipo de experiencia que puedes crear.</p>
+      </div>
+
+      <div class="marquee-wrap" aria-label="Ejemplos deslizantes de tarjetas Rewards">
+        <div class="marquee">
+          <div class="marquee-track">
+            <div class="example-card"><img src="/assets/ejemplo1.png" alt="Ejemplo 1 de tarjeta Rewards Enla"></div>
+            <div class="example-card"><img src="/assets/ejemplo2.png" alt="Ejemplo 2 de tarjeta Rewards Enla" loading="lazy"></div>
+            <div class="example-card"><img src="/assets/ejemplo3.png" alt="Ejemplo 3 de tarjeta Rewards Enla" loading="lazy"></div>
+            <div class="example-card"><img src="/assets/ejemplo4.png" alt="Ejemplo 4 de tarjeta Rewards Enla" loading="lazy"></div>
+            <div class="example-card"><img src="/assets/ejemplo5.png" alt="Ejemplo 5 de tarjeta Rewards Enla" loading="lazy"></div>
+            <div class="example-card"><img src="/assets/ejemplo6.png" alt="Ejemplo 6 de tarjeta Rewards Enla" loading="lazy"></div>
+            <div class="example-card"><img src="/assets/ejemplo7.png" alt="Ejemplo 7 de tarjeta Rewards Enla" loading="lazy"></div>
+            <div class="example-card"><img src="/assets/ejemplo8.png" alt="Ejemplo 8 de tarjeta Rewards Enla" loading="lazy"></div>
+            <div class="example-card" aria-hidden="true"><img src="/assets/ejemplo1.png" alt="Ejemplo 1 de tarjeta Rewards Enla" loading="lazy"></div>
+            <div class="example-card" aria-hidden="true"><img src="/assets/ejemplo2.png" alt="Ejemplo 2 de tarjeta Rewards Enla" loading="lazy"></div>
+            <div class="example-card" aria-hidden="true"><img src="/assets/ejemplo3.png" alt="Ejemplo 3 de tarjeta Rewards Enla" loading="lazy"></div>
+            <div class="example-card" aria-hidden="true"><img src="/assets/ejemplo4.png" alt="Ejemplo 4 de tarjeta Rewards Enla" loading="lazy"></div>
+            <div class="example-card" aria-hidden="true"><img src="/assets/ejemplo5.png" alt="Ejemplo 5 de tarjeta Rewards Enla" loading="lazy"></div>
+            <div class="example-card" aria-hidden="true"><img src="/assets/ejemplo6.png" alt="Ejemplo 6 de tarjeta Rewards Enla" loading="lazy"></div>
+            <div class="example-card" aria-hidden="true"><img src="/assets/ejemplo7.png" alt="Ejemplo 7 de tarjeta Rewards Enla" loading="lazy"></div>
+            <div class="example-card" aria-hidden="true"><img src="/assets/ejemplo8.png" alt="Ejemplo 8 de tarjeta Rewards Enla" loading="lazy"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <section class="section" id="soluciones">
       <div class="wrap">
         <div class="section-head">
@@ -348,37 +387,6 @@
             <h3>Acceso y membresías</h3>
             <p>Controla membresías de clientes o entradas y salidas de empleados con vigencia, fotografía y estado de acceso.</p>
           </article>
-        </div>
-      </div>
-    </section>
-
-    <section class="showcase-section" id="ejemplos">
-      <div class="section-head wrap">
-        <span class="tag">Ejemplos de tarjetas</span>
-        <h2>Tu marca, siempre en el celular de tus clientes.</h2>
-        <p>Personaliza colores, nombre, recompensas, imágenes y la información que verá cada cliente. Estos son algunos ejemplos del tipo de experiencia que puedes crear.</p>
-      </div>
-
-      <div class="marquee-wrap" aria-label="Ejemplos deslizantes de tarjetas Rewards">
-        <div class="marquee">
-          <div class="marquee-track">
-            <div class="example-card"><img src="/assets/ejemplo1.png" alt="Ejemplo 1 de tarjeta Rewards Enla"></div>
-            <div class="example-card"><img src="/assets/ejemplo2.png" alt="Ejemplo 2 de tarjeta Rewards Enla" loading="lazy"></div>
-            <div class="example-card"><img src="/assets/ejemplo3.png" alt="Ejemplo 3 de tarjeta Rewards Enla" loading="lazy"></div>
-            <div class="example-card"><img src="/assets/ejemplo4.png" alt="Ejemplo 4 de tarjeta Rewards Enla" loading="lazy"></div>
-            <div class="example-card"><img src="/assets/ejemplo5.png" alt="Ejemplo 5 de tarjeta Rewards Enla" loading="lazy"></div>
-            <div class="example-card"><img src="/assets/ejemplo6.png" alt="Ejemplo 6 de tarjeta Rewards Enla" loading="lazy"></div>
-            <div class="example-card"><img src="/assets/ejemplo7.png" alt="Ejemplo 7 de tarjeta Rewards Enla" loading="lazy"></div>
-            <div class="example-card"><img src="/assets/ejemplo8.png" alt="Ejemplo 8 de tarjeta Rewards Enla" loading="lazy"></div>
-            <div class="example-card" aria-hidden="true"><img src="/assets/ejemplo1.png" alt="Ejemplo 1 de tarjeta Rewards Enla" loading="lazy"></div>
-            <div class="example-card" aria-hidden="true"><img src="/assets/ejemplo2.png" alt="Ejemplo 2 de tarjeta Rewards Enla" loading="lazy"></div>
-            <div class="example-card" aria-hidden="true"><img src="/assets/ejemplo3.png" alt="Ejemplo 3 de tarjeta Rewards Enla" loading="lazy"></div>
-            <div class="example-card" aria-hidden="true"><img src="/assets/ejemplo4.png" alt="Ejemplo 4 de tarjeta Rewards Enla" loading="lazy"></div>
-            <div class="example-card" aria-hidden="true"><img src="/assets/ejemplo5.png" alt="Ejemplo 5 de tarjeta Rewards Enla" loading="lazy"></div>
-            <div class="example-card" aria-hidden="true"><img src="/assets/ejemplo6.png" alt="Ejemplo 6 de tarjeta Rewards Enla" loading="lazy"></div>
-            <div class="example-card" aria-hidden="true"><img src="/assets/ejemplo7.png" alt="Ejemplo 7 de tarjeta Rewards Enla" loading="lazy"></div>
-            <div class="example-card" aria-hidden="true"><img src="/assets/ejemplo8.png" alt="Ejemplo 8 de tarjeta Rewards Enla" loading="lazy"></div>
-          </div>
         </div>
       </div>
     </section>
