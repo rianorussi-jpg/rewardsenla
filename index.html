@@ -146,12 +146,11 @@
     @keyframes marquee{from{transform:translateX(0)}to{transform:translateX(calc(-50% - 10px))}}
 
     .example-card{
-      width:380px;height:245px;flex:none;border-radius:26px;padding:12px;
-      background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);
-      box-shadow:0 24px 50px rgba(0,0,0,.24);overflow:hidden;
+      width:320px;height:446px;flex:none;
+      background:transparent;border:0;box-shadow:none;padding:0;overflow:visible;
       display:flex;align-items:center;justify-content:center;
     }
-    .example-card img{width:100%;height:100%;object-fit:contain;display:block;border-radius:18px}
+    .example-card img{width:100%;height:100%;object-fit:contain;display:block;border-radius:0}
 
     .wallet-card{width:330px;min-height:212px;border-radius:25px;padding:20px;position:relative;overflow:hidden;box-shadow:0 23px 45px rgba(0,0,0,.24);border:1px solid rgba(255,255,255,.12);flex:none}
     .wallet-card:after{content:"";position:absolute;width:210px;height:210px;border-radius:50%;right:-115px;top:-110px;background:rgba(255,255,255,.11);filter:blur(2px)}
@@ -246,7 +245,7 @@
       .wrap{width:min(100% - 26px,1180px)}.nav-inner{height:66px}.brand{font-size:22px}.nav-actions .btn{padding:0 13px;min-height:41px;font-size:12px}
       .hero{padding:48px 0 44px}.hero-copy>p{font-size:16px;line-height:1.65}.hero-actions .btn{width:100%}.hero-points{gap:10px 15px}.wallet-stage{min-height:350px;margin-top:4px}.hero-wallet-image{width:116%;max-width:none}.hero-float{display:none}
       .section{padding:68px 0}.section-head{margin-bottom:35px}.section-head h2{font-size:38px}.section-head p{font-size:14px}
-      .type-grid{grid-template-columns:1fr}.type-card{padding:22px}.showcase-section{padding:68px 0}.wallet-card{width:285px;min-height:196px}.wc-title{font-size:24px}.example-card{width:300px;height:195px;padding:9px;border-radius:21px}.example-card img{border-radius:14px}.marquee-track{animation-duration:28s}
+      .type-grid{grid-template-columns:1fr}.type-card{padding:22px}.showcase-section{padding:68px 0}.wallet-card{width:285px;min-height:196px}.wc-title{font-size:24px}.example-card{width:260px;height:362px;padding:0}.example-card img{border-radius:0}.marquee-track{animation-duration:28s}
       .benefit-main{padding:27px}.benefit-main h3{font-size:31px}.check-grid{grid-template-columns:1fr}.benefit-side{grid-template-columns:1fr}.steps{grid-template-columns:1fr}.pricing-section{padding:68px 0}.pricing-grid{grid-template-columns:1fr}.price-card{min-height:0}.usecases{grid-template-columns:repeat(2,1fr)}
       .cta{padding-bottom:95px}.cta-box{padding:34px 25px;flex-direction:column;align-items:flex-start}.cta-box .btn{width:100%}.footer-grid{grid-template-columns:1fr;gap:28px}.footer-grid>div:first-child{grid-column:auto}.float-cta{display:block}footer{padding-bottom:95px}
     }
