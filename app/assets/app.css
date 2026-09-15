@@ -142,3 +142,8 @@
   .customer-stamps.single-row .stamp{width:48px;height:48px;font-size:25px}
   .customer-stamps.single-row .stamp img{width:38px;height:38px}
 }
+
+/* 2026-09-14 · sellos con margen lateral */
+.wallet-stamps{padding-left:8px;padding-right:8px;justify-content:center}
+.customer-stamps{padding-left:16px;padding-right:16px;box-sizing:border-box}
+@media(max-width:520px){.customer-stamps{padding-left:12px;padding-right:12px}}

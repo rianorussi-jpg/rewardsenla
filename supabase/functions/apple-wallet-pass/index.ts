@@ -104,35 +104,88 @@ function blendHex(a?: string, b?: string, t = 0.35) {
   const mix=(x:number,y:number)=>Math.round(x+(y-x)*t);
   return `#${mix(ar,br).toString(16).padStart(2,'0')}${mix(ag,bg).toString(16).padStart(2,'0')}${mix(ab,bbv).toString(16).padStart(2,'0')}`;
 }
-async function makeStampStripPng(filled: Uint8Array, empty: Uint8Array, value: number, goal: number, width: number, height: number) {
+async function makeStampStripPng(
+  filled: Uint8Array,
+  empty: Uint8Array,
+  value: number,
+  goal: number,
+  width: number,
+  height: number,
+  promoText = "",
+  textColor = "#ffffff",
+) {
   try {
     const canvas = new Jimp(width, height, 0x00000000);
     const count = Math.min(Math.max(Math.floor(goal), 1), 10);
-    // 2-5 sellos: una sola fila grande y compacta. 6-10: dos filas centradas.
-    // Así una tarjeta de 5 sellos no conserva el mismo "aire" visual de una de 10.
     const rows = count > 5 ? 2 : 1;
     const cols = rows === 2 ? 5 : count;
-    const outerX = Math.round(width * (rows === 1 ? 0.05 : 0.06));
-    const outerY = Math.round(height * (rows === 1 ? 0.035 : 0.045));
+    const scale = Math.max(1, width / 375);
+
+    // Más aire a los lados para que los sellos nunca queden pegados al borde de Wallet.
+    const outerX = Math.round(width * 0.085);
+    const outerBottom = Math.round(6 * scale);
+    const cleanPromo = String(promoText || "").trim();
+    const promoBand = cleanPromo ? Math.round(34 * scale) : 0;
+    const contentTop = cleanPromo ? promoBand : Math.round(5 * scale);
+    const availableH = Math.max(1, height - contentTop - outerBottom);
     const cellW = (width - outerX * 2) / cols;
-    const cellH = (height - outerY * 2) / rows;
-    const iconScale = rows === 1 ? 0.90 : 0.82;
-    const iconSize = Math.max(18, Math.floor(Math.min(cellW * iconScale, cellH * iconScale)));
+    const cellH = availableH / rows;
+    const iconScale = rows === 1 ? 0.90 : 0.84;
+    const iconSize = Math.max(Math.round(18 * scale), Math.floor(Math.min(cellW * iconScale, cellH * iconScale)));
+
+    // Aprovechamos el espacio superior de una sola fila para mostrar la promoción.
+    // Así 2-5 sellos no dejan una franja vacía encima de los iconos.
+    if (cleanPromo) {
+      try {
+        const fontRef = scale >= 2.6 ? Jimp.FONT_SANS_32_WHITE : scale >= 1.6 ? Jimp.FONT_SANS_32_WHITE : Jimp.FONT_SANS_16_WHITE;
+        const font = await Jimp.loadFont(fontRef);
+        const textLayer = new Jimp(width, promoBand, 0x00000000);
+        const maxChars = 64;
+        const shown = cleanPromo.length > maxChars ? `${cleanPromo.slice(0, maxChars - 3)}...` : cleanPromo;
+        textLayer.print(
+          font,
+          outerX,
+          Math.round(2 * scale),
+          {
+            text: shown,
+            alignmentX: Jimp.HORIZONTAL_ALIGN_CENTER,
+            alignmentY: Jimp.VERTICAL_ALIGN_MIDDLE,
+          },
+          width - outerX * 2,
+          Math.max(1, promoBand - Math.round(3 * scale)),
+        );
+        const hex = /^#[0-9a-fA-F]{6}$/.test(textColor || "") ? textColor : "#ffffff";
+        const n = parseInt(hex.slice(1), 16);
+        const rr = (n >> 16) & 255, gg = (n >> 8) & 255, bb = n & 255;
+        textLayer.scan(0, 0, textLayer.bitmap.width, textLayer.bitmap.height, (_x: number, _y: number, idx: number) => {
+          if (textLayer.bitmap.data[idx + 3] > 0) {
+            textLayer.bitmap.data[idx] = rr;
+            textLayer.bitmap.data[idx + 1] = gg;
+            textLayer.bitmap.data[idx + 2] = bb;
+          }
+        });
+        canvas.composite(textLayer, 0, 0);
+      } catch (textErr) {
+        console.warn("No se pudo dibujar el texto promocional sobre los sellos", textErr);
+      }
+    }
+
     const filledImg = await Jimp.read(Buffer.from(filled));
     const emptyImg = await Jimp.read(Buffer.from(empty));
-    filledImg.contain(iconSize, iconSize); emptyImg.contain(iconSize, iconSize);
+    filledImg.contain(iconSize, iconSize);
+    emptyImg.contain(iconSize, iconSize);
+
     for (let i = 0; i < count; i++) {
       const row = rows === 2 ? Math.floor(i / 5) : 0;
       const col = rows === 2 ? i % 5 : i;
       const itemsThisRow = rows === 2 && row === 1 ? count - 5 : cols;
       const rowOffset = rows === 2 && row === 1 && itemsThisRow < 5 ? ((5 - itemsThisRow) * cellW) / 2 : 0;
       const x = Math.round(outerX + rowOffset + col * cellW + (cellW - iconSize) / 2);
-      const y = rows === 1
-        ? Math.round(height - outerY - iconSize)
-        : Math.round(outerY + row * cellH + (cellH - iconSize) / 2);
+      const y = Math.round(contentTop + row * cellH + (cellH - iconSize) / 2);
       const src = i < value ? filledImg : emptyImg;
       canvas.composite(src.clone(), x, y);
     }
+
     return new Uint8Array(await canvas.getBufferAsync(Jimp.MIME_PNG));
   } catch (e) {
     console.warn("No se pudo generar la cuadrícula de sellos personalizada", e);
@@ -224,9 +277,10 @@ Deno.serve(async (req) => {
 
     const sourceStampFilled = program.program_type === "stamps" ? await fetchImage(program.stamp_filled_image_url) : null;
     const sourceStampEmpty = program.program_type === "stamps" ? await fetchImage(program.stamp_empty_image_url) : null;
-    const customStampStrip1x = sourceStampFilled && sourceStampEmpty ? await makeStampStripPng(sourceStampFilled, sourceStampEmpty, value, goal, 375, 123) : null;
-    const customStampStrip2x = sourceStampFilled && sourceStampEmpty ? await makeStampStripPng(sourceStampFilled, sourceStampEmpty, value, goal, 750, 246) : null;
-    const customStampStrip3x = sourceStampFilled && sourceStampEmpty ? await makeStampStripPng(sourceStampFilled, sourceStampEmpty, value, goal, 1125, 369) : null;
+    const customStampStrip1x = sourceStampFilled && sourceStampEmpty ? await makeStampStripPng(sourceStampFilled, sourceStampEmpty, value, goal, 375, 123, promoText, program.text_color || "#ffffff") : null;
+    const customStampStrip2x = sourceStampFilled && sourceStampEmpty ? await makeStampStripPng(sourceStampFilled, sourceStampEmpty, value, goal, 750, 246, promoText, program.text_color || "#ffffff") : null;
+    const customStampStrip3x = sourceStampFilled && sourceStampEmpty ? await makeStampStripPng(sourceStampFilled, sourceStampEmpty, value, goal, 1125, 369, promoText, program.text_color || "#ffffff") : null;
+    const stampStripHasPromo = Boolean(customStampStrip1x && promoText);
 
     const stampIcon = String(program.stamp_icon || "⭐");
     const visibleGoal = Math.min(goal, 10);
@@ -293,7 +347,7 @@ Deno.serve(async (req) => {
             ]
           : [
               { key: "reward", label: "RECOMPENSA", value: reward },
-              ...(promoFrontField ? [promoFrontField] : []),
+              ...(!stampStripHasPromo && promoFrontField ? [promoFrontField] : []),
             ],
       auxiliaryFields: isVisits
         ? [{ key: "customerName", label: "CLIENTE", value: String(customer.name || "Cliente") }]
