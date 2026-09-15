@@ -108,15 +108,16 @@ async function makeStampStripPng(filled: Uint8Array, empty: Uint8Array, value: n
   try {
     const canvas = new Jimp(width, height, 0x00000000);
     const count = Math.min(Math.max(Math.floor(goal), 1), 10);
-    // Apple Wallet ofrece una franja baja y ancha. Con 6-10 sellos se ve mucho mejor
-    // en dos renglones (máximo 5 por fila) que encoger los 10 en una sola línea.
+    // 2-5 sellos: una sola fila grande y compacta. 6-10: dos filas centradas.
+    // Así una tarjeta de 5 sellos no conserva el mismo "aire" visual de una de 10.
     const rows = count > 5 ? 2 : 1;
     const cols = rows === 2 ? 5 : count;
-    const outerX = Math.round(width * 0.12);
-    const outerY = Math.round(height * (rows === 2 ? 0.08 : 0.18));
+    const outerX = Math.round(width * (rows === 1 ? 0.05 : 0.06));
+    const outerY = Math.round(height * (rows === 1 ? 0.035 : 0.045));
     const cellW = (width - outerX * 2) / cols;
     const cellH = (height - outerY * 2) / rows;
-    const iconSize = Math.max(14, Math.floor(Math.min(cellW * 0.60, cellH * 0.68)));
+    const iconScale = rows === 1 ? 0.90 : 0.82;
+    const iconSize = Math.max(18, Math.floor(Math.min(cellW * iconScale, cellH * iconScale)));
     const filledImg = await Jimp.read(Buffer.from(filled));
     const emptyImg = await Jimp.read(Buffer.from(empty));
     filledImg.contain(iconSize, iconSize); emptyImg.contain(iconSize, iconSize);
@@ -126,7 +127,9 @@ async function makeStampStripPng(filled: Uint8Array, empty: Uint8Array, value: n
       const itemsThisRow = rows === 2 && row === 1 ? count - 5 : cols;
       const rowOffset = rows === 2 && row === 1 && itemsThisRow < 5 ? ((5 - itemsThisRow) * cellW) / 2 : 0;
       const x = Math.round(outerX + rowOffset + col * cellW + (cellW - iconSize) / 2);
-      const y = Math.round(outerY + row * cellH + (cellH - iconSize) / 2);
+      const y = rows === 1
+        ? Math.round(height - outerY - iconSize)
+        : Math.round(outerY + row * cellH + (cellH - iconSize) / 2);
       const src = i < value ? filledImg : emptyImg;
       canvas.composite(src.clone(), x, y);
     }
@@ -225,7 +228,7 @@ Deno.serve(async (req) => {
 
     const stampIcon = String(program.stamp_icon || "⭐");
     const visibleGoal = Math.min(goal, 10);
-    const stampRow = Array.from({ length: visibleGoal }, (_, i) => i < value ? stampIcon : "○").join("  ") + (goal > 10 ? `  ···  ${value}/${goal}` : "");
+    const stampRow = Array.from({ length: visibleGoal }, (_, i) => i < value ? stampIcon : "○").join(" ") + (goal > 10 ? ` ··· ${value}/${goal}` : "");
 
     const walletNotice = String(customer.wallet_notification_message || "").trim();
     const walletNoticeNonce = String(customer.wallet_notification_nonce || "").trim();
@@ -276,7 +279,7 @@ Deno.serve(async (req) => {
           ? (strip1x ? [] : [{ key: "visits", label: inactive ? "ESTADO" : "PAQUETE", value: inactive ? "INACTIVA" : `${goal} visitas incluidas` }])
           : customStampStrip1x ? [] : [{ key: "stamps", label: "TUS SELLOS", value: stampRow }],
       secondaryFields: isCashback
-        ? (String(program.promo_text || "").trim() ? [{ key: "promoFront", label: "PROMOCIÓN", value: String(program.promo_text).slice(0, 90) }] : [])
+        ? []
         : isVisits
           ? [{ key: "visitPackage", label: inactive ? "ESTADO" : "PAQUETE", value: inactive ? "Tarjeta inactiva" : `${goal} visitas incluidas` }]
           : [{ key: "reward", label: "RECOMPENSA", value: reward }],
@@ -286,7 +289,7 @@ Deno.serve(async (req) => {
       backFields: [
         { key: "program", label: "Programa", value: programName },
         ...(isVisits ? [{ key: "visitsPackage", label: "Paquete", value: inactive ? "Tarjeta inactiva" : `${goal} visitas incluidas` }] : []),
-        { key: "promo", label: "Información", value: String(program.promo_text || (isVisits ? `Incluye ${goal} visitas por ciclo.` : isCashback ? "Acumula saldo y úsalo en futuras compras." : `Acumula ${goal} sellos y recibe tu recompensa.`)) },
+        { key: "info", label: "Información", value: isVisits ? `Incluye ${goal} visitas por ciclo.` : isCashback ? "Acumula saldo y úsalo en futuras compras." : `Acumula ${goal} sellos y recibe tu recompensa.` },
         { key: "code", label: "Código de cliente", value: customer.public_code },
         ...(noticeBackField ? [noticeBackField] : []),
         { key: "powered", label: "Tecnología", value: "Powered by rewards.enla.mx" },
@@ -301,9 +304,9 @@ Deno.serve(async (req) => {
       organizationName: issuerName,
       description: isAccess ? `${program.service_name || programName} · ${customer.name}` : `${programName} de ${issuerName}`,
       logoText: logo1x ? "" : issuerName,
-      foregroundColor: "rgb(255, 255, 255)",
-      labelColor: "rgb(255, 255, 255)",
-      backgroundColor: rgb(program.card_style === "classic" ? program.primary_color : blendHex(program.primary_color, program.secondary_color, 0.38)),
+      foregroundColor: rgb(program.text_color || "#ffffff"),
+      labelColor: rgb(program.text_color || "#ffffff"),
+      backgroundColor: rgb(program.primary_color),
       webServiceURL: `${SUPABASE_URL}/functions/v1/apple-wallet-webservice`,
       authenticationToken: authToken,
       ...(program.geo_enabled && Number.isFinite(Number(program.geo_latitude)) && Number.isFinite(Number(program.geo_longitude)) ? {

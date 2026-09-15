@@ -115,3 +115,30 @@
 .editor-layout{grid-template-columns:minmax(0,1.18fr) minmax(300px,.72fr);gap:24px}.preview-stick{max-width:360px;justify-self:center;width:100%}.wallet-preview-real{padding:15px;border-radius:21px}.wallet-preview-head{margin-bottom:10px}.apple-pass-preview{width:min(330px,100%);min-height:0;border-radius:19px;padding:15px 15px 14px;box-shadow:0 17px 38px rgba(16,24,40,.20)}.apple-pass-top{min-height:45px}.preview-brand{max-width:64%}.apple-pass-preview .logo-preview{height:34px;max-width:128px}.wallet-logo-text{font-size:12px}.wallet-header-field{max-width:40%;gap:1px}.wallet-header-field small,.wallet-field-label,.wallet-field-row small{font-size:7px}.wallet-header-field strong{font-size:13px}.apple-strip{margin:5px -15px 9px}.wallet-primary-content{margin-top:7px}.wallet-stamps{margin-top:5px;gap:5px}.wallet-stamps .stamp{width:26px;height:26px;font-size:13px}.wallet-stamps .stamp img{width:19px;height:19px}.wallet-field-row{gap:9px;margin-top:10px}.wallet-field-row b{font-size:10px}.wallet-promo-preview{margin-top:9px!important;font-size:9px!important;line-height:1.35}.wallet-code-area{margin:12px auto 0;padding-top:9px;gap:4px}.wallet-code-area small{font-size:6px}.wallet-qr-demo{width:62px;height:62px;border-width:6px;background-size:10px 10px;border-radius:4px}.wallet-barcode-demo{width:158px;height:46px;border-width:6px}.wallet-program-name{display:none!important}
 @media(max-width:980px){.editor-layout{grid-template-columns:1fr}.preview-stick{position:static;max-width:360px;margin:0 auto;order:-1}}
 @media(max-width:760px){.wallet-preview-real{padding:12px}.preview-stick{max-width:330px}.apple-pass-preview{width:100%;min-height:0;padding:14px 14px 13px}.apple-strip{margin-left:-14px;margin-right:-14px}.wallet-code-area{margin-top:10px}.wallet-qr-demo{width:58px;height:58px}.wallet-barcode-demo{width:145px;height:43px}.logo-ready{grid-template-columns:56px 1fr}.logo-ready .btn{grid-column:1/-1;width:100%}.logo-ready img{width:56px;height:40px}}
+
+/* 2026-09-14 · text color + compact one-row stamps */
+.apple-pass-preview.stamps-single-row .wallet-field-row{margin-top:5px}
+.wallet-stamps.single-row{gap:8px;margin-top:5px;align-items:center}
+.wallet-stamps.single-row .stamp{width:36px;height:36px;font-size:20px}
+.wallet-stamps.single-row .stamp img{width:30px;height:30px}
+.wallet-stamps.two-rows .stamp{width:30px;height:30px;font-size:16px}
+.wallet-stamps.two-rows .stamp img{width:24px;height:24px}
+@media(max-width:760px){
+  .wallet-stamps.single-row .stamp{width:34px;height:34px;font-size:19px}
+  .wallet-stamps.single-row .stamp img{width:28px;height:28px}
+  .wallet-stamps.two-rows .stamp{width:29px;height:29px;font-size:15px}
+  .wallet-stamps.two-rows .stamp img{width:23px;height:23px}
+}
+.customer-stamps{justify-content:center;gap:10px;margin-top:16px}
+.customer-stamps .stamp{width:44px;height:44px;font-size:23px}
+.customer-stamps .stamp img{width:34px;height:34px}
+.customer-stamps.single-row{gap:12px;margin-top:14px}
+.customer-stamps.single-row .stamp{width:52px;height:52px;font-size:27px}
+.customer-stamps.single-row .stamp img{width:42px;height:42px}
+@media(max-width:520px){
+  .customer-stamps{gap:8px}
+  .customer-stamps .stamp{width:40px;height:40px;font-size:21px}
+  .customer-stamps .stamp img{width:31px;height:31px}
+  .customer-stamps.single-row .stamp{width:48px;height:48px;font-size:25px}
+  .customer-stamps.single-row .stamp img{width:38px;height:38px}
+}

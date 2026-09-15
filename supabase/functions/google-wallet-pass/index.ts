@@ -170,7 +170,6 @@ Deno.serve(async (req) => {
         { id: "expires", header: "Vencimiento", body: expiryText },
         { id: "customer", header: "Cliente", body: customer.name },
       ] : [
-        { id: "promo", header: program.program_type === "visits" ? "Paquete" : "Promoción", body: program.promo_text || (program.program_type === "visits" ? `Incluye ${program.goal_count || 8} visitas.` : `Acumula ${program.goal_count || 6} y recibe tu recompensa.`) },
         program.program_type === 'cashback'
           ? { id: 'reward', header: 'Saldo', body: `$${Number(value).toFixed(2)}` }
           : program.program_type === 'visits'
