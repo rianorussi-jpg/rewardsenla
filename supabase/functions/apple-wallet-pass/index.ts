@@ -207,6 +207,8 @@ Deno.serve(async (req) => {
     const isVisits = program.program_type === "visits";
     const isAccess = program.program_type === "access";
     const reward = String(program.reward_text || "Recompensa especial").slice(0, 90);
+    const promoText = String(program.promo_text || "").trim().slice(0, 90);
+    const promoFrontField = promoText ? { key: "promoFront", label: "PROMOCIÓN", value: promoText } : null;
 
     const sourceLogo = await fetchImage(program.logo_url);
     const logo1x = sourceLogo ? await makeLogoPng(sourceLogo, 160, 50) : null;
@@ -258,10 +260,14 @@ Deno.serve(async (req) => {
     const storeCard: Record<string, unknown> = isAccess ? {
       headerFields: [{ key: "expiry", label: "VENCIMIENTO", value: expiryText }],
       primaryFields: strip1x ? [] : [{ key: "service", label: "SERVICIO", value: String(program.service_name || programName).slice(0, 80) }],
-      secondaryFields: [{ key: "service2", label: "SERVICIO", value: String(program.service_name || programName).slice(0, 80) }],
+      secondaryFields: [
+        { key: "service2", label: "SERVICIO", value: String(program.service_name || programName).slice(0, 80) },
+        ...(promoFrontField ? [promoFrontField] : []),
+      ],
       auxiliaryFields: [{ key: "customerName", label: "CLIENTE", value: String(customer.name || "Cliente") }],
       backFields: [
         { key: "status", label: "Estado", value: inactive ? "Inactiva" : expired ? "Vencida" : "Activa" },
+        ...(promoText ? [{ key: "promo", label: "Promoción", value: promoText }] : []),
         { key: "mode", label: "Control", value: program.access_mode === "entry_exit" ? "Entrada / salida" : "Acceso ilimitado durante la vigencia" },
         { key: "code", label: "Código", value: customer.public_code },
         ...(noticeBackField ? [noticeBackField] : []),
@@ -279,17 +285,23 @@ Deno.serve(async (req) => {
           ? (strip1x ? [] : [{ key: "visits", label: inactive ? "ESTADO" : "PAQUETE", value: inactive ? "INACTIVA" : `${goal} visitas incluidas` }])
           : customStampStrip1x ? [] : [{ key: "stamps", label: "TUS SELLOS", value: stampRow }],
       secondaryFields: isCashback
-        ? []
+        ? (promoFrontField ? [promoFrontField] : [])
         : isVisits
-          ? [{ key: "visitPackage", label: inactive ? "ESTADO" : "PAQUETE", value: inactive ? "Tarjeta inactiva" : `${goal} visitas incluidas` }]
-          : [{ key: "reward", label: "RECOMPENSA", value: reward }],
+          ? [
+              { key: "visitPackage", label: inactive ? "ESTADO" : "PAQUETE", value: inactive ? "Tarjeta inactiva" : `${goal} visitas incluidas` },
+              ...(promoFrontField ? [promoFrontField] : []),
+            ]
+          : [
+              { key: "reward", label: "RECOMPENSA", value: reward },
+              ...(promoFrontField ? [promoFrontField] : []),
+            ],
       auxiliaryFields: isVisits
         ? [{ key: "customerName", label: "CLIENTE", value: String(customer.name || "Cliente") }]
         : [],
       backFields: [
         { key: "program", label: "Programa", value: programName },
         ...(isVisits ? [{ key: "visitsPackage", label: "Paquete", value: inactive ? "Tarjeta inactiva" : `${goal} visitas incluidas` }] : []),
-        { key: "info", label: "Información", value: isVisits ? `Incluye ${goal} visitas por ciclo.` : isCashback ? "Acumula saldo y úsalo en futuras compras." : `Acumula ${goal} sellos y recibe tu recompensa.` },
+        { key: "info", label: "Información", value: promoText || (isVisits ? `Incluye ${goal} visitas por ciclo.` : isCashback ? "Acumula saldo y úsalo en futuras compras." : `Acumula ${goal} sellos y recibe tu recompensa.`) },
         { key: "code", label: "Código de cliente", value: customer.public_code },
         ...(noticeBackField ? [noticeBackField] : []),
         { key: "powered", label: "Tecnología", value: "Powered by rewards.enla.mx" },

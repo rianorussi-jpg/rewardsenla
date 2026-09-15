@@ -153,6 +153,8 @@ Deno.serve(async (req) => {
     const rawValue = Math.max(0, Number(customer.current_value || 0));
     const value = program.program_type === 'cashback' ? Math.round(rawValue * 100) / 100 : Math.floor(rawValue);
     const isAccess = program.program_type === "access";
+    const promoText = String(program.promo_text || "").trim().slice(0, 180);
+    const promoModule = promoText ? { id: "promo", header: "Promoción", body: promoText } : null;
     const expiryText = customer.expires_at ? new Date(customer.expires_at).toLocaleDateString("es-MX", { day: "2-digit", month: "short", year: "numeric" }) : "—";
     const loyaltyObject: any = {
       id: objectId,
@@ -169,7 +171,9 @@ Deno.serve(async (req) => {
         { id: "service", header: "Servicio", body: String(program.service_name || programName) },
         { id: "expires", header: "Vencimiento", body: expiryText },
         { id: "customer", header: "Cliente", body: customer.name },
+        ...(promoModule ? [promoModule] : []),
       ] : [
+        ...(promoModule ? [promoModule] : []),
         program.program_type === 'cashback'
           ? { id: 'reward', header: 'Saldo', body: `$${Number(value).toFixed(2)}` }
           : program.program_type === 'visits'
