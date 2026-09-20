@@ -205,6 +205,18 @@ async function makeLogoPng(source: Uint8Array, width: number, height: number) {
   }
 }
 
+async function makeSquareIconPng(source: Uint8Array, size: number) {
+  try {
+    const img = await Jimp.read(Buffer.from(source));
+    // La imagen ya está recortada a 1:1 por el editor; sólo normalizamos a PNG.
+    img.contain(size, size, Jimp.HORIZONTAL_ALIGN_CENTER | Jimp.VERTICAL_ALIGN_MIDDLE);
+    return new Uint8Array(await img.getBufferAsync(Jimp.MIME_PNG));
+  } catch (e) {
+    console.warn("No se pudo preparar el icono cuadrado de Wallet", e);
+    return null;
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "GET") return new Response(JSON.stringify({ error: "Método no permitido." }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
@@ -266,6 +278,13 @@ Deno.serve(async (req) => {
     const sourceLogo = await fetchImage(program.logo_url);
     const logo1x = sourceLogo ? await makeLogoPng(sourceLogo, 160, 50) : null;
     const logo2x = sourceLogo ? await makeLogoPng(sourceLogo, 320, 100) : null;
+    // El icono de Wallet/Lock Screen es independiente del logo horizontal del pase.
+    // Sin logo cuadrado se conserva el icono Enla ya utilizado por tarjetas anteriores.
+    const sourceSquareLogo = await fetchImage(program.square_logo_url);
+    const icon1x = sourceSquareLogo ? await makeSquareIconPng(sourceSquareLogo, 38) : null;
+    const icon2x = sourceSquareLogo ? await makeSquareIconPng(sourceSquareLogo, 76) : null;
+    const icon3x = sourceSquareLogo ? await makeSquareIconPng(sourceSquareLogo, 114) : null;
+
 
     // Imagen central/promocional configurada por el negocio.
     // Se genera en los tamaños nativos del strip de Store Card para evitar el crop agresivo
@@ -394,9 +413,10 @@ Deno.serve(async (req) => {
 
     const files: Record<string, Uint8Array> = {
       "pass.json": strToU8(JSON.stringify(passJson)),
-      "icon.png": b64ToU8(ICON_1X),
-      "icon@2x.png": b64ToU8(ICON_2X),
+      "icon.png": icon1x || b64ToU8(ICON_1X),
+      "icon@2x.png": icon2x || b64ToU8(ICON_2X),
     };
+    if (icon3x) files["icon@3x.png"] = icon3x;
     if (logo1x) files["logo.png"] = logo1x;
     if (logo2x) files["logo@2x.png"] = logo2x;
     if (customStampStrip1x) files["strip.png"] = customStampStrip1x; else if (strip1x) files["strip.png"] = strip1x;

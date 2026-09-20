@@ -124,12 +124,23 @@ Deno.serve(async (req) => {
 
     const safeBusinessId = String(business.id).replace(/[^A-Za-z0-9._-]/g, "_");
     const safeCustomerId = String(customer.id).replace(/[^A-Za-z0-9._-]/g, "_");
-    const classId = program.program_type === "access" ? `${ISSUER_ID}.access_${safeBusinessId}_${String(program.id).replace(/[^A-Za-z0-9._-]/g, "_")}` : `${ISSUER_ID}.rewards_${safeBusinessId}`;
+    // Antes se compartía una clase por negocio para sellos/cashback/visitas.
+    // Las clases nuevas son por tarjeta: así un logo no altera tarjetas hermanas.
+    const preferredClassId = `${ISSUER_ID}.rewards_${safeBusinessId}_${String(program.id).replace(/[^A-Za-z0-9._-]/g, "_")}`;
+    let classId = preferredClassId;
     const objectId = `${ISSUER_ID}.customer_${safeCustomerId}`;
     const color = /^#[0-9a-fA-F]{6}$/.test(program.primary_color || "") ? program.primary_color : "#4b63f3";
     const issuerName = String(program.display_name || business.business_name || "Enla Rewards").slice(0, 60);
     const programName = String(program.program_name || "Rewards").slice(0, 60);
 
+    const token = await getGoogleAccessToken(SERVICE_EMAIL, PRIVATE_KEY);
+    const existingObject = await googleRequest(`loyaltyObject/${encodeURIComponent(objectId)}`, token);
+    if (existingObject.status !== 404 && !existingObject.ok) throw new Error(`Google Wallet object: ${existingObject.data?.error?.message || existingObject.status}`);
+    // Los pases ya emitidos deben conservar su clase original para no romperlos.
+    // En clases compartidas antiguas no cambiamos el logo: afectaría otros programas.
+    const isLegacySharedClass = existingObject.ok && existingObject.data?.classId === `${ISSUER_ID}.rewards_${safeBusinessId}`;
+    if (existingObject.ok && existingObject.data?.classId) classId = existingObject.data.classId;
+    const canUpdateClassBrand = !isLegacySharedClass;
     const loyaltyClass: any = {
       id: classId,
       issuerName,
@@ -137,9 +148,9 @@ Deno.serve(async (req) => {
       reviewStatus: "UNDER_REVIEW",
       hexBackgroundColor: color,
     };
-    if (program.logo_url) {
+    if (program.square_logo_url || program.logo_url) {
       loyaltyClass.programLogo = {
-        sourceUri: { uri: program.logo_url },
+        sourceUri: { uri: program.square_logo_url || program.logo_url },
         contentDescription: { defaultValue: { language: "es", value: `Logo de ${issuerName}` } },
       };
     }
@@ -202,21 +213,19 @@ Deno.serve(async (req) => {
       balance: program.program_type === 'cashback' ? { double: value } : { int: value },
     };
 
-    const token = await getGoogleAccessToken(SERVICE_EMAIL, PRIVATE_KEY);
-
-    // Crea o actualiza la clase para que cambios de logo/color/nombre se reflejen.
-    const classGet = await googleRequest(`loyaltyClass/${encodeURIComponent(classId)}`, token);
+    // Crea/actualiza clase propia; evita actualizar clases legadas compartidas.
+    const classGet = canUpdateClassBrand ? await googleRequest(`loyaltyClass/${encodeURIComponent(classId)}`, token) : { ok:true, status:200 };
     if (classGet.status === 404) {
       const created = await googleRequest("loyaltyClass", token, { method: "POST", body: JSON.stringify(loyaltyClass) });
       if (!created.ok) throw new Error(`Google Wallet class: ${created.data?.error?.message || created.status}`);
     } else if (!classGet.ok) {
       throw new Error(`Google Wallet class: ${classGet.data?.error?.message || classGet.status}`);
-    } else {
+    } else if (canUpdateClassBrand) {
       const patched = await googleRequest(`loyaltyClass/${encodeURIComponent(classId)}`, token, { method: "PATCH", body: JSON.stringify(loyaltyClass) });
       if (!patched.ok) throw new Error(`Google Wallet class update: ${patched.data?.error?.message || patched.status}`);
     }
 
-    const objectGet = await googleRequest(`loyaltyObject/${encodeURIComponent(objectId)}`, token);
+    const objectGet = existingObject;
     if (objectGet.status === 404) {
       const created = await googleRequest("loyaltyObject", token, { method: "POST", body: JSON.stringify(loyaltyObject) });
       if (!created.ok) throw new Error(`Google Wallet object: ${created.data?.error?.message || created.status}`);
@@ -249,7 +258,7 @@ Deno.serve(async (req) => {
     }
 
     await Promise.all([
-      admin.from("rewards_loyalty_programs").update({ google_class_id: classId }).eq("id", program.id),
+      admin.from("rewards_loyalty_programs").update({ google_class_id: preferredClassId }).eq("id", program.id),
       admin.from("rewards_customers").update({
         google_object_id: objectId,
         ...(notifiedNonce ? { google_notification_sent_nonce: notifiedNonce } : {}),

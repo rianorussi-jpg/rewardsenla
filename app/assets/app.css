@@ -147,3 +147,6 @@
 .wallet-stamps{padding-left:8px;padding-right:8px;justify-content:center}
 .customer-stamps{padding-left:16px;padding-right:16px;box-sizing:border-box}
 @media(max-width:520px){.customer-stamps{padding-left:12px;padding-right:12px}}
+
+/* Logo cuadrado: vista del archivo seleccionado en Paso 2 */
+.logo-ready img.square-logo-thumb{width:54px;height:54px;object-fit:contain;border-radius:11px;background:#f8fafc;padding:2px}
