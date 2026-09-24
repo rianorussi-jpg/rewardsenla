@@ -1,4 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import Jimp from "npm:jimp@0.22.12";
+import { Buffer } from "node:buffer";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -88,6 +90,68 @@ async function googleRequest(path: string, token: string, init: RequestInit = {}
   return { ok: r.ok, status: r.status, data };
 }
 
+async function fetchImage(url?: string | null) {
+  if (!url) return null;
+  try {
+    const r = await fetch(url);
+    if (!r.ok) return null;
+    const bytes = new Uint8Array(await r.arrayBuffer());
+    if (!bytes.length || bytes.length > 5_000_000) return null;
+    return bytes;
+  } catch { return null; }
+}
+
+// Imagen para el HERO de Google Wallet (ancho completo), no para la pequeña
+// ranura de 20 dp situada encima del QR. La promoción se muestra en un campo
+// independiente arriba de esta imagen para mantenerla legible y sin duplicarla.
+async function makeGoogleStampStrip(
+  filledBytes: Uint8Array, emptyBytes: Uint8Array, value: number, goal: number,
+) {
+  const count = Math.min(Math.max(Math.floor(goal), 1), 10);
+  const rows = count > 5 ? 2 : 1;
+  const cols = Math.min(count, 5);
+  const width = 1032, height = rows === 2 ? 540 : 360;
+  const side = 76, paddingY = 24, gap = 28, rowGap = 20;
+  const canvas = new Jimp(width, height, 0x00000000);
+  const filled = await Jimp.read(Buffer.from(filledBytes));
+  const empty = await Jimp.read(Buffer.from(emptyBytes));
+  const availableW = width - 2 * side;
+  const cellW = (availableW - gap * (cols - 1)) / cols;
+  const cellH = (height - paddingY * 2 - rowGap * (rows - 1)) / rows;
+  const iconSize = Math.floor(Math.min(204, cellW * 0.94, cellH * 0.92));
+
+  for (let i = 0; i < count; i++) {
+    const row = Math.floor(i / 5);
+    const rowCount = rows === 1 ? count : Math.min(5, count - row * 5);
+    const rowWidth = rowCount * cellW + Math.max(0, rowCount - 1) * gap;
+    const rowStart = (width - rowWidth) / 2;
+    const col = rows === 1 ? i : i % 5;
+    const x = Math.round(rowStart + col * (cellW + gap) + (cellW - iconSize) / 2);
+    const y = Math.round(paddingY + row * (cellH + rowGap) + (cellH - iconSize) / 2);
+    const src = (i < value ? filled : empty).clone();
+    src.contain(iconSize, iconSize, Jimp.HORIZONTAL_ALIGN_CENTER | Jimp.VERTICAL_ALIGN_MIDDLE);
+    canvas.composite(src, x, y);
+  }
+  return new Uint8Array(await canvas.getBufferAsync(Jimp.MIME_PNG));
+}
+
+async function uploadGoogleStampStrip(admin: any, program: any, customer: any, value: number, goal: number) {
+  const [filled, empty] = await Promise.all([fetchImage(program.stamp_filled_image_url), fetchImage(program.stamp_empty_image_url)]);
+  if (!filled || !empty) return null;
+  try {
+    const png = await makeGoogleStampStrip(filled, empty, value, goal);
+    const path = `google-stamps/${program.id}/${customer.id}-${value}-${goal}-hero-v2.png`;
+    const { error } = await admin.storage.from("reward-logos").upload(path, png, { upsert: true, contentType: "image/png", cacheControl: "60" });
+    if (error) throw error;
+    const { data } = admin.storage.from("reward-logos").getPublicUrl(path);
+    // Cache-buster ensures Google fetches the new visual immediately after a stamp changes.
+    return `${data.publicUrl}?v=${Date.now()}`;
+  } catch (e) {
+    console.warn("Google Wallet stamp strip:", e);
+    return null;
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return json({ error: "Método no permitido." }, 405);
@@ -132,27 +196,52 @@ Deno.serve(async (req) => {
     const color = /^#[0-9a-fA-F]{6}$/.test(program.primary_color || "") ? program.primary_color : "#4b63f3";
     const issuerName = String(program.display_name || business.business_name || "Enla Rewards").slice(0, 60);
     const programName = String(program.program_name || "Rewards").slice(0, 60);
+    // Google muestra el emisor y el nombre del programa en líneas diferentes.
+    // Evita repetir "Waffela" encima de "Waffela Rewards" si coinciden.
+    const visibleProgramName = program.program_type === "stamps" &&
+      programName.toLocaleLowerCase("es").startsWith(`${issuerName.toLocaleLowerCase("es")} `)
+      ? programName.slice(issuerName.length).trim() || programName
+      : programName;
 
     const token = await getGoogleAccessToken(SERVICE_EMAIL, PRIVATE_KEY);
     const existingObject = await googleRequest(`loyaltyObject/${encodeURIComponent(objectId)}`, token);
     if (existingObject.status !== 404 && !existingObject.ok) throw new Error(`Google Wallet object: ${existingObject.data?.error?.message || existingObject.status}`);
     // Los pases ya emitidos deben conservar su clase original para no romperlos.
-    // En clases compartidas antiguas no cambiamos el logo: afectaría otros programas.
+    // En clases compartidas antiguas no cambiamos la plantilla ni el logo:
+    // afectaría también a otras tarjetas del mismo negocio.
     const isLegacySharedClass = existingObject.ok && existingObject.data?.classId === `${ISSUER_ID}.rewards_${safeBusinessId}`;
     if (existingObject.ok && existingObject.data?.classId) classId = existingObject.data.classId;
     const canUpdateClassBrand = !isLegacySharedClass;
     const loyaltyClass: any = {
       id: classId,
       issuerName,
-      programName,
+      programName: visibleProgramName,
       reviewStatus: "UNDER_REVIEW",
       hexBackgroundColor: color,
     };
-    if (program.square_logo_url || program.logo_url) {
+    // El logo cuadrado es opcional para los iconos/avisos: NO sustituye al
+    // logo original del encabezado de la tarjeta (igual que Apple Wallet).
+    if (program.logo_url || program.square_logo_url) {
       loyaltyClass.programLogo = {
-        sourceUri: { uri: program.square_logo_url || program.logo_url },
+        sourceUri: { uri: program.logo_url || program.square_logo_url },
         contentDescription: { defaultValue: { language: "es", value: `Logo de ${issuerName}` } },
       };
+    }
+    // Google permite un logo horizontal sin máscara circular cuando la imagen
+    // original es suficientemente ancha. No transformamos el logo del negocio.
+    if (program.logo_url) {
+      const brandImage = await fetchImage(program.logo_url);
+      if (brandImage) {
+        try {
+          const brand = await Jimp.read(Buffer.from(brandImage));
+          if (brand.bitmap.width / brand.bitmap.height >= 1.65) {
+            loyaltyClass.wideProgramLogo = {
+              sourceUri: { uri: program.logo_url },
+              contentDescription: { defaultValue: { language: "es", value: `Logo horizontal de ${issuerName}` } },
+            };
+          }
+        } catch (e) { console.warn("Google Wallet wide logo:", e); }
+      }
     }
     if (program.program_type !== "stamps" && program.central_image_url) {
       loyaltyClass.heroImage = {
@@ -160,10 +249,38 @@ Deno.serve(async (req) => {
         contentDescription: { defaultValue: { language: "es", value: `Promoción de ${issuerName}` } },
       };
     }
+    if (program.program_type === "stamps") {
+      // Las imágenes que van justo sobre el QR tienen un límite visual de 20 dp:
+      // ahí los 5 sellos se veían minúsculos. Usamos el hero del OBJETO, que
+      // puede mostrar una franja grande distinta para cada cliente.
+      // Con dos filas Google coloca el hero DESPUÉS de la primera, conservando:
+      // promoción -> sellos -> recompensa -> código.
+      const promoRow = {
+        oneItem: {
+          item: { firstValue: { fields: [{ fieldPath: "object.textModulesData['promo']" }] } },
+        },
+      };
+      const rewardRow = {
+        oneItem: {
+          item: { firstValue: { fields: [{ fieldPath: "object.textModulesData['reward']" }] } },
+        },
+      };
+      loyaltyClass.classTemplateInfo = {
+        cardTemplateOverride: {
+          cardRowTemplateInfos: String(program.promo_text || "").trim()
+            ? [promoRow, rewardRow]
+            : [rewardRow],
+        },
+      };
+    }
 
     const rawValue = Math.max(0, Number(customer.current_value || 0));
     const value = program.program_type === 'cashback' ? Math.round(rawValue * 100) / 100 : Math.floor(rawValue);
     const isAccess = program.program_type === "access";
+    const goal = Math.min(Math.max(Number(program.goal_count || 5), 1), 10);
+    const googleStampStripUrl = program.program_type === "stamps"
+      ? await uploadGoogleStampStrip(admin, program, customer, Math.min(value, goal), goal)
+      : null;
     const promoText = String(program.promo_text || "").trim().slice(0, 180);
     const promoModule = promoText ? { id: "promo", header: "Promoción", body: promoText } : null;
     const expiryText = customer.expires_at ? new Date(customer.expires_at).toLocaleDateString("es-MX", { day: "2-digit", month: "short", year: "numeric" }) : "—";
@@ -178,6 +295,15 @@ Deno.serve(async (req) => {
         value: customer.public_code,
         alternateText: customer.public_code,
       },
+      // El hero se muestra grande en el frente; la miniatura en firstTopDetail
+      // anterior se elimina para no repetir los sellos encima del QR.
+      ...(googleStampStripUrl ? {
+        heroImage: {
+          sourceUri: { uri: googleStampStripUrl },
+          contentDescription: { defaultValue: { language: "es", value: `Progreso de sellos de ${issuerName}` } },
+        },
+        imageModulesData: [], // limpia la imagen antigua en objetos ya emitidos
+      } : {}),
       textModulesData: isAccess ? [
         { id: "service", header: "Servicio", body: String(program.service_name || programName) },
         { id: "expires", header: "Vencimiento", body: expiryText },
@@ -193,6 +319,7 @@ Deno.serve(async (req) => {
       ],
       hexBackgroundColor: color,
     };
+    loyaltyObject.merchantLocations = []; // Vaciar ubicaciones al desactivar proximidad.
     if (program.geo_enabled && Number.isFinite(Number(program.geo_latitude)) && Number.isFinite(Number(program.geo_longitude))) {
       loyaltyObject.merchantLocations = [{
         latitude: Number(program.geo_latitude),
@@ -223,6 +350,11 @@ Deno.serve(async (req) => {
     } else if (canUpdateClassBrand) {
       const patched = await googleRequest(`loyaltyClass/${encodeURIComponent(classId)}`, token, { method: "PATCH", body: JSON.stringify(loyaltyClass) });
       if (!patched.ok) throw new Error(`Google Wallet class update: ${patched.data?.error?.message || patched.status}`);
+    } else if (isLegacySharedClass && program.program_type === "stamps") {
+      // Los pases antiguos aún usan una clase compartida por negocio; tocar
+      // aquí logo/título/plantilla cambiaría otros programas (cashback, visitas).
+      // El objeto sí recibe su hero de sellos de tamaño grande y se actualiza.
+      console.info("Google Wallet: pase antiguo con clase compartida; preservamos su branding global.");
     }
 
     const objectGet = existingObject;

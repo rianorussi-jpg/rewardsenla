@@ -334,9 +334,14 @@ async function syncProgramWallets(programId){
   if(error)throw error;
   const codes=(data||[]).map(x=>x.public_code).filter(Boolean);
   const batchSize=6;
+  let failed=0;
   for(let i=0;i<codes.length;i+=batchSize){
-    await Promise.allSettled(codes.slice(i,i+batchSize).map(code=>syncWallet(code)));
+    const batch=await Promise.allSettled(codes.slice(i,i+batchSize).map(code=>syncWallet(code)));
+    for(const result of batch){
+      if(result.status==='rejected'||result.value?.ok===false||result.value?.data?.google?.ok===false||Number(result.value?.data?.apple?.failed||0)>0)failed++;
+    }
   }
+  if(failed)throw new Error(`Se guardó la configuración, pero ${failed} pase(s) no pudieron sincronizarse. Reintenta guardar para actualizar los pases pendientes.`);
   return codes.length;
 }
 

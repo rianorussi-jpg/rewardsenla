@@ -38,24 +38,40 @@ Deno.serve(async (req) => {
     const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const auth = req.headers.get("Authorization") || "";
     if (!SUPABASE_URL || !ANON || !SERVICE_ROLE || !auth) return json({ error: "No autorizado." }, 401);
-
-    const userClient = createClient(SUPABASE_URL, ANON, { global: { headers: { Authorization: auth } }, auth: { persistSession: false } });
-    const { data: userData, error: userError } = await userClient.auth.getUser();
-    if (userError || !userData.user) return json({ error: "Sesión inválida." }, 401);
-
-    const { public_code } = await req.json();
-    const code = String(public_code || "").trim().toUpperCase();
-    if (!code) return json({ error: "Falta public_code." }, 400);
-
-    const admin = createClient(SUPABASE_URL, SERVICE_ROLE, { auth: { persistSession: false } });
-    const { data: business, error: bError } = await admin.from("rewards_businesses").select("id").eq("owner_id", userData.user.id).maybeSingle();
-    if (bError) throw bError;
-    if (!business) return json({ error: "No se encontró tu negocio." }, 403);
-    const { data: customer, error: cError } = await admin.from("rewards_customers")
-      .select("id,public_code,apple_serial_number")
-      .eq("business_id", business.id).eq("public_code", code).maybeSingle();
-    if (cError) throw cError;
-    if (!customer) return json({ error: "El cliente no pertenece a tu negocio." }, 404);
+    const body=await req.json();
+    const code=String(body?.public_code||"").trim().toUpperCase();
+    if(!code)return json({error:"Falta public_code."},400);
+    // Sólo el trabajo servidor-servidor puede omitir la sesión del propietario.
+    const secret=Deno.env.get("BIRTHDAY_CRON_SECRET");
+    const internal=Boolean(secret && secret.length>=32 && req.headers.get("x-enla-birthday-secret")===secret && auth===`Bearer ${SERVICE_ROLE}`);
+    const admin=createClient(SUPABASE_URL,SERVICE_ROLE,{auth:{persistSession:false}});
+    let customer:any=null;
+    if(internal){
+      const {data,error}=await admin.from("rewards_customers")
+        .select("id,public_code,apple_serial_number,birthday_sent_on,program_id")
+        .eq("public_code",code).maybeSingle();
+      if(error)throw error;
+      const dateParts=new Intl.DateTimeFormat("en-US",{timeZone:"America/Mexico_City",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date());
+      const part=(type:string)=>dateParts.find(x=>x.type===type)?.value||"";
+      const today=`${part("year")}-${part("month")}-${part("day")}`;
+      if(!data||data.birthday_sent_on!==today)return json({error:"Entrega interna no autorizada para este pase."},403);
+      const {data:program,error:pe}=await admin.from("rewards_loyalty_programs").select("birthday_enabled").eq("id",data.program_id).single();
+      if(pe)throw pe;
+      if(!program?.birthday_enabled)return json({error:"Notificaciones de cumpleaños desactivadas."},403);
+      customer=data;
+    }else{
+      const userClient=createClient(SUPABASE_URL,ANON,{global:{headers:{Authorization:auth}},auth:{persistSession:false}});
+      const {data:userData,error:userError}=await userClient.auth.getUser();
+      if(userError||!userData.user)return json({error:"Sesión inválida."},401);
+      const {data:business,error:bError}=await admin.from("rewards_businesses").select("id").eq("owner_id",userData.user.id).maybeSingle();
+      if(bError)throw bError;
+      if(!business)return json({error:"No se encontró tu negocio."},403);
+      const {data,error}=await admin.from("rewards_customers")
+        .select("id,public_code,apple_serial_number").eq("business_id",business.id).eq("public_code",code).maybeSingle();
+      if(error)throw error;
+      if(!data)return json({error:"El cliente no pertenece a tu negocio."},404);
+      customer=data;
+    }
 
     const result: any = { google: null, apple: { pushed: 0, failed: 0, configured: false, registrations: 0, errors: [] as any[] } };
 
