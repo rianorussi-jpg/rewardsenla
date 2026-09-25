@@ -380,6 +380,7 @@
         }
 
         function drawWalletCompatibilityRow(ctx, centerX, y, kind) {
+          const fg = program.text_color || '#ffffff';
           const gap = kind === 'a5' ? 26 : 20;
           const badgeH = kind === 'a5' ? 52 : 48;
           const appleW = kind === 'a5' ? 250 : 232;
