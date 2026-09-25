@@ -1,7 +1,739 @@
-<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Clientes — rewards.enla</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"><link rel="stylesheet" href="/app/assets/app.css?v=20260907-publish2"></head><body><div class="app-shell"><aside class="sidebar"><a class="side-brand" href="/">rewards.<span>enla</span></a><nav class="nav-list"></nav><div class="side-bottom"><button class="btn btn-secondary" id="signOut" style="width:100%">Cerrar sesión</button></div></aside><div class="overlay"></div><main class="main"><header class="topbar"><div style="display:flex;align-items:center;gap:10px"><button class="btn btn-secondary mobile-menu" id="mobileMenu">☰</button><div><h1>Clientes</h1><div class="topbar-sub" id="programName"></div></div></div><a class="btn btn-secondary btn-sm" id="backCard">Volver al resumen</a></header><div class="content"><div class="section-title" style="margin-top:0"><div><h2>Clientes de esta tarjeta</h2><p class="muted small">Gestiona progreso, saldo y altas exclusivamente para el programa seleccionado.</p></div><div class="toolbar-actions"><button class="btn btn-secondary" id="showJoinQR">QR para unirse</button><button class="btn btn-primary" id="addCustomer">＋ Nuevo cliente</button></div></div><div id="joinBox" class="card hidden" style="margin-bottom:18px"><div class="grid grid-2" style="align-items:center"><div><span class="badge blue">Registro público</span><h3>QR para unirse a esta tarjeta</h3><p class="muted small">Imprímelo o muéstralo en caja. Los clientes que entren aquí quedarán ligados únicamente a este programa.</p><div id="joinUrl" class="copy-url"></div><div class="share-row"><button class="btn btn-secondary btn-sm" id="copyJoin">Copiar enlace</button><a class="btn btn-primary btn-sm" id="openJoin" target="_blank">Abrir registro</a></div></div><div class="join-qr-box"><div id="joinQR"></div></div></div></div><div class="card"><div class="table-wrap"><table class="table"><thead><tr><th>Cliente</th><th>Contacto</th><th>Progreso / saldo</th><th>Estado</th><th>Acciones</th></tr></thead><tbody id="rows"><tr><td colspan="5" class="muted">Cargando...</td></tr></tbody></table></div></div><dialog id="modal" class="app-dialog"><form method="dialog" class="dialog-card"><div class="dialog-head"><div><span class="badge blue">Alta manual</span><h2>Nuevo cliente</h2></div><button class="dialog-x" value="cancel">×</button></div><div class="form-grid"><div class="field"><label>Nombre</label><input id="cname" required></div><div class="field" id="manualPhotoField" style="display:none"><label>Foto del titular</label><input id="cphoto" type="file" accept="image/png,image/jpeg,image/webp"></div><div class="field"><label>Correo (opcional)</label><input id="cemail" type="email"></div><div class="field"><label>Teléfono (opcional)</label><input id="cphone"></div><div class="dialog-actions"><button class="btn btn-secondary" value="cancel">Cancelar</button><button class="btn btn-primary" id="saveCustomer" value="default">Guardar</button></div></div></form></dialog></div></main></div><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script><script src="/app/assets/config.js?v=20260907-publish2"></script><script src="/app/assets/app.js?v=20260907-publish2"></script><script>ENLA.bindShell();(async()=>{try{await ENLA.requireAuth();ENLA.ensureConfigured();const selectedProgram=new URLSearchParams(location.search).get('program');if(!selectedProgram){location.replace('/app/dashboard.html');return}const program=await ENLA.getProgram(selectedProgram);if(!program)throw new Error('No se encontró la tarjeta seleccionada.');document.querySelector('#programName').textContent=program.program_name;document.querySelector('#backCard').href='/app/card-detail.html?id='+program.id;const rows=document.querySelector('#rows'),modal=document.querySelector('#modal');document.querySelector('#addCustomer').onclick=()=>modal.showModal();let joinLink='';document.querySelector('#showJoinQR').onclick=()=>{joinLink=location.origin+'/join.html?p='+encodeURIComponent(program.public_slug||program.id);document.querySelector('#joinUrl').textContent=joinLink;document.querySelector('#openJoin').href=joinLink;const q=document.querySelector('#joinQR');q.innerHTML='';new QRCode(q,{text:joinLink,width:190,height:190});document.querySelector('#joinBox').classList.remove('hidden')};document.querySelector('#copyJoin').onclick=async()=>{if(joinLink){await navigator.clipboard.writeText(joinLink);alert('Enlace copiado.')}};const goal=Number(program.goal_count||6),type=program.program_type,isCashback=type==='cashback',isVisits=type==='visits',isAccess=type==='access';if(isAccess)document.querySelector('#manualPhotoField').style.display='block';const money=n=>'$'+Number(n||0).toFixed(2);
-async function load(){const {data,error}=await ENLA.sb.from('rewards_customers').select('*').eq('program_id',program.id).order('created_at',{ascending:false});if(error)throw error;rows.innerHTML=data.length?data.map(c=>{const value=Number(c.current_value||0),inactive=c.status==='inactive',ready=type==='stamps'&&value>=goal;const expired=isAccess&&(!c.expires_at||new Date(c.expires_at).getTime()<Date.now());const progress=isCashback?money(value):isVisits?`${value} de ${goal}`:isAccess?(expired?'Vencida':new Date(c.expires_at).toLocaleDateString('es-MX')):`${value} / ${goal}`;const state=isCashback?'Saldo activo':isVisits?(inactive?'Inactiva':value<=0?'Sin visitas':'Activa'):isAccess?(inactive?'Inactiva':expired?'Vencida':'Activa'):ready?'Recompensa lista':'Activo';let actions='';if(isCashback)actions=`<button class="btn btn-primary btn-sm" onclick="addCash('${c.id}')">＋ Saldo</button><button class="btn btn-secondary btn-sm" onclick="spendCash('${c.id}',${value})" ${value<=0?'disabled':''}>Usar</button><button class="btn btn-ghost btn-sm" onclick="editBalance('${c.id}',${value})">Editar saldo</button>`;else if(isAccess)actions=`<button class="btn btn-secondary btn-sm" onclick="editExpiry('${c.id}','${c.expires_at||''}')">Editar vencimiento</button><button class="btn btn-primary btn-sm" onclick="renewAccessNow('${c.id}')">+ ${program.validity_days||30} días</button><button class="btn ${inactive?'btn-primary':'btn-danger'} btn-sm" onclick="toggleAccess('${c.id}','${inactive?'active':'inactive'}')">${inactive?'Reactivar':'Suspender'}</button>`;else if(isVisits)actions=inactive?`<button class="btn btn-primary btn-sm" onclick="renewVisitsNow('${c.id}')">Renovar ${goal}</button>`:value<=0?`<button class="btn btn-primary btn-sm" onclick="renewVisitsNow('${c.id}')">Renovar ${goal}</button><button class="btn btn-danger btn-sm" onclick="deactivateVisitsNow('${c.id}')">Desactivar</button>`:`<button class="btn btn-primary btn-sm" onclick="useVisitNow('${c.id}')">Usar visita</button>`;else actions=ready?`<button class="btn btn-primary btn-sm" onclick="redeemNow('${c.id}')">Canjear</button>`:`<button class="btn btn-secondary btn-sm" onclick="addStampNow('${c.id}')">＋ Sello</button>`;return `<tr><td><div class="person">${isAccess&&c.photo_url?`<img class="scan-person-photo" src="${c.photo_url}" alt="${c.name}">`:`<div class="avatar">${ENLA.initials(c.name)}</div>`}<div><b>${c.name}</b><div class="muted tiny">${c.public_code}</div></div></div></td><td>${c.email||c.phone||'—'}</td><td><b>${progress}</b></td><td><span class="badge ${inactive?'red':ready?'blue':'green'}">${state}</span></td><td><div class="row-actions">${actions}</div></td></tr>`}).join(''):'<tr><td colspan="5" class="muted">Aún no hay clientes en esta tarjeta.</td></tr>'}
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Clientes — rewards.enla</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/app/assets/app.css?v=20260924-print-templates">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <a class="side-brand" href="/">rewards.<span>enla</span></a>
+      <nav class="nav-list"></nav>
+      <div class="side-bottom"><button class="btn btn-secondary" id="signOut" style="width:100%">Cerrar sesión</button></div>
+    </aside>
+    <div class="overlay"></div>
 
-window.editExpiry=async(id,current)=>{const v=prompt('Nuevo vencimiento (AAAA-MM-DD)',current?new Date(current).toISOString().slice(0,10):'');if(!v)return;try{const r=await ENLA.setAccessExpiry(id,new Date(v+'T23:59:59').toISOString());await load()}catch(e){alert(e.message)}};
-window.toggleAccess=async(id,status)=>{try{await ENLA.setAccessStatus(id,status);await load()}catch(e){alert(e.message)}};
-document.querySelector('#saveCustomer').onclick=async e=>{e.preventDefault();try{const name=document.querySelector('#cname').value.trim();if(!name)return;const b=await ENLA.getBusiness(),initial=isVisits?goal:0;let photo_url=null,expires_at=null;if(isAccess){const f=document.querySelector('#cphoto').files[0];if(!f)throw new Error('Sube la foto del titular.');const path=`manual/${crypto.randomUUID?crypto.randomUUID():Date.now()}.${(f.name.split('.').pop()||'jpg')}`;const up=await ENLA.sb.storage.from('rewards-customer-photos').upload(path,f,{contentType:f.type||undefined});if(up.error)throw up.error;photo_url=ENLA.sb.storage.from('rewards-customer-photos').getPublicUrl(path).data.publicUrl;expires_at=new Date(Date.now()+Number(program.validity_days||30)*86400000).toISOString();}const {error}=await ENLA.sb.from('rewards_customers').insert({business_id:b.id,program_id:program.id,name,email:document.querySelector('#cemail').value||null,phone:document.querySelector('#cphone').value||null,current_value:initial,status:'active',photo_url,expires_at});if(error)throw error;modal.close();await load()}catch(err){alert(err.message)}};
-window.renewAccessNow=async id=>{try{await ENLA.renewAccess(id,program.validity_days||30);await load()}catch(e){alert(e.message)}};window.addCash=async id=>{const raw=prompt('¿Cuánto saldo quieres agregar?');if(raw===null)return;try{const r=await ENLA.addCashbackAmount(id,Number(String(raw).replace('$','').trim()));await load();alert(`Saldo agregado. Nuevo saldo: ${money(r.current_value)}`)}catch(e){alert(e.message)}};window.spendCash=async(id,balance)=>{const raw=prompt(`¿Cuánto saldo quieres usar? Disponible: ${money(balance)}`);if(raw===null)return;try{const r=await ENLA.spendCashback(id,Number(String(raw).replace('$','').trim()));await load();alert(`Saldo restante: ${money(r.current_value)}`)}catch(e){alert(e.message)}};window.editBalance=async(id,balance)=>{const raw=prompt(`Editar saldo actual (${money(balance)}). Escribe el saldo correcto:`,Number(balance).toFixed(2));if(raw===null)return;try{const r=await ENLA.setCashbackBalance(id,Number(String(raw).replace('$','').trim()));await load();alert(`Saldo corregido a ${money(r.current_value)}.`)}catch(e){alert(e.message)}};window.addStampNow=async id=>{try{const r=await ENLA.addStamp(id);await load();if(r?.reward_ready)alert('Recompensa lista para canjear.')}catch(e){alert(e.message)}};window.useVisitNow=async id=>{try{await ENLA.useVisit(id);await load()}catch(e){alert(e.message)}};window.renewVisitsNow=async id=>{if(!confirm('¿Renovar el paquete completo?'))return;try{await ENLA.renewVisits(id);await load()}catch(e){alert(e.message)}};window.deactivateVisitsNow=async id=>{if(!confirm('¿Desactivar esta tarjeta?'))return;try{await ENLA.deactivateVisitCard(id);await load()}catch(e){alert(e.message)}};window.redeemNow=async id=>{if(!confirm('¿Ya entregaste la recompensa?'))return;try{await ENLA.redeemReward(id);await load()}catch(e){alert(e.message)}};await load()}catch(e){document.querySelector('#rows').innerHTML=`<tr><td colspan="5"><div class="error">${e.message}</div></td></tr>`}})();</script></body></html>
+    <main class="main">
+      <header class="topbar">
+        <div style="display:flex;align-items:center;gap:10px">
+          <button class="btn btn-secondary mobile-menu" id="mobileMenu">☰</button>
+          <div>
+            <h1>Clientes</h1>
+            <div class="topbar-sub" id="programName"></div>
+          </div>
+        </div>
+        <a class="btn btn-secondary btn-sm" id="backCard">Volver al resumen</a>
+      </header>
+
+      <div class="content">
+        <div class="section-title" style="margin-top:0">
+          <div>
+            <h2>Clientes de esta tarjeta</h2>
+            <p class="muted small">Gestiona progreso, saldo y altas exclusivamente para el programa seleccionado.</p>
+          </div>
+          <div class="toolbar-actions">
+            <button class="btn btn-secondary" id="showJoinQR">QR para unirse</button>
+            <button class="btn btn-primary" id="addCustomer">＋ Nuevo cliente</button>
+          </div>
+        </div>
+
+        <div id="joinBox" class="card hidden" style="margin-bottom:18px">
+          <div class="join-share-layout">
+            <div>
+              <span class="badge blue">Registro público</span>
+              <h3 style="margin:10px 0 8px">QR para unirse a esta tarjeta</h3>
+              <p class="muted small">Imprímelo, compártelo o descárgalo para tu negocio. Los clientes que entren aquí quedarán ligados únicamente a este programa.</p>
+              <div id="joinUrl" class="copy-url"></div>
+              <div class="share-row join-actions-row">
+                <button class="btn btn-secondary btn-sm" id="copyJoin">Copiar enlace</button>
+                <a class="btn btn-primary btn-sm" id="openJoin" target="_blank">Abrir registro</a>
+                <button class="btn btn-secondary btn-sm" id="downloadJoinQR">Descargar QR</button>
+              </div>
+            </div>
+            <div class="join-qr-box">
+              <div id="joinQR"></div>
+            </div>
+          </div>
+
+          <div class="print-materials">
+            <div class="print-materials-head">
+              <div>
+                <h3>Material listo para imprimir</h3>
+                <p class="muted small">Usaremos automáticamente el color, texto y estilo de tu tarjeta para generar piezas listas para mostrar en tu negocio.</p>
+              </div>
+            </div>
+            <div class="print-template-grid" id="templateGrid"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Cliente</th>
+                  <th>Contacto</th>
+                  <th>Progreso / saldo</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="rows"><tr><td colspan="5" class="muted">Cargando...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
+        <dialog id="modal" class="app-dialog">
+          <form method="dialog" class="dialog-card">
+            <div class="dialog-head">
+              <div>
+                <span class="badge blue">Alta manual</span>
+                <h2>Nuevo cliente</h2>
+              </div>
+              <button class="dialog-x" value="cancel">×</button>
+            </div>
+            <div class="form-grid">
+              <div class="field"><label>Nombre</label><input id="cname" required></div>
+              <div class="field" id="manualPhotoField" style="display:none"><label>Foto del titular</label><input id="cphoto" type="file" accept="image/png,image/jpeg,image/webp"></div>
+              <div class="field"><label>Correo (opcional)</label><input id="cemail" type="email"></div>
+              <div class="field"><label>Teléfono (opcional)</label><input id="cphone"></div>
+              <div class="dialog-actions">
+                <button class="btn btn-secondary" value="cancel">Cancelar</button>
+                <button class="btn btn-primary" id="saveCustomer" value="default">Guardar</button>
+              </div>
+            </div>
+          </form>
+        </dialog>
+      </div>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+  <script src="/app/assets/config.js?v=20260924-print-templates"></script>
+  <script src="/app/assets/app.js?v=20260924-print-templates"></script>
+  <script>
+    ENLA.bindShell();
+    (async()=>{
+      try {
+        await ENLA.requireAuth();
+        ENLA.ensureConfigured();
+
+        const selectedProgram = new URLSearchParams(location.search).get('program');
+        if (!selectedProgram) {
+          location.replace('/app/dashboard.html');
+          return;
+        }
+
+        const program = await ENLA.getProgram(selectedProgram);
+        if (!program) throw new Error('No se encontró la tarjeta seleccionada.');
+
+        document.querySelector('#programName').textContent = program.program_name;
+        document.querySelector('#backCard').href = '/app/card-detail.html?id=' + program.id;
+
+        const rows = document.querySelector('#rows');
+        const modal = document.querySelector('#modal');
+        const goal = Number(program.goal_count || 6);
+        const type = program.program_type;
+        const isCashback = type === 'cashback';
+        const isVisits = type === 'visits';
+        const isAccess = type === 'access';
+        const joinBox = document.querySelector('#joinBox');
+        const joinQRNode = document.querySelector('#joinQR');
+        const templateGrid = document.querySelector('#templateGrid');
+        const copyJoinBtn = document.querySelector('#copyJoin');
+        const openJoinBtn = document.querySelector('#openJoin');
+        const downloadJoinQRBtn = document.querySelector('#downloadJoinQR');
+        let joinLink = '';
+
+        if (isAccess) document.querySelector('#manualPhotoField').style.display = 'block';
+
+        document.querySelector('#addCustomer').onclick = () => modal.showModal();
+        document.querySelector('#showJoinQR').onclick = async () => {
+          try {
+            await renderJoinAssets();
+            joinBox.classList.remove('hidden');
+            joinBox.scrollIntoView({ behavior:'smooth', block:'start' });
+          } catch (err) {
+            alert(err.message || 'No se pudo generar el QR.');
+          }
+        };
+
+        copyJoinBtn.onclick = async () => {
+          if (!joinLink) await renderJoinAssets();
+          if (joinLink) {
+            await navigator.clipboard.writeText(joinLink);
+            alert('Enlace copiado.');
+          }
+        };
+
+        downloadJoinQRBtn.onclick = async () => {
+          try {
+            if (!joinLink) await renderJoinAssets();
+            await downloadPureQR();
+          } catch (err) {
+            alert(err.message || 'No se pudo descargar el QR.');
+          }
+        };
+
+        const templates = [
+          {
+            key: 'a5',
+            title: 'Mostrador vertical',
+            subtitle: 'A5 vertical',
+            description: 'Perfecto para mostrador, recepción o caja. El cliente ve el beneficio, escanea y guarda tu tarjeta.',
+            label: 'A5'
+          },
+          {
+            key: 'tabletent',
+            title: 'Porta menú / acrílico',
+            subtitle: '10 × 15 cm',
+            description: 'Formato compacto para mesas, vitrinas o exhibidores pequeños.',
+            label: '10×15'
+          },
+          {
+            key: 'sticker',
+            title: 'Sticker QR',
+            subtitle: 'Cuadrado',
+            description: 'Versión minimalista para impresión rápida en etiqueta o adhesivo.',
+            label: 'QR'
+          }
+        ];
+
+        function buildTemplateCards() {
+          templateGrid.innerHTML = templates.map((tpl) => `
+            <div class="print-template-card">
+              <div class="print-template-thumb" style="--card-bg:${escapeHtml(program.primary_color || '#4b63f3')};--card-fg:${escapeHtml(program.text_color || '#ffffff')}">
+                <div class="print-thumb-paper print-thumb-${tpl.key}">
+                  <div class="print-thumb-chip">${tpl.label}</div>
+                  <div class="print-thumb-title">${escapeHtml(program.display_name || program.program_name || 'Tu tarjeta')}</div>
+                  <div class="print-thumb-cta">Escanea y guarda tu tarjeta</div>
+                  <div class="print-thumb-qr"></div>
+                </div>
+              </div>
+              <div class="print-template-body">
+                <div class="print-template-subtitle">${tpl.subtitle}</div>
+                <h4>${tpl.title}</h4>
+                <p>${tpl.description}</p>
+                <button class="btn btn-secondary btn-sm" data-template-download="${tpl.key}">Descargar plantilla</button>
+              </div>
+            </div>
+          `).join('');
+
+          templateGrid.querySelectorAll('[data-template-download]').forEach((btn) => {
+            btn.onclick = async () => {
+              try {
+                if (!joinLink) await renderJoinAssets();
+                await downloadTemplate(btn.dataset.templateDownload);
+              } catch (err) {
+                alert(err.message || 'No se pudo generar la plantilla.');
+              }
+            };
+          });
+        }
+
+        function escapeHtml(value='') {
+          return String(value)
+            .replace(/&/g,'&amp;')
+            .replace(/</g,'&lt;')
+            .replace(/>/g,'&gt;')
+            .replace(/"/g,'&quot;')
+            .replace(/'/g,'&#39;');
+        }
+
+        function getJoinLink() {
+          return location.origin + '/join.html?p=' + encodeURIComponent(program.public_slug || program.id);
+        }
+
+        function money(n) {
+          return '$' + Number(n || 0).toFixed(2);
+        }
+
+        function fileSafe(name='archivo') {
+          return String(name || 'tarjeta')
+            .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+            .replace(/[^a-zA-Z0-9]+/g,'-')
+            .replace(/^-+|-+$/g,'')
+            .toLowerCase() || 'tarjeta';
+        }
+
+        function getProgramBenefitLine() {
+          if (type === 'cashback') return 'Recibe cashback en cada compra y úsalo cuando quieras.';
+          if (type === 'visits') return `Guarda esta tarjeta y controla tus ${goal} visitas incluidas.`;
+          if (type === 'access') return 'Guarda tu tarjeta digital y úsala para identificarte al entrar.';
+          const reward = program.reward_text ? ` y recibe ${program.reward_text}` : '';
+          return `Acumula ${goal} sellos${reward}.`;
+        }
+
+        function getProgramJoinTitle() {
+          if (type === 'cashback') return 'Escanea y guarda nuestra tarjeta de cashback';
+          if (type === 'visits') return 'Escanea y guarda tu tarjeta de visitas';
+          if (type === 'access') return 'Escanea y guarda tu tarjeta digital';
+          return 'Escanea y guarda nuestra tarjeta de lealtad';
+        }
+
+        function roundedRectPath(ctx, x, y, w, h, r) {
+          const radius = Math.min(r, w / 2, h / 2);
+          ctx.beginPath();
+          ctx.moveTo(x + radius, y);
+          ctx.lineTo(x + w - radius, y);
+          ctx.quadraticCurveTo(x + w, y, x + w, y + radius);
+          ctx.lineTo(x + w, y + h - radius);
+          ctx.quadraticCurveTo(x + w, y + h, x + w - radius, y + h);
+          ctx.lineTo(x + radius, y + h);
+          ctx.quadraticCurveTo(x, y + h, x, y + h - radius);
+          ctx.lineTo(x, y + radius);
+          ctx.quadraticCurveTo(x, y, x + radius, y);
+          ctx.closePath();
+        }
+
+        function fitRect(srcW, srcH, boxW, boxH) {
+          const ratio = Math.min(boxW / srcW, boxH / srcH);
+          const w = srcW * ratio;
+          const h = srcH * ratio;
+          return { w, h, x: (boxW - w) / 2, y: (boxH - h) / 2 };
+        }
+
+        function hexToRgba(hex, alpha) {
+          const h = String(hex || '#4b63f3').replace('#','');
+          const full = h.length === 3 ? h.split('').map((c) => c + c).join('') : h.padEnd(6,'0').slice(0,6);
+          const r = parseInt(full.slice(0,2),16);
+          const g = parseInt(full.slice(2,4),16);
+          const b = parseInt(full.slice(4,6),16);
+          return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        }
+
+        function wrapText(ctx, text, maxWidth) {
+          const words = String(text || '').split(/\s+/).filter(Boolean);
+          if (!words.length) return [''];
+          const lines = [];
+          let line = '';
+          for (const word of words) {
+            const test = line ? `${line} ${word}` : word;
+            if (ctx.measureText(test).width <= maxWidth || !line) line = test;
+            else { lines.push(line); line = word; }
+          }
+          if (line) lines.push(line);
+          return lines;
+        }
+
+        function drawWrappedText(ctx, text, x, y, maxWidth, lineHeight, maxLines) {
+          const lines = wrapText(ctx, text, maxWidth).slice(0, maxLines || 99);
+          lines.forEach((line, index) => ctx.fillText(line, x, y + index * lineHeight));
+          return lines.length;
+        }
+
+        async function loadImage(url) {
+          return await new Promise((resolve, reject) => {
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.onload = () => resolve(img);
+            img.onerror = () => reject(new Error('No se pudo cargar una imagen.'));
+            img.src = url;
+          });
+        }
+
+        function getQRCodeCanvas() {
+          const canvas = joinQRNode.querySelector('canvas');
+          if (canvas) return canvas;
+          const img = joinQRNode.querySelector('img');
+          if (!img) return null;
+          const c = document.createElement('canvas');
+          c.width = img.naturalWidth || 512;
+          c.height = img.naturalHeight || 512;
+          const ctx = c.getContext('2d');
+          ctx.drawImage(img, 0, 0, c.width, c.height);
+          return c;
+        }
+
+        async function renderJoinAssets() {
+          joinLink = getJoinLink();
+          document.querySelector('#joinUrl').textContent = joinLink;
+          openJoinBtn.href = joinLink;
+          joinQRNode.innerHTML = '';
+          new QRCode(joinQRNode, { text: joinLink, width: 220, height: 220 });
+          buildTemplateCards();
+        }
+
+        async function downloadPureQR() {
+          const qrSource = getQRCodeCanvas();
+          if (!qrSource) throw new Error('Primero genera el QR para unirte.');
+          const size = 1400;
+          const padding = 140;
+          const canvas = document.createElement('canvas');
+          canvas.width = size;
+          canvas.height = size;
+          const ctx = canvas.getContext('2d');
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, size, size);
+          ctx.imageSmoothingEnabled = false;
+          ctx.drawImage(qrSource, padding, padding, size - padding * 2, size - padding * 2);
+          downloadCanvas(canvas, `${fileSafe(program.program_name)}-qr.png`);
+        }
+
+        function downloadCanvas(canvas, filename) {
+          const a = document.createElement('a');
+          a.href = canvas.toDataURL('image/png');
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+        }
+
+        async function downloadTemplate(kind) {
+          const canvas = await buildTemplateCanvas(kind);
+          const suffix = kind === 'a5' ? 'plantilla-a5' : kind === 'tabletent' ? 'plantilla-10x15' : 'sticker-qr';
+          downloadCanvas(canvas, `${fileSafe(program.program_name)}-${suffix}.png`);
+        }
+
+        async function buildTemplateCanvas(kind) {
+          const qrSource = getQRCodeCanvas();
+          if (!qrSource) throw new Error('Primero genera el QR para unirte.');
+
+          const specs = {
+            a5: { w: 1240, h: 1748, pad: 92 },
+            tabletent: { w: 1200, h: 1800, pad: 88 },
+            sticker: { w: 1200, h: 1200, pad: 78 }
+          }[kind];
+          if (!specs) throw new Error('Plantilla no disponible.');
+
+          const canvas = document.createElement('canvas');
+          canvas.width = specs.w;
+          canvas.height = specs.h;
+          const ctx = canvas.getContext('2d');
+
+          const bg = program.primary_color || '#4b63f3';
+          const fg = program.text_color || '#ffffff';
+          const accent = hexToRgba(fg, 0.12);
+          const subtle = hexToRgba(fg, 0.22);
+          const cardX = specs.pad;
+          const cardY = specs.pad;
+          const cardW = specs.w - specs.pad * 2;
+          const cardH = specs.h - specs.pad * 2;
+
+          ctx.fillStyle = bg;
+          ctx.fillRect(0, 0, specs.w, specs.h);
+
+          ctx.save();
+          ctx.globalAlpha = 0.12;
+          ctx.fillStyle = '#ffffff';
+          ctx.beginPath(); ctx.arc(specs.w * 0.13, specs.h * 0.1, specs.w * 0.1, 0, Math.PI * 2); ctx.fill();
+          ctx.beginPath(); ctx.arc(specs.w * 0.88, specs.h * 0.18, specs.w * 0.16, 0, Math.PI * 2); ctx.fill();
+          ctx.beginPath(); ctx.arc(specs.w * 0.78, specs.h * 0.88, specs.w * 0.2, 0, Math.PI * 2); ctx.fill();
+          ctx.restore();
+
+          ctx.save();
+          roundedRectPath(ctx, cardX, cardY, cardW, cardH, kind === 'sticker' ? 48 : 56);
+          ctx.fillStyle = accent;
+          ctx.fill();
+          ctx.restore();
+
+          let logoImg = null;
+          try { if (program.logo_url) logoImg = await loadImage(program.logo_url); } catch (_) {}
+
+          const qrSize = kind === 'sticker' ? 520 : kind === 'tabletent' ? 470 : 500;
+          const qrBoxSize = qrSize + 70;
+          const logoBox = kind === 'sticker'
+            ? { x: specs.w / 2 - 74, y: 120, w: 148, h: 148 }
+            : { x: specs.w / 2 - 84, y: 120, w: 168, h: 168 };
+
+          if (logoImg) {
+            ctx.save();
+            roundedRectPath(ctx, logoBox.x, logoBox.y, logoBox.w, logoBox.h, kind === 'sticker' ? 38 : 42);
+            ctx.fillStyle = 'rgba(255,255,255,0.92)';
+            ctx.fill();
+            ctx.clip();
+            const fit = fitRect(logoImg.naturalWidth, logoImg.naturalHeight, logoBox.w - 26, logoBox.h - 26);
+            ctx.drawImage(logoImg, logoBox.x + 13 + fit.x, logoBox.y + 13 + fit.y, fit.w, fit.h);
+            ctx.restore();
+          } else {
+            ctx.save();
+            roundedRectPath(ctx, logoBox.x, logoBox.y, logoBox.w, logoBox.h, kind === 'sticker' ? 38 : 42);
+            ctx.fillStyle = 'rgba(255,255,255,0.18)';
+            ctx.fill();
+            ctx.fillStyle = fg;
+            ctx.font = `900 ${kind === 'sticker' ? 54 : 60}px Inter, sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText((program.display_name || program.program_name || 'RE').slice(0,2).toUpperCase(), logoBox.x + logoBox.w / 2, logoBox.y + logoBox.h / 2 + 4);
+            ctx.restore();
+          }
+
+          ctx.fillStyle = fg;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'alphabetic';
+
+          const businessName = program.display_name || program.program_name || 'Tu negocio';
+          const joinTitle = getProgramJoinTitle();
+          const benefitLine = getProgramBenefitLine();
+
+          if (kind === 'sticker') {
+            ctx.font = '700 28px Inter, sans-serif';
+            ctx.fillText(businessName, specs.w / 2, 330);
+            ctx.font = '900 66px Inter, sans-serif';
+            drawWrappedText(ctx, 'Escanea para guardar tu tarjeta', specs.w / 2, 420, 920, 78, 2);
+            ctx.font = '500 28px Inter, sans-serif';
+            drawWrappedText(ctx, benefitLine, specs.w / 2, 580, 920, 40, 3);
+
+            const qrX = specs.w / 2 - qrBoxSize / 2;
+            const qrY = 650;
+            ctx.save();
+            roundedRectPath(ctx, qrX, qrY, qrBoxSize, qrBoxSize, 44);
+            ctx.fillStyle = '#ffffff';
+            ctx.fill();
+            ctx.restore();
+            ctx.imageSmoothingEnabled = false;
+            ctx.drawImage(qrSource, qrX + 35, qrY + 35, qrSize, qrSize);
+
+            ctx.font = '700 26px Inter, sans-serif';
+            ctx.fillText('Apple Wallet · Google Wallet', specs.w / 2, qrY + qrBoxSize + 70);
+            ctx.font = '600 24px Inter, sans-serif';
+            ctx.fillText('Powered by rewards.enla.mx', specs.w / 2, specs.h - 86);
+            return canvas;
+          }
+
+          ctx.font = '700 34px Inter, sans-serif';
+          ctx.fillText(businessName, specs.w / 2, 340);
+          ctx.font = kind === 'a5' ? '900 78px Inter, sans-serif' : '900 68px Inter, sans-serif';
+          drawWrappedText(ctx, joinTitle, specs.w / 2, kind === 'a5' ? 455 : 430, kind === 'a5' ? 980 : 920, kind === 'a5' ? 88 : 76, 3);
+
+          ctx.font = kind === 'a5' ? '500 34px Inter, sans-serif' : '500 30px Inter, sans-serif';
+          drawWrappedText(ctx, benefitLine, specs.w / 2, kind === 'a5' ? 680 : 620, kind === 'a5' ? 930 : 860, kind === 'a5' ? 48 : 42, 3);
+
+          const qrX = specs.w / 2 - qrBoxSize / 2;
+          const qrY = kind === 'a5' ? 790 : 720;
+          ctx.save();
+          roundedRectPath(ctx, qrX, qrY, qrBoxSize, qrBoxSize, 44);
+          ctx.fillStyle = '#ffffff';
+          ctx.fill();
+          ctx.restore();
+          ctx.imageSmoothingEnabled = false;
+          ctx.drawImage(qrSource, qrX + 35, qrY + 35, qrSize, qrSize);
+
+          const stepsY = qrY + qrBoxSize + (kind === 'a5' ? 120 : 100);
+          const colW = 240;
+          const stepGap = 36;
+          const stepStart = specs.w / 2 - ((colW * 3 + stepGap * 2) / 2);
+          const steps = [
+            { n: '1', title: 'Escanea', text: 'Abre el registro en segundos.' },
+            { n: '2', title: 'Guárdala', text: 'Agrégala a tu Apple Wallet o Google Wallet.' },
+            { n: '3', title: 'Disfruta', text: 'Empieza a acumular beneficios desde tu primera compra.' }
+          ];
+          steps.forEach((step, index) => {
+            const x = stepStart + index * (colW + stepGap);
+            ctx.save();
+            roundedRectPath(ctx, x, stepsY, colW, kind === 'a5' ? 210 : 190, 28);
+            ctx.fillStyle = subtle;
+            ctx.fill();
+            ctx.restore();
+            ctx.save();
+            ctx.fillStyle = fg;
+            ctx.globalAlpha = 0.18;
+            ctx.beginPath();
+            ctx.arc(x + 46, stepsY + 42, 22, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+            ctx.fillStyle = fg;
+            ctx.font = '900 28px Inter, sans-serif';
+            ctx.fillText(step.n, x + 46, stepsY + 52);
+            ctx.textAlign = 'left';
+            ctx.font = '800 28px Inter, sans-serif';
+            ctx.fillText(step.title, x + 78, stepsY + 52);
+            ctx.font = '500 22px Inter, sans-serif';
+            drawWrappedText(ctx, step.text, x + 26, stepsY + 104, colW - 52, 30, 3);
+            ctx.textAlign = 'center';
+          });
+
+          ctx.font = '700 28px Inter, sans-serif';
+          ctx.fillText('Powered by rewards.enla.mx', specs.w / 2, specs.h - 92);
+          return canvas;
+        }
+
+        async function load() {
+          const { data, error } = await ENLA.sb.from('rewards_customers').select('*').eq('program_id', program.id).order('created_at', { ascending: false });
+          if (error) throw error;
+
+          rows.innerHTML = data.length ? data.map((c) => {
+            const value = Number(c.current_value || 0);
+            const inactive = c.status === 'inactive';
+            const ready = type === 'stamps' && value >= goal;
+            const expired = isAccess && (!c.expires_at || new Date(c.expires_at).getTime() < Date.now());
+            const progress = isCashback
+              ? money(value)
+              : isVisits
+              ? `${value} de ${goal}`
+              : isAccess
+              ? (expired ? 'Vencida' : new Date(c.expires_at).toLocaleDateString('es-MX'))
+              : `${value} / ${goal}`;
+            const state = isCashback
+              ? 'Saldo activo'
+              : isVisits
+              ? (inactive ? 'Inactiva' : value <= 0 ? 'Sin visitas' : 'Activa')
+              : isAccess
+              ? (inactive ? 'Inactiva' : expired ? 'Vencida' : 'Activa')
+              : ready
+              ? 'Recompensa lista'
+              : 'Activo';
+
+            let actions = '';
+            if (isCashback) {
+              actions = `<button class="btn btn-primary btn-sm" onclick="addCash('${c.id}')">＋ Saldo</button><button class="btn btn-secondary btn-sm" onclick="spendCash('${c.id}',${value})" ${value <= 0 ? 'disabled' : ''}>Usar</button><button class="btn btn-ghost btn-sm" onclick="editBalance('${c.id}',${value})">Editar saldo</button>`;
+            } else if (isAccess) {
+              actions = `<button class="btn btn-secondary btn-sm" onclick="editExpiry('${c.id}','${c.expires_at || ''}')">Editar vencimiento</button><button class="btn btn-primary btn-sm" onclick="renewAccessNow('${c.id}')">+ ${program.validity_days || 30} días</button><button class="btn ${inactive ? 'btn-primary' : 'btn-danger'} btn-sm" onclick="toggleAccess('${c.id}','${inactive ? 'active' : 'inactive'}')">${inactive ? 'Reactivar' : 'Suspender'}</button>`;
+            } else if (isVisits) {
+              actions = inactive
+                ? `<button class="btn btn-primary btn-sm" onclick="renewVisitsNow('${c.id}')">Renovar ${goal}</button>`
+                : value <= 0
+                ? `<button class="btn btn-primary btn-sm" onclick="renewVisitsNow('${c.id}')">Renovar ${goal}</button><button class="btn btn-danger btn-sm" onclick="deactivateVisitsNow('${c.id}')">Desactivar</button>`
+                : `<button class="btn btn-primary btn-sm" onclick="useVisitNow('${c.id}')">Usar visita</button>`;
+            } else {
+              actions = ready
+                ? `<button class="btn btn-primary btn-sm" onclick="redeemNow('${c.id}')">Canjear</button>`
+                : `<button class="btn btn-secondary btn-sm" onclick="addStampNow('${c.id}')">＋ Sello</button>`;
+            }
+
+            return `<tr>
+              <td>
+                <div class="person">
+                  ${isAccess && c.photo_url ? `<img class="scan-person-photo" src="${c.photo_url}" alt="${escapeHtml(c.name)}">` : `<div class="avatar">${ENLA.initials(c.name)}</div>`}
+                  <div><b>${escapeHtml(c.name)}</b><div class="muted tiny">${escapeHtml(c.public_code || '')}</div></div>
+                </div>
+              </td>
+              <td>${escapeHtml(c.email || c.phone || '—')}</td>
+              <td><b>${escapeHtml(progress)}</b></td>
+              <td><span class="badge ${inactive ? 'red' : ready ? 'blue' : 'green'}">${escapeHtml(state)}</span></td>
+              <td><div class="row-actions">${actions}</div></td>
+            </tr>`;
+          }).join('') : '<tr><td colspan="5" class="muted">Aún no hay clientes en esta tarjeta.</td></tr>';
+        }
+
+        window.editExpiry = async (id, current) => {
+          const v = prompt('Nuevo vencimiento (AAAA-MM-DD)', current ? new Date(current).toISOString().slice(0, 10) : '');
+          if (!v) return;
+          try {
+            await ENLA.setAccessExpiry(id, new Date(v + 'T23:59:59').toISOString());
+            await load();
+          } catch (e) {
+            alert(e.message);
+          }
+        };
+
+        window.toggleAccess = async (id, status) => {
+          try {
+            await ENLA.setAccessStatus(id, status);
+            await load();
+          } catch (e) {
+            alert(e.message);
+          }
+        };
+
+        document.querySelector('#saveCustomer').onclick = async (e) => {
+          e.preventDefault();
+          try {
+            const name = document.querySelector('#cname').value.trim();
+            if (!name) return;
+            const b = await ENLA.getBusiness();
+            const initial = isVisits ? goal : 0;
+            let photo_url = null;
+            let expires_at = null;
+
+            if (isAccess) {
+              const f = document.querySelector('#cphoto').files[0];
+              if (!f) throw new Error('Sube la foto del titular.');
+              const path = `manual/${crypto.randomUUID ? crypto.randomUUID() : Date.now()}.${(f.name.split('.').pop() || 'jpg')}`;
+              const up = await ENLA.sb.storage.from('rewards-customer-photos').upload(path, f, { contentType: f.type || undefined });
+              if (up.error) throw up.error;
+              photo_url = ENLA.sb.storage.from('rewards-customer-photos').getPublicUrl(path).data.publicUrl;
+              expires_at = new Date(Date.now() + Number(program.validity_days || 30) * 86400000).toISOString();
+            }
+
+            const { error } = await ENLA.sb.from('rewards_customers').insert({
+              business_id: b.id,
+              program_id: program.id,
+              name,
+              email: document.querySelector('#cemail').value || null,
+              phone: document.querySelector('#cphone').value || null,
+              current_value: initial,
+              status: 'active',
+              photo_url,
+              expires_at
+            });
+            if (error) throw error;
+            modal.close();
+            await load();
+          } catch (err) {
+            alert(err.message);
+          }
+        };
+
+        window.renewAccessNow = async (id) => {
+          try { await ENLA.renewAccess(id, program.validity_days || 30); await load(); }
+          catch (e) { alert(e.message); }
+        };
+        window.addCash = async (id) => {
+          const raw = prompt('¿Cuánto saldo quieres agregar?');
+          if (raw === null) return;
+          try {
+            const r = await ENLA.addCashbackAmount(id, Number(String(raw).replace('$', '').trim()));
+            await load();
+            alert(`Saldo agregado. Nuevo saldo: ${money(r.current_value)}`);
+          } catch (e) { alert(e.message); }
+        };
+        window.spendCash = async (id, balance) => {
+          const raw = prompt(`¿Cuánto saldo quieres usar? Disponible: ${money(balance)}`);
+          if (raw === null) return;
+          try {
+            const r = await ENLA.spendCashback(id, Number(String(raw).replace('$', '').trim()));
+            await load();
+            alert(`Saldo restante: ${money(r.current_value)}`);
+          } catch (e) { alert(e.message); }
+        };
+        window.editBalance = async (id, balance) => {
+          const raw = prompt(`Editar saldo actual (${money(balance)}). Escribe el saldo correcto:`, Number(balance).toFixed(2));
+          if (raw === null) return;
+          try {
+            const r = await ENLA.setCashbackBalance(id, Number(String(raw).replace('$', '').trim()));
+            await load();
+            alert(`Saldo corregido a ${money(r.current_value)}.`);
+          } catch (e) { alert(e.message); }
+        };
+        window.addStampNow = async (id) => {
+          try {
+            const r = await ENLA.addStamp(id);
+            await load();
+            if (r?.reward_ready) alert('Recompensa lista para canjear.');
+          } catch (e) { alert(e.message); }
+        };
+        window.useVisitNow = async (id) => {
+          try { await ENLA.useVisit(id); await load(); }
+          catch (e) { alert(e.message); }
+        };
+        window.renewVisitsNow = async (id) => {
+          if (!confirm('¿Renovar el paquete completo?')) return;
+          try { await ENLA.renewVisits(id); await load(); }
+          catch (e) { alert(e.message); }
+        };
+        window.deactivateVisitsNow = async (id) => {
+          if (!confirm('¿Desactivar esta tarjeta?')) return;
+          try { await ENLA.deactivateVisitCard(id); await load(); }
+          catch (e) { alert(e.message); }
+        };
+        window.redeemNow = async (id) => {
+          if (!confirm('¿Ya entregaste la recompensa?')) return;
+          try { await ENLA.redeemReward(id); await load(); }
+          catch (e) { alert(e.message); }
+        };
+
+        await load();
+      } catch (e) {
+        document.querySelector('#rows').innerHTML = `<tr><td colspan="5"><div class="error">${e.message}</div></td></tr>`;
+      }
+    })();
+  </script>
+</body>
+</html>
