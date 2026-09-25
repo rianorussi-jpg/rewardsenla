@@ -584,7 +584,7 @@
           drawWrappedText(ctx, benefitLine, specs.w / 2, kind === 'a5' ? 680 : 620, kind === 'a5' ? 930 : 860, kind === 'a5' ? 48 : 42, 3);
 
           const qrX = specs.w / 2 - qrBoxSize / 2;
-          const qrY = kind === 'a5' ? 720 : 720;
+          const qrY = kind === 'a5' ? 750 : 720;
           ctx.save();
           roundedRectPath(ctx, qrX, qrY, qrBoxSize, qrBoxSize, 44);
           ctx.fillStyle = '#ffffff';
@@ -593,7 +593,7 @@
           ctx.imageSmoothingEnabled = false;
           ctx.drawImage(qrSource, qrX + 35, qrY + 35, qrSize, qrSize);
 
-          const stepsY = kind === 'a5' ? 1230 : 1325;
+          const stepsY = kind === 'a5' ? 1260 : 1325;
           const colW = 240;
           const stepGap = 36;
           const stepHeight = kind === 'a5' ? 180 : 190;
@@ -628,7 +628,7 @@
             ctx.textAlign = 'center';
           });
 
-          drawWalletCompatibilityRow(ctx, specs.w / 2, kind === 'a5' ? 1468 : 1592, kind);
+          drawWalletCompatibilityRow(ctx, specs.w / 2, kind === 'a5' ? 1498 : 1592, kind);
           ctx.font = '700 26px Inter, sans-serif';
           ctx.fillText('Powered by rewards.enla.mx', specs.w / 2, kind === 'a5' ? 1625 : specs.h - 92);
           return canvas;
