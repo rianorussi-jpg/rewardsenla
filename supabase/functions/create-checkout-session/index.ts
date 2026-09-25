@@ -5,7 +5,7 @@ const rank:any={basic:1,pro:2,business:3};
 Deno.serve(async req=>{if(req.method==='OPTIONS')return new Response('ok',{headers:cors});try{
  const auth=req.headers.get('Authorization')||''; const url=Deno.env.get('SUPABASE_URL')!, anon=Deno.env.get('SUPABASE_ANON_KEY')!, service=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
  const userClient=createClient(url,anon,{global:{headers:{Authorization:auth}}}); const {data:{user}}=await userClient.auth.getUser(); if(!user)throw new Error('Sesión requerida.');
- const admin=createClient(url,service); const {data:b,error}=await admin.from('rewards_businesses').select('*').eq('owner_id',user.id).single(); if(error)throw error;
+ const admin=createClient(url,service); const {data:b,error}=await admin.from('rewards_businesses').select('*').eq('owner_id',user.id).single(); if(error)throw error; if(b.manual_plan)throw new Error('Tu cuenta tiene un plan de cortesía. Contacta a Rewards Enla para contratar una suscripción.');
  const {plan,publishProgramId}=await req.json(); if(!['basic','pro','business'].includes(plan))throw new Error('Plan inválido.');
  const priceMap:any={basic:Deno.env.get('STRIPE_PRICE_BASIC'),pro:Deno.env.get('STRIPE_PRICE_PRO'),business:Deno.env.get('STRIPE_PRICE_BUSINESS')}; if(!priceMap[plan])throw new Error('Falta configurar el Price ID de Stripe para este plan.');
  const stripe=new Stripe(Deno.env.get('STRIPE_SECRET_KEY')!);
