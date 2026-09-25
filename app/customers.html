@@ -52,11 +52,17 @@
               <div class="share-row join-actions-row">
                 <button class="btn btn-secondary btn-sm" id="copyJoin">Copiar enlace</button>
                 <a class="btn btn-primary btn-sm" id="openJoin" target="_blank">Abrir registro</a>
-                <button class="btn btn-secondary btn-sm" id="downloadJoinQR">Descargar QR</button>
               </div>
             </div>
-            <div class="join-qr-box">
+            <div class="join-qr-box" style="gap:14px">
               <div id="joinQR"></div>
+              <div style="width:100%;text-align:center">
+                <div class="small muted" style="font-weight:800;margin-bottom:8px">Descargar QR</div>
+                <div class="share-row" style="justify-content:center">
+                  <button class="btn btn-secondary btn-sm" id="downloadJoinQRImage">Guardar imagen</button>
+                  <button class="btn btn-secondary btn-sm" id="downloadJoinQRPDF">Descargar PDF</button>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -115,6 +121,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <script src="/app/assets/config.js?v=20260924-print-templates"></script>
   <script src="/app/assets/app.js?v=20260924-print-templates"></script>
   <script>
@@ -148,7 +155,8 @@
         const templateGrid = document.querySelector('#templateGrid');
         const copyJoinBtn = document.querySelector('#copyJoin');
         const openJoinBtn = document.querySelector('#openJoin');
-        const downloadJoinQRBtn = document.querySelector('#downloadJoinQR');
+        const downloadJoinQRImageBtn = document.querySelector('#downloadJoinQRImage');
+        const downloadJoinQRPDFBtn = document.querySelector('#downloadJoinQRPDF');
         let joinLink = '';
 
         if (isAccess) document.querySelector('#manualPhotoField').style.display = 'block';
@@ -172,12 +180,21 @@
           }
         };
 
-        downloadJoinQRBtn.onclick = async () => {
+        downloadJoinQRImageBtn.onclick = async () => {
           try {
             if (!joinLink) await renderJoinAssets();
-            await downloadPureQR();
+            await downloadPureQR('image');
           } catch (err) {
-            alert(err.message || 'No se pudo descargar el QR.');
+            alert(err.message || 'No se pudo guardar el QR.');
+          }
+        };
+
+        downloadJoinQRPDFBtn.onclick = async () => {
+          try {
+            if (!joinLink) await renderJoinAssets();
+            await downloadPureQR('pdf');
+          } catch (err) {
+            alert(err.message || 'No se pudo generar el PDF del QR.');
           }
         };
 
@@ -220,18 +237,32 @@
                 <div class="print-template-subtitle">${tpl.subtitle}</div>
                 <h4>${tpl.title}</h4>
                 <p>${tpl.description}</p>
-                <button class="btn btn-secondary btn-sm" data-template-download="${tpl.key}">Descargar plantilla</button>
+                <div class="share-row" style="margin-top:4px">
+                  <button class="btn btn-secondary btn-sm" data-template-image="${tpl.key}">Guardar imagen</button>
+                  <button class="btn btn-secondary btn-sm" data-template-pdf="${tpl.key}">Descargar PDF</button>
+                </div>
               </div>
             </div>
           `).join('');
 
-          templateGrid.querySelectorAll('[data-template-download]').forEach((btn) => {
+          templateGrid.querySelectorAll('[data-template-image]').forEach((btn) => {
             btn.onclick = async () => {
               try {
                 if (!joinLink) await renderJoinAssets();
-                await downloadTemplate(btn.dataset.templateDownload);
+                await downloadTemplate(btn.dataset.templateImage, 'image');
               } catch (err) {
-                alert(err.message || 'No se pudo generar la plantilla.');
+                alert(err.message || 'No se pudo guardar la imagen.');
+              }
+            };
+          });
+
+          templateGrid.querySelectorAll('[data-template-pdf]').forEach((btn) => {
+            btn.onclick = async () => {
+              try {
+                if (!joinLink) await renderJoinAssets();
+                await downloadTemplate(btn.dataset.templatePdf, 'pdf');
+              } catch (err) {
+                alert(err.message || 'No se pudo generar el PDF.');
               }
             };
           });
@@ -439,7 +470,55 @@
           buildTemplateCards();
         }
 
-        async function downloadPureQR() {
+        function canvasToBlob(canvas, type='image/png', quality=0.96) {
+          return new Promise((resolve, reject) => {
+            canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error('No se pudo preparar el archivo.')), type, quality);
+          });
+        }
+
+        async function saveBlobForDevice(blob, filename, title='Rewards Enla') {
+          const file = new File([blob], filename, { type: blob.type || 'application/octet-stream' });
+          const isTouchDevice = window.matchMedia?.('(pointer: coarse)')?.matches || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '');
+
+          if (isTouchDevice && navigator.share && navigator.canShare?.({ files:[file] })) {
+            try {
+              await navigator.share({ files:[file], title });
+              return;
+            } catch (err) {
+              if (err?.name === 'AbortError') return;
+              console.warn('No se pudo abrir la hoja de compartir; usando descarga alternativa.', err);
+            }
+          }
+
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = filename;
+          if (isTouchDevice) a.target = '_blank';
+          a.rel = 'noopener';
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          setTimeout(() => URL.revokeObjectURL(url), 60000);
+        }
+
+        function pdfBlobFromCanvas(canvas, kind='sticker') {
+          if (!window.jspdf?.jsPDF) throw new Error('No se pudo cargar el generador de PDF.');
+          const { jsPDF } = window.jspdf;
+          const pdfSpec = kind === 'a5'
+            ? { format:'a5', orientation:'portrait', w:148, h:210 }
+            : kind === 'tabletent'
+            ? { format:[100,150], orientation:'portrait', w:100, h:150 }
+            : kind === 'qr'
+            ? { format:[100,100], orientation:'portrait', w:100, h:100 }
+            : { format:[100,100], orientation:'portrait', w:100, h:100 };
+          const doc = new jsPDF({ orientation:pdfSpec.orientation, unit:'mm', format:pdfSpec.format, compress:true });
+          const image = canvas.toDataURL('image/png');
+          doc.addImage(image, 'PNG', 0, 0, pdfSpec.w, pdfSpec.h, undefined, 'FAST');
+          return doc.output('blob');
+        }
+
+        function buildPureQRCanvas() {
           const qrSource = getQRCodeCanvas();
           if (!qrSource) throw new Error('Primero genera el QR para unirte.');
           const size = 1400;
@@ -452,22 +531,32 @@
           ctx.fillRect(0, 0, size, size);
           ctx.imageSmoothingEnabled = false;
           ctx.drawImage(qrSource, padding, padding, size - padding * 2, size - padding * 2);
-          downloadCanvas(canvas, `${fileSafe(program.program_name)}-qr.png`);
+          return canvas;
         }
 
-        function downloadCanvas(canvas, filename) {
-          const a = document.createElement('a');
-          a.href = canvas.toDataURL('image/png');
-          a.download = filename;
-          document.body.appendChild(a);
-          a.click();
-          a.remove();
+        async function downloadPureQR(format='image') {
+          const canvas = buildPureQRCanvas();
+          const base = `${fileSafe(program.program_name)}-qr`;
+          if (format === 'pdf') {
+            const blob = pdfBlobFromCanvas(canvas, 'qr');
+            await saveBlobForDevice(blob, `${base}.pdf`, 'QR de Rewards Enla');
+            return;
+          }
+          const blob = await canvasToBlob(canvas, 'image/png');
+          await saveBlobForDevice(blob, `${base}.png`, 'QR de Rewards Enla');
         }
 
-        async function downloadTemplate(kind) {
+        async function downloadTemplate(kind, format='image') {
           const canvas = await buildTemplateCanvas(kind);
           const suffix = kind === 'a5' ? 'plantilla-a5' : kind === 'tabletent' ? 'plantilla-10x15' : 'sticker-qr';
-          downloadCanvas(canvas, `${fileSafe(program.program_name)}-${suffix}.png`);
+          const base = `${fileSafe(program.program_name)}-${suffix}`;
+          if (format === 'pdf') {
+            const blob = pdfBlobFromCanvas(canvas, kind);
+            await saveBlobForDevice(blob, `${base}.pdf`, 'Plantilla de Rewards Enla');
+            return;
+          }
+          const blob = await canvasToBlob(canvas, 'image/png');
+          await saveBlobForDevice(blob, `${base}.png`, 'Plantilla de Rewards Enla');
         }
 
         async function buildTemplateCanvas(kind) {
