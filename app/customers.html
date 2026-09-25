@@ -386,6 +386,13 @@
           const googleW = kind === 'a5' ? 272 : 250;
           const totalW = appleW + googleW + gap;
           const startX = centerX - totalW / 2;
+          ctx.save();
+          ctx.fillStyle = fg;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'alphabetic';
+          ctx.font = kind === 'a5' ? '700 24px Inter, sans-serif' : '700 22px Inter, sans-serif';
+          ctx.fillText('Compatible en', centerX, y - 18);
+          ctx.restore();
           drawWalletBadge(ctx, startX, y, appleW, badgeH, 'Apple Wallet', 'apple');
           drawWalletBadge(ctx, startX + appleW + gap, y, googleW, badgeH, 'Google Wallet', 'google');
         }
@@ -552,7 +559,7 @@
             drawWrappedText(ctx, benefitLine, specs.w / 2, 535, 900, 32, 2);
 
             const qrX = specs.w / 2 - qrBoxSize / 2;
-            const qrY = 620;
+            const qrY = 600;
             ctx.save();
             roundedRectPath(ctx, qrX, qrY, qrBoxSize, qrBoxSize, 40);
             ctx.fillStyle = '#ffffff';
@@ -576,7 +583,7 @@
           drawWrappedText(ctx, benefitLine, specs.w / 2, kind === 'a5' ? 680 : 620, kind === 'a5' ? 930 : 860, kind === 'a5' ? 48 : 42, 3);
 
           const qrX = specs.w / 2 - qrBoxSize / 2;
-          const qrY = kind === 'a5' ? 700 : 720;
+          const qrY = kind === 'a5' ? 720 : 720;
           ctx.save();
           roundedRectPath(ctx, qrX, qrY, qrBoxSize, qrBoxSize, 44);
           ctx.fillStyle = '#ffffff';
@@ -585,7 +592,7 @@
           ctx.imageSmoothingEnabled = false;
           ctx.drawImage(qrSource, qrX + 35, qrY + 35, qrSize, qrSize);
 
-          const stepsY = qrY + qrBoxSize + (kind === 'a5' ? 60 : 100);
+          const stepsY = kind === 'a5' ? 1230 : 1325;
           const colW = 240;
           const stepGap = 36;
           const stepHeight = kind === 'a5' ? 180 : 190;
