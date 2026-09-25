@@ -6,3 +6,7 @@
 .card-row-actions .secondary:hover{background:#efefff;border-color:#b6bbec}
 .card-row-actions .registration-link{background:#f0f1ff;color:#414bc5;border-color:#d5d8fa}
 .card-row-actions .registration-link:focus-visible{outline:3px solid #8a8ff5;outline-offset:2px}
+
+/* El acceso de prueba debe verse claramente junto a Transferir. */
+#programRows .registration-link{background:#6269ee!important;color:#fff!important;border-color:#6269ee!important;box-shadow:0 2px 7px #6269ee24;cursor:pointer}
+#programRows .registration-link:hover{background:#4e57d8!important}
