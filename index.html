@@ -209,6 +209,7 @@
     .price-list svg{width:15px;height:15px;color:#2ab77a;flex:none;margin-top:1px}
     .price-card .btn{width:100%}
     .pricing-foot{text-align:center;color:#7a8294;font-size:11px;margin-top:21px}
+    .pricing-toggle-wrap{display:flex;flex-direction:column;align-items:center;gap:10px;margin:0 0 26px}.pricing-toggle{display:inline-flex;gap:4px;padding:5px;background:#e7eaf2;border:1px solid #dfe3ec;border-radius:15px}.pricing-toggle button{border:0;background:transparent;padding:10px 18px;border-radius:11px;color:#6b7280;font:800 12px/1 Inter,sans-serif;cursor:pointer}.pricing-toggle button.active{background:#fff;color:#232c42;box-shadow:0 3px 12px rgba(35,43,84,.08)}.pricing-toggle .promo-mini{display:block;color:#5965e8;font-size:9px;margin-top:4px}.opening-promo{max-width:720px;text-align:center;padding:10px 14px;border-radius:13px;background:#e9ecff;color:#4b57d6;font-size:11px;font-weight:800}.annual-pill{display:none;width:max-content;margin:8px 0 0;padding:5px 8px;border-radius:999px;background:#ecfdf3;color:#067647;font-size:9px;font-weight:900}.price-card.annual-mode .annual-pill{display:inline-flex}.price-card.annual-mode{box-shadow:0 16px 38px rgba(74,82,230,.09)}
 
     /* USE CASES */
     .usecases{display:grid;grid-template-columns:repeat(6,1fr);gap:12px}
@@ -441,6 +442,14 @@
           <p>Prueba hasta 15 borradores gratis. Básico incluye hasta 15 borradores y los planes Pro y Negocio ofrecen borradores ilimitados; elige cuántas tarjetas quieres publicar.</p>
         </div>
 
+        <div class="pricing-toggle-wrap">
+          <div class="pricing-toggle" role="group" aria-label="Periodo de facturación">
+            <button type="button" id="publicMonthly" class="active">Mensual</button>
+            <button type="button" id="publicAnnual">Anual <span class="promo-mini">Promoción de apertura</span></button>
+          </div>
+          <div class="opening-promo" id="publicPromoCopy">Promoción hasta agotar existencias · disponible únicamente para los primeros 50 negocios que contraten un plan anual.</div>
+        </div>
+
         <div class="pricing-grid">
           <article class="price-card">
             <div class="price-name">Prueba</div>
@@ -457,11 +466,12 @@
             <a class="btn btn-secondary session-cta" href="/app/register.html">Probar gratis</a>
           </article>
 
-          <article class="price-card">
+          <article class="price-card" data-public-plan="basic">
             <div class="price-name">Básico</div>
             <div class="price-desc">Para un negocio que comienza con su primer programa.</div>
-            <div class="price"><strong>$149</strong><span>MXN/mes</span></div>
-            <div class="price-note">Cobro mensual</div>
+            <div class="price"><strong class="public-price">$149</strong><span class="public-period">MXN/mes</span></div>
+            <div class="price-note public-note">Cobro mensual</div>
+            <div class="annual-pill">Precio especial de apertura</div>
             <div class="price-divider"></div>
             <ul class="price-list">
               <li><svg viewBox="0 0 24 24" fill="none"><path d="m5 12 4 4L19 6" stroke="currentColor" stroke-width="2"/></svg>1 tarjeta publicada</li>
@@ -471,15 +481,16 @@
               <li><svg viewBox="0 0 24 24" fill="none"><path d="m5 12 4 4L19 6" stroke="currentColor" stroke-width="2"/></svg>Notificaciones automáticas por cumpleaños</li>
               <li><svg viewBox="0 0 24 24" fill="none"><path d="m5 12 4 4L19 6" stroke="currentColor" stroke-width="2"/></svg>Hasta 15 tarjetas en borrador</li>
             </ul>
-            <a class="btn btn-secondary pricing-cta" href="/app/register.html">Empezar con Básico</a>
+            <a class="btn btn-secondary pricing-cta" data-plan="basic" href="/app/register.html">Empezar con Básico</a>
           </article>
 
-          <article class="price-card featured">
+          <article class="price-card featured" data-public-plan="pro">
             <span class="popular">Más popular</span>
             <div class="price-name">Pro</div>
             <div class="price-desc">Para negocios que quieren operar varios programas y crecer.</div>
-            <div class="price"><strong>$249</strong><span>MXN/mes</span></div>
-            <div class="price-note">Cobro mensual</div>
+            <div class="price"><strong class="public-price">$249</strong><span class="public-period">MXN/mes</span></div>
+            <div class="price-note public-note">Cobro mensual</div>
+            <div class="annual-pill">6 meses gratis · 50% menos</div>
             <div class="price-divider"></div>
             <ul class="price-list">
               <li><svg viewBox="0 0 24 24" fill="none"><path d="m5 12 4 4L19 6" stroke="currentColor" stroke-width="2"/></svg>5 tarjetas publicadas</li>
@@ -491,14 +502,15 @@
               <li><svg viewBox="0 0 24 24" fill="none"><path d="m5 12 4 4L19 6" stroke="currentColor" stroke-width="2"/></svg>Notificaciones de recordatorio aleatorias</li>
               <li><svg viewBox="0 0 24 24" fill="none"><path d="m5 12 4 4L19 6" stroke="currentColor" stroke-width="2"/></svg>Tarjetas en borrador ilimitadas</li>
             </ul>
-            <a class="btn btn-primary pricing-cta" href="/app/register.html">Elegir Pro</a>
+            <a class="btn btn-primary pricing-cta" data-plan="pro" href="/app/register.html">Elegir Pro</a>
           </article>
 
-          <article class="price-card">
+          <article class="price-card" data-public-plan="business">
             <div class="price-name">Negocio</div>
             <div class="price-desc">Para operaciones con más clientes, tarjetas y personal.</div>
-            <div class="price"><strong>$499</strong><span>MXN/mes</span></div>
-            <div class="price-note">Cobro mensual</div>
+            <div class="price"><strong class="public-price">$499</strong><span class="public-period">MXN/mes</span></div>
+            <div class="price-note public-note">Cobro mensual</div>
+            <div class="annual-pill">6 meses gratis · 50% menos</div>
             <div class="price-divider"></div>
             <ul class="price-list">
               <li><svg viewBox="0 0 24 24" fill="none"><path d="m5 12 4 4L19 6" stroke="currentColor" stroke-width="2"/></svg>15 tarjetas publicadas</li>
@@ -510,10 +522,10 @@
               <li><svg viewBox="0 0 24 24" fill="none"><path d="m5 12 4 4L19 6" stroke="currentColor" stroke-width="2"/></svg>Notificaciones de recordatorio aleatorias</li>
               <li><svg viewBox="0 0 24 24" fill="none"><path d="m5 12 4 4L19 6" stroke="currentColor" stroke-width="2"/></svg>Tarjetas en borrador ilimitadas</li>
             </ul>
-            <a class="btn btn-secondary pricing-cta" href="/app/register.html">Elegir Negocio</a>
+            <a class="btn btn-secondary pricing-cta" data-plan="business" href="/app/register.html">Elegir Negocio</a>
           </article>
         </div>
-        <div class="pricing-foot">Precios en MXN. Puedes mejorar de plan conforme crece tu operación.</div>
+        <div class="pricing-foot">Precios en MXN. La promoción anual es para los primeros 50 negocios y está disponible hasta agotar existencias.</div>
       </div>
     </section>
 
@@ -602,6 +614,35 @@
         return false;
       }
 
+      var publicBillingInterval = 'monthly';
+      var publicPriceData = {
+        basic:{monthly:['$149','MXN/mes','Cobro mensual'],annual:['$999','MXN/año','Ahorras $789 al año · equivale a $83.25/mes']},
+        pro:{monthly:['$249','MXN/mes','Cobro mensual'],annual:['$1,494','MXN/año','Ahorras $1,494 · 6 meses gratis']},
+        business:{monthly:['$499','MXN/mes','Cobro mensual'],annual:['$2,994','MXN/año','Ahorras $2,994 · 6 meses gratis']}
+      };
+      function renderPublicPricing(){
+        var monthly=document.getElementById('publicMonthly'), annual=document.getElementById('publicAnnual'), promo=document.getElementById('publicPromoCopy');
+        if(monthly)monthly.classList.toggle('active',publicBillingInterval==='monthly');
+        if(annual)annual.classList.toggle('active',publicBillingInterval==='annual');
+        if(promo)promo.style.display=publicBillingInterval==='annual'?'block':'none';
+        document.querySelectorAll('[data-public-plan]').forEach(function(card){
+          var plan=card.getAttribute('data-public-plan'), data=publicPriceData[plan][publicBillingInterval];
+          card.querySelector('.public-price').textContent=data[0];
+          card.querySelector('.public-period').textContent=data[1];
+          card.querySelector('.public-note').textContent=data[2];
+          card.classList.toggle('annual-mode',publicBillingInterval==='annual');
+        });
+        document.querySelectorAll('.pricing-cta').forEach(function(a){
+          var plan=a.getAttribute('data-plan');
+          if(hasSupabaseSession()) a.href='/app/billing.html?billing='+publicBillingInterval+(plan?'&plan='+encodeURIComponent(plan):'');
+          else a.href='/app/register.html?billing='+publicBillingInterval+(plan?'&plan='+encodeURIComponent(plan):'');
+        });
+      }
+      var monthlyToggle=document.getElementById('publicMonthly'),annualToggle=document.getElementById('publicAnnual');
+      if(monthlyToggle)monthlyToggle.onclick=function(){publicBillingInterval='monthly';renderPublicPricing();};
+      if(annualToggle)annualToggle.onclick=function(){publicBillingInterval='annual';renderPublicPricing();};
+      renderPublicPricing();
+
       if(hasSupabaseSession()){
         const login = document.getElementById('loginLink');
         const navCta = document.getElementById('navCta');
@@ -610,7 +651,7 @@
         if(navCta){ navCta.textContent = 'Ir al dashboard'; navCta.href = '/app/dashboard.html'; }
         if(mobileSession){ mobileSession.textContent = 'Dashboard'; mobileSession.href = '/app/dashboard.html'; }
         document.querySelectorAll('.session-cta').forEach(function(a){ a.textContent = 'Ir al dashboard →'; a.href = '/app/dashboard.html'; });
-        document.querySelectorAll('.pricing-cta').forEach(function(a){ a.href = '/app/billing.html'; });
+        renderPublicPricing();
       }
     })();
   </script>

@@ -1,21 +1,290 @@
-<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Plan y facturación — rewards.enla</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"><link rel="stylesheet" href="/app/assets/app.css?v=20260907-publish2"></head><body><div class="app-shell"><aside class="sidebar"><a class="side-brand" href="/">rewards.<span>enla</span></a><nav class="nav-list"></nav><div class="side-bottom"><button class="btn btn-secondary" id="signOut" style="width:100%">Cerrar sesión</button></div></aside><div class="overlay"></div><main class="main"><header class="topbar"><div style="display:flex;align-items:center;gap:10px"><button class="btn btn-secondary mobile-menu" id="mobileMenu">☰</button><div><h1>Plan y facturación</h1><div class="topbar-sub">Tu plan define cuántas tarjetas puedes tener publicadas</div></div></div><a class="btn btn-secondary btn-sm" href="/app/dashboard.html">← Mis tarjetas</a></header><div class="content"><div id="notice" class="hidden"></div><div id="publishContext"></div><section class="billing-hero card"><div><span class="badge blue" id="currentBadge">Cargando…</span><h2 id="currentTitle">Tu plan</h2><p class="muted" id="currentText"></p><div class="billing-usage" id="usage"></div></div><button class="btn btn-secondary hidden" id="portal">Administrar suscripción</button></section><div class="pricing-grid" id="pricing"><article class="price-card" data-card-plan="basic"><span class="badge">Básico</span><h2>$149 <small>MXN/mes</small></h2><p>Para comenzar a operar.</p><ul><li><b>1 tarjeta publicada</b></li><li>1,000 clientes</li><li>1 empleado</li><li>Notificaciones de geolocalización · 1 sucursal</li><li>Notificaciones automáticas por cumpleaños</li><li>Hasta 15 tarjetas en borrador</li></ul><button class="btn btn-secondary choose" data-plan="basic">Elegir Básico</button></article><article class="price-card featured" data-card-plan="pro"><span class="badge blue">Más popular · Pro</span><h2>$249 <small>MXN/mes</small></h2><p>Para negocios en crecimiento.</p><ul><li><b>5 tarjetas publicadas</b></li><li>Clientes ilimitados por tarjeta publicada</li><li>5 empleados por tarjeta</li><li>Notificaciones de geolocalización · 2 sucursales por tarjeta</li><li>Notificaciones personalizadas</li><li>Notificaciones por cumpleaños</li><li>Notificaciones de recordatorio aleatorias</li><li>Tarjetas en borrador ilimitadas</li></ul><button class="btn btn-primary choose" data-plan="pro">Elegir Pro</button></article><article class="price-card" data-card-plan="business"><span class="badge">Negocio</span><h2>$499 <small>MXN/mes</small></h2><p>Para mayor volumen.</p><ul><li><b>15 tarjetas publicadas</b></li><li>Clientes ilimitados por tarjeta publicada</li><li>Empleados ilimitados por tarjeta</li><li>Notificaciones de geolocalización · 2 sucursales por tarjeta</li><li>Notificaciones personalizadas</li><li>Notificaciones por cumpleaños</li><li>Notificaciones de recordatorio aleatorias</li><li>Tarjetas en borrador ilimitadas</li></ul><button class="btn btn-secondary choose" data-plan="business">Elegir Negocio</button></article></div><div class="trial-note card"><b>Borradores sin costo</b><p class="muted">En Prueba y Básico puedes mantener hasta 15 tarjetas en borrador; Pro y Negocio incluyen borradores ilimitados. Las tarjetas publicadas tienen su propio límite según tu plan.</p></div></div></main></div><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="/app/assets/config.js?v=20260907-publish2"></script><script src="/app/assets/app.js?v=20260907-publish2"></script><script>
-ENLA.bindShell();
-(async()=>{try{
- await ENLA.requireAuth();
- let b=await ENLA.getBilling(); let o=await ENLA.getPublicationOverview().catch(()=>null);
- const params=new URLSearchParams(location.search), pending=params.get('publish'), reason=params.get('reason'), success=params.get('success');
- const names={trial:'Sin plan',basic:'Básico',pro:'Pro',business:'Negocio'},rank={trial:0,basic:1,pro:2,business:3};
- document.querySelector('#currentBadge').textContent=names[b.plan]||b.plan;
- document.querySelector('#currentTitle').textContent=b.plan==='trial'?'Todavía no tienes un plan activo':'Plan '+names[b.plan];
- document.querySelector('#currentText').textContent=b.plan==='trial'?'Crea hasta 15 borradores gratis. Contrata un plan cuando quieras publicar.':('Estado: '+b.status+(b.current_period_end?' · periodo hasta '+new Date(b.current_period_end).toLocaleDateString('es-MX'):''));
- const ownedBusiness=await ENLA.getBusiness();const courtesy=Boolean(ownedBusiness?.manual_plan);if(courtesy)document.querySelector('#currentText').textContent='Plan de cortesía asignado por Rewards Enla. No genera cargos en Stripe.';
- if(o){const draftLimit=b.plan==='pro'||b.plan==='business'?'∞':'15';const drafts=Math.max(0,Number(o.total_cards||0)-Number(o.published_count||0));document.querySelector('#usage').innerHTML=`<div class="usage-pill"><b>${o.published_count}</b> / ${o.published_limit} tarjetas publicadas</div><div class="usage-pill"><b>${drafts}</b> / ${draftLimit} tarjetas en borrador</div>`;}
- if(b.plan!=='trial' && !courtesy && ownedBusiness?.stripe_subscription_id){document.querySelector('#portal').classList.remove('hidden');document.querySelector('#portal').onclick=()=>ENLA.openBillingPortal()}
- if(pending){const text=reason==='published_limit'?`Tu plan ${names[b.plan]} ya tiene todas sus tarjetas publicadas. Mejora tu plan o apaga una tarjeta publicada.`:`Para publicar esta tarjeta necesitas contratar un plan.`;document.querySelector('#publishContext').innerHTML=`<div class="publish-context card"><span class="badge blue">Publicar tarjeta</span><div><h2>${text}</h2><p class="muted">La tarjeta seguirá guardada como borrador mientras eliges.</p></div><a class="btn btn-secondary btn-sm" href="/app/card-detail.html?id=${encodeURIComponent(pending)}">Volver a la tarjeta</a></div>`}
- document.querySelectorAll('[data-card-plan]').forEach(card=>{const plan=card.dataset.cardPlan,btn=card.querySelector('.choose');if(plan===b.plan){card.classList.add('current-plan');btn.textContent='Tu plan actual';btn.disabled=true;card.insertAdjacentHTML('afterbegin','<span class="current-plan-ribbon">PLAN ACTUAL</span>')}else if(rank[plan]>rank[b.plan]&&b.plan!=='trial'){btn.textContent='Mejorar a '+names[plan];btn.classList.add('btn-primary');btn.classList.remove('btn-secondary')}else if(rank[plan]<rank[b.plan]){btn.textContent='Plan inferior';btn.disabled=true}}
- );
- if(courtesy)document.querySelectorAll('.choose').forEach(x=>{x.disabled=true;if(x.dataset.plan!==b.plan)x.textContent='Solicitar cambio a Enla'});
- document.querySelectorAll('.choose').forEach(x=>x.onclick=async()=>{if(x.disabled)return;x.disabled=true;const old=x.textContent;x.textContent=b.plan==='trial'?'Abriendo Stripe…':'Actualizando plan…';try{const r=await ENLA.startCheckout(x.dataset.plan,pending);if(r?.updated){if(pending){await ENLA.publishProgram(pending);location.href='/app/card-detail.html?id='+encodeURIComponent(pending)}else location.reload()}}catch(e){ENLA.msg(document.querySelector('#notice'),e.message);x.disabled=false;x.textContent=old}});
- if(success==='1'&&pending){let published=false;for(let i=0;i<8&&!published;i++){try{await new Promise(r=>setTimeout(r,i?900:250));b=await ENLA.getBilling();o=await ENLA.getPublicationOverview(pending);if(o?.can_publish){await ENLA.publishProgram(pending);published=true;location.href='/app/card-detail.html?id='+encodeURIComponent(pending)}}catch{}}if(!published)ENLA.msg(document.querySelector('#notice'),'El pago se recibió, pero Stripe todavía está confirmando tu plan. Espera unos segundos y vuelve a pulsar Publicar.',false)}
-}catch(e){ENLA.msg(document.querySelector('#notice'),e.message)}})();
-</script></body></html>
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Plan y facturación — rewards.enla</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/app/assets/app.css?v=20260924-annual1">
+  <style>
+    .billing-cycle-wrap{display:flex;flex-direction:column;align-items:center;gap:10px;margin:24px 0 20px}.billing-cycle{display:inline-flex;padding:5px;background:#eef1f7;border:1px solid #e1e5ee;border-radius:15px;gap:4px}.cycle-btn{border:0;background:transparent;color:#667085;font-weight:800;padding:10px 18px;border-radius:11px;cursor:pointer}.cycle-btn.active{background:#fff;color:#344054;box-shadow:0 3px 12px rgba(16,24,40,.08)}.cycle-btn .cycle-promo{margin-left:6px;color:#4b63f3;font-size:11px}.annual-promo-banner{max-width:720px;text-align:center;padding:10px 14px;border-radius:13px;background:#eef1ff;color:#3547d6;font-size:12px;font-weight:750}.annual-promo-banner.sold-out{background:#fff1f2;color:#b42318}.price-main{display:flex;align-items:baseline;gap:7px;flex-wrap:wrap}.price-main strong{font-size:34px;letter-spacing:-.045em}.price-main small{font-size:12px;color:#667085}.price-saving{min-height:36px;margin-top:7px;font-size:12px;font-weight:750;color:#067647}.price-saving.monthly{color:#667085;font-weight:600}.annual-highlight{display:inline-flex;margin-top:7px;padding:5px 8px;border-radius:999px;background:#ecfdf3;color:#067647;font-size:11px;font-weight:850}.annual-highlight.hidden{display:none}.price-card.promo-annual{box-shadow:0 12px 34px rgba(75,99,243,.09)}@media(max-width:720px){.billing-cycle{width:100%}.cycle-btn{flex:1;padding:10px 8px}.cycle-btn .cycle-promo{display:block;margin:3px 0 0}.annual-promo-banner{width:100%}}
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <a class="side-brand" href="/">rewards.<span>enla</span></a>
+      <nav class="nav-list"></nav>
+      <div class="side-bottom"><button class="btn btn-secondary" id="signOut" style="width:100%">Cerrar sesión</button></div>
+    </aside>
+    <div class="overlay"></div>
+    <main class="main">
+      <header class="topbar">
+        <div style="display:flex;align-items:center;gap:10px">
+          <button class="btn btn-secondary mobile-menu" id="mobileMenu">☰</button>
+          <div><h1>Plan y facturación</h1><div class="topbar-sub">Tu plan define cuántas tarjetas puedes tener publicadas</div></div>
+        </div>
+        <a class="btn btn-secondary btn-sm" href="/app/dashboard.html">← Mis tarjetas</a>
+      </header>
+
+      <div class="content">
+        <div id="notice" class="hidden"></div>
+        <div id="publishContext"></div>
+
+        <section class="billing-hero card">
+          <div>
+            <span class="badge blue" id="currentBadge">Cargando…</span>
+            <h2 id="currentTitle">Tu plan</h2>
+            <p class="muted" id="currentText"></p>
+            <div class="billing-usage" id="usage"></div>
+          </div>
+          <button class="btn btn-secondary hidden" id="portal">Administrar suscripción</button>
+        </section>
+
+        <div class="billing-cycle-wrap">
+          <div class="billing-cycle" role="group" aria-label="Periodo de facturación">
+            <button class="cycle-btn active" id="monthlyBtn" type="button">Mensual</button>
+            <button class="cycle-btn" id="annualBtn" type="button">Anual <span class="cycle-promo">Promoción de apertura</span></button>
+          </div>
+          <div class="annual-promo-banner" id="annualPromoBanner">Promoción hasta agotar existencias · disponible para los primeros 50 negocios que contraten anual.</div>
+        </div>
+
+        <div class="pricing-grid" id="pricing">
+          <article class="price-card" data-card-plan="basic">
+            <span class="badge">Básico</span>
+            <div class="price-main"><strong class="plan-price">$149</strong><small class="plan-period">MXN/mes</small></div>
+            <div class="price-saving monthly">Cobro mensual</div>
+            <span class="annual-highlight hidden">Precio especial de apertura</span>
+            <p>Para comenzar a operar.</p>
+            <ul>
+              <li><b>1 tarjeta publicada</b></li>
+              <li>1,000 clientes</li>
+              <li>1 empleado</li>
+              <li>Notificaciones de geolocalización · 1 sucursal</li>
+              <li>Notificaciones automáticas por cumpleaños</li>
+              <li>Hasta 15 tarjetas en borrador</li>
+            </ul>
+            <button class="btn btn-secondary choose" data-plan="basic">Elegir Básico</button>
+          </article>
+
+          <article class="price-card featured" data-card-plan="pro">
+            <span class="badge blue">Más popular · Pro</span>
+            <div class="price-main"><strong class="plan-price">$249</strong><small class="plan-period">MXN/mes</small></div>
+            <div class="price-saving monthly">Cobro mensual</div>
+            <span class="annual-highlight hidden">6 meses gratis · 50% menos</span>
+            <p>Para negocios en crecimiento.</p>
+            <ul>
+              <li><b>5 tarjetas publicadas</b></li>
+              <li>Clientes ilimitados por tarjeta publicada</li>
+              <li>5 empleados por tarjeta</li>
+              <li>Notificaciones de geolocalización · 2 sucursales por tarjeta</li>
+              <li>Notificaciones personalizadas</li>
+              <li>Notificaciones por cumpleaños</li>
+              <li>Notificaciones de recordatorio aleatorias</li>
+              <li>Tarjetas en borrador ilimitadas</li>
+            </ul>
+            <button class="btn btn-primary choose" data-plan="pro">Elegir Pro</button>
+          </article>
+
+          <article class="price-card" data-card-plan="business">
+            <span class="badge">Negocio</span>
+            <div class="price-main"><strong class="plan-price">$499</strong><small class="plan-period">MXN/mes</small></div>
+            <div class="price-saving monthly">Cobro mensual</div>
+            <span class="annual-highlight hidden">6 meses gratis · 50% menos</span>
+            <p>Para mayor volumen.</p>
+            <ul>
+              <li><b>15 tarjetas publicadas</b></li>
+              <li>Clientes ilimitados por tarjeta publicada</li>
+              <li>Empleados ilimitados por tarjeta</li>
+              <li>Notificaciones de geolocalización · 2 sucursales por tarjeta</li>
+              <li>Notificaciones personalizadas</li>
+              <li>Notificaciones por cumpleaños</li>
+              <li>Notificaciones de recordatorio aleatorias</li>
+              <li>Tarjetas en borrador ilimitadas</li>
+            </ul>
+            <button class="btn btn-secondary choose" data-plan="business">Elegir Negocio</button>
+          </article>
+        </div>
+
+        <div class="trial-note card">
+          <b>Borradores sin costo</b>
+          <p class="muted">En Prueba y Básico puedes mantener hasta 15 tarjetas en borrador; Pro y Negocio incluyen borradores ilimitados. Las tarjetas publicadas tienen su propio límite según tu plan.</p>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/app/assets/config.js?v=20260924-annual1"></script>
+  <script src="/app/assets/app.js?v=20260924-annual1"></script>
+  <script>
+    ENLA.bindShell();
+    (async()=>{try{
+      await ENLA.requireAuth();
+      let billing=await ENLA.getBilling();
+      let overview=await ENLA.getPublicationOverview().catch(()=>null);
+      const ownedBusiness=await ENLA.getBusiness();
+      const promo=await ENLA.getAnnualPromoStatus().catch(()=>null);
+      const params=new URLSearchParams(location.search);
+      const pending=params.get('publish');
+      const reason=params.get('reason');
+      const success=params.get('success');
+      const names={trial:'Sin plan',basic:'Básico',pro:'Pro',business:'Negocio'};
+      const rank={trial:0,basic:1,pro:2,business:3};
+      const courtesy=Boolean(ownedBusiness?.manual_plan);
+      const currentInterval=ownedBusiness?.billing_interval==='annual'?'annual':'monthly';
+      let selectedInterval=params.get('billing')==='annual'?'annual':(currentInterval==='annual'?'annual':'monthly');
+
+      const priceData={
+        basic:{monthly:{price:'$149',period:'MXN/mes',saving:'Cobro mensual'},annual:{price:'$999',period:'MXN/año',saving:'Ahorras $789 al año · equivale a $83.25/mes'}},
+        pro:{monthly:{price:'$249',period:'MXN/mes',saving:'Cobro mensual'},annual:{price:'$1,494',period:'MXN/año',saving:'Ahorras $1,494 al año · 6 meses gratis'}},
+        business:{monthly:{price:'$499',period:'MXN/mes',saving:'Cobro mensual'},annual:{price:'$2,994',period:'MXN/año',saving:'Ahorras $2,994 al año · 6 meses gratis'}}
+      };
+
+      document.querySelector('#currentBadge').textContent=names[billing.plan]||billing.plan;
+      document.querySelector('#currentTitle').textContent=billing.plan==='trial'
+        ? 'Todavía no tienes un plan activo'
+        : `Plan ${names[billing.plan]} · ${currentInterval==='annual'?'Anual':'Mensual'}`;
+      document.querySelector('#currentText').textContent=billing.plan==='trial'
+        ? 'Crea hasta 15 borradores gratis. Contrata un plan cuando quieras publicar.'
+        : ('Estado: '+billing.status+(billing.current_period_end?' · periodo hasta '+new Date(billing.current_period_end).toLocaleDateString('es-MX'):''));
+      if(courtesy)document.querySelector('#currentText').textContent='Plan de cortesía asignado por Rewards Enla. No genera cargos en Stripe.';
+
+      if(overview){
+        const draftLimit=billing.plan==='pro'||billing.plan==='business'?'∞':'15';
+        const drafts=Math.max(0,Number(overview.total_cards||0)-Number(overview.published_count||0));
+        document.querySelector('#usage').innerHTML=`<div class="usage-pill"><b>${overview.published_count}</b> / ${overview.published_limit} tarjetas publicadas</div><div class="usage-pill"><b>${drafts}</b> / ${draftLimit} tarjetas en borrador</div>`;
+      }
+
+      if(billing.plan!=='trial'&&!courtesy&&ownedBusiness?.stripe_subscription_id){
+        document.querySelector('#portal').classList.remove('hidden');
+        document.querySelector('#portal').onclick=()=>ENLA.openBillingPortal();
+      }
+
+      if(pending){
+        const text=reason==='published_limit'
+          ? `Tu plan ${names[billing.plan]} ya tiene todas sus tarjetas publicadas. Mejora tu plan o apaga una tarjeta publicada.`
+          : 'Para publicar esta tarjeta necesitas contratar un plan.';
+        document.querySelector('#publishContext').innerHTML=`<div class="publish-context card"><span class="badge blue">Publicar tarjeta</span><div><h2>${text}</h2><p class="muted">La tarjeta seguirá guardada como borrador mientras eliges.</p></div><a class="btn btn-secondary btn-sm" href="/app/card-detail.html?id=${encodeURIComponent(pending)}">Volver a la tarjeta</a></div>`;
+      }
+
+      const promoBanner=document.querySelector('#annualPromoBanner');
+      if(promo?.has_claim){
+        promoBanner.textContent='Tu negocio ya forma parte de los primeros 50. Tu acceso al precio anual promocional está asegurado.';
+      }else if(promo && !promo.promo_open){
+        promoBanner.textContent='Promoción anual agotada · los 50 lugares ya fueron tomados.';
+        promoBanner.classList.add('sold-out');
+      }else if(promo){
+        promoBanner.textContent=`Promoción hasta agotar existencias · primeros 50 negocios · ${promo.available_count} lugar${Number(promo.available_count)===1?'':'es'} disponible${Number(promo.available_count)===1?'':'s'}.`;
+      }
+
+      function renderPricing(){
+        document.querySelector('#monthlyBtn').classList.toggle('active',selectedInterval==='monthly');
+        document.querySelector('#annualBtn').classList.toggle('active',selectedInterval==='annual');
+        promoBanner.style.display=selectedInterval==='annual'?'block':'none';
+
+        document.querySelectorAll('[data-card-plan]').forEach(card=>{
+          const plan=card.dataset.cardPlan;
+          const data=priceData[plan][selectedInterval];
+          card.querySelector('.plan-price').textContent=data.price;
+          card.querySelector('.plan-period').textContent=data.period;
+          const saving=card.querySelector('.price-saving');
+          saving.textContent=data.saving;
+          saving.classList.toggle('monthly',selectedInterval==='monthly');
+          card.classList.toggle('promo-annual',selectedInterval==='annual');
+          card.querySelector('.annual-highlight').classList.toggle('hidden',selectedInterval!=='annual');
+
+          card.classList.toggle('current-plan',plan===billing.plan);
+          if(plan===billing.plan&&!card.querySelector('.current-plan-ribbon'))card.insertAdjacentHTML('afterbegin','<span class="current-plan-ribbon">PLAN ACTUAL</span>');
+          const btn=card.querySelector('.choose');
+          btn.disabled=false;
+          btn.classList.toggle('btn-primary',plan==='pro'||(rank[plan]>rank[billing.plan]&&billing.plan!=='trial'));
+          btn.classList.toggle('btn-secondary',!btn.classList.contains('btn-primary'));
+          btn.textContent=`Elegir ${names[plan]}`;
+
+          if(courtesy){
+            btn.disabled=true;
+            btn.textContent=plan===billing.plan?'Tu plan de cortesía':'Solicitar cambio a Enla';
+            return;
+          }
+
+          if(selectedInterval==='annual' && promo && !promo.promo_open && !promo.has_claim){
+            btn.disabled=true;
+            btn.textContent='Promoción agotada';
+            return;
+          }
+
+          if(billing.plan!=='trial'){
+            if(rank[plan]<rank[billing.plan]){
+              btn.disabled=true;
+              btn.textContent='Plan inferior';
+            }else if(plan===billing.plan){
+              if(currentInterval===selectedInterval){
+                btn.disabled=true;
+                btn.textContent='Tu plan actual';
+              }else if(currentInterval==='monthly'&&selectedInterval==='annual'){
+                btn.textContent='Cambiar a anual';
+              }else{
+                btn.disabled=true;
+                btn.textContent='Tu plan es anual';
+              }
+            }else{
+              btn.textContent=`Mejorar a ${names[plan]}${selectedInterval==='annual'?' anual':''}`;
+            }
+          }
+        });
+      }
+
+      document.querySelector('#monthlyBtn').onclick=()=>{selectedInterval='monthly';renderPricing();};
+      document.querySelector('#annualBtn').onclick=()=>{selectedInterval='annual';renderPricing();};
+      renderPricing();
+
+      document.querySelectorAll('.choose').forEach(btn=>btn.onclick=async()=>{
+        if(btn.disabled)return;
+        const plan=btn.dataset.plan;
+        if(billing.plan!=='trial'&&currentInterval==='monthly'&&selectedInterval==='annual'){
+          const ok=confirm('Vas a cambiar tu suscripción a facturación anual. Stripe aplicará el ajuste y cobro correspondiente al cambiar el periodo. ¿Continuar?');
+          if(!ok)return;
+        }
+        btn.disabled=true;
+        const old=btn.textContent;
+        btn.textContent=billing.plan==='trial'?'Abriendo Stripe…':'Actualizando plan…';
+        try{
+          const result=await ENLA.startCheckout(plan,pending,selectedInterval);
+          if(result?.updated){
+            if(pending){
+              await ENLA.publishProgram(pending);
+              location.href='/app/card-detail.html?id='+encodeURIComponent(pending);
+            }else location.reload();
+          }
+        }catch(e){
+          ENLA.msg(document.querySelector('#notice'),e.message);
+          btn.disabled=false;
+          btn.textContent=old;
+        }
+      });
+
+      if(success==='1'&&pending){
+        let published=false;
+        for(let i=0;i<8&&!published;i++){
+          try{
+            await new Promise(r=>setTimeout(r,i?900:250));
+            billing=await ENLA.getBilling();
+            overview=await ENLA.getPublicationOverview(pending);
+            if(overview?.can_publish){
+              await ENLA.publishProgram(pending);
+              published=true;
+              location.href='/app/card-detail.html?id='+encodeURIComponent(pending);
+            }
+          }catch(_e){}
+        }
+        if(!published)ENLA.msg(document.querySelector('#notice'),'El pago se recibió, pero Stripe todavía está confirmando tu plan. Espera unos segundos y vuelve a pulsar Publicar.',false);
+      }
+    }catch(e){
+      ENLA.msg(document.querySelector('#notice'),e.message);
+    }})();
+  </script>
+</body>
+</html>
