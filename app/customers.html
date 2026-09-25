@@ -436,7 +436,7 @@
           let logoImg = null;
           try { if (program.logo_url) logoImg = await loadImage(program.logo_url); } catch (_) {}
 
-          const qrSize = kind === 'sticker' ? 520 : kind === 'tabletent' ? 470 : 500;
+          const qrSize = kind === 'sticker' ? 360 : kind === 'tabletent' ? 470 : 400;
           const qrBoxSize = qrSize + 70;
           const logoBox = kind === 'sticker'
             ? { x: specs.w / 2 - 74, y: 120, w: 148, h: 148 }
@@ -474,26 +474,26 @@
 
           if (kind === 'sticker') {
             ctx.font = '700 28px Inter, sans-serif';
-            ctx.fillText(businessName, specs.w / 2, 330);
-            ctx.font = '900 66px Inter, sans-serif';
-            drawWrappedText(ctx, 'Escanea para guardar tu tarjeta', specs.w / 2, 420, 920, 78, 2);
-            ctx.font = '500 28px Inter, sans-serif';
-            drawWrappedText(ctx, benefitLine, specs.w / 2, 580, 920, 40, 3);
+            ctx.fillText(businessName, specs.w / 2, 310);
+            ctx.font = '900 62px Inter, sans-serif';
+            drawWrappedText(ctx, 'Escanea para guardar tu tarjeta', specs.w / 2, 385, 900, 70, 2);
+            ctx.font = '500 24px Inter, sans-serif';
+            drawWrappedText(ctx, benefitLine, specs.w / 2, 535, 900, 32, 2);
 
             const qrX = specs.w / 2 - qrBoxSize / 2;
-            const qrY = 650;
+            const qrY = 620;
             ctx.save();
-            roundedRectPath(ctx, qrX, qrY, qrBoxSize, qrBoxSize, 44);
+            roundedRectPath(ctx, qrX, qrY, qrBoxSize, qrBoxSize, 40);
             ctx.fillStyle = '#ffffff';
             ctx.fill();
             ctx.restore();
             ctx.imageSmoothingEnabled = false;
             ctx.drawImage(qrSource, qrX + 35, qrY + 35, qrSize, qrSize);
 
-            ctx.font = '700 26px Inter, sans-serif';
-            ctx.fillText('Apple Wallet · Google Wallet', specs.w / 2, qrY + qrBoxSize + 70);
-            ctx.font = '600 24px Inter, sans-serif';
-            ctx.fillText('Powered by rewards.enla.mx', specs.w / 2, specs.h - 86);
+            ctx.font = '800 24px Inter, sans-serif';
+            ctx.fillText('Funciona con Apple Wallet y Google Wallet', specs.w / 2, 1100);
+            ctx.font = '600 22px Inter, sans-serif';
+            ctx.fillText('Powered by rewards.enla.mx', specs.w / 2, 1152);
             return canvas;
           }
 
@@ -506,7 +506,7 @@
           drawWrappedText(ctx, benefitLine, specs.w / 2, kind === 'a5' ? 680 : 620, kind === 'a5' ? 930 : 860, kind === 'a5' ? 48 : 42, 3);
 
           const qrX = specs.w / 2 - qrBoxSize / 2;
-          const qrY = kind === 'a5' ? 790 : 720;
+          const qrY = kind === 'a5' ? 700 : 720;
           ctx.save();
           roundedRectPath(ctx, qrX, qrY, qrBoxSize, qrBoxSize, 44);
           ctx.fillStyle = '#ffffff';
@@ -515,19 +515,20 @@
           ctx.imageSmoothingEnabled = false;
           ctx.drawImage(qrSource, qrX + 35, qrY + 35, qrSize, qrSize);
 
-          const stepsY = qrY + qrBoxSize + (kind === 'a5' ? 120 : 100);
+          const stepsY = qrY + qrBoxSize + (kind === 'a5' ? 60 : 100);
           const colW = 240;
           const stepGap = 36;
+          const stepHeight = kind === 'a5' ? 180 : 190;
           const stepStart = specs.w / 2 - ((colW * 3 + stepGap * 2) / 2);
           const steps = [
             { n: '1', title: 'Escanea', text: 'Abre el registro en segundos.' },
-            { n: '2', title: 'Guárdala', text: 'Agrégala a tu Apple Wallet o Google Wallet.' },
-            { n: '3', title: 'Disfruta', text: 'Empieza a acumular beneficios desde tu primera compra.' }
+            { n: '2', title: 'Guárdala', text: 'Agrégala a Apple Wallet o Google Wallet.' },
+            { n: '3', title: 'Disfruta', text: 'Disfruta tus beneficios desde tu primera compra.' }
           ];
           steps.forEach((step, index) => {
             const x = stepStart + index * (colW + stepGap);
             ctx.save();
-            roundedRectPath(ctx, x, stepsY, colW, kind === 'a5' ? 210 : 190, 28);
+            roundedRectPath(ctx, x, stepsY, colW, stepHeight, 28);
             ctx.fillStyle = subtle;
             ctx.fill();
             ctx.restore();
@@ -545,12 +546,14 @@
             ctx.font = '800 28px Inter, sans-serif';
             ctx.fillText(step.title, x + 78, stepsY + 52);
             ctx.font = '500 22px Inter, sans-serif';
-            drawWrappedText(ctx, step.text, x + 26, stepsY + 104, colW - 52, 30, 3);
+            drawWrappedText(ctx, step.text, x + 26, stepsY + 100, colW - 52, 29, 3);
             ctx.textAlign = 'center';
           });
 
-          ctx.font = '700 28px Inter, sans-serif';
-          ctx.fillText('Powered by rewards.enla.mx', specs.w / 2, specs.h - 92);
+          ctx.font = '800 26px Inter, sans-serif';
+          ctx.fillText('Funciona con Apple Wallet y Google Wallet', specs.w / 2, kind === 'a5' ? 1510 : 1632);
+          ctx.font = '700 26px Inter, sans-serif';
+          ctx.fillText('Powered by rewards.enla.mx', specs.w / 2, kind === 'a5' ? 1625 : specs.h - 92);
           return canvas;
         }
 
