@@ -328,6 +328,77 @@
           return lines.length;
         }
 
+        function drawWalletBadge(ctx, x, y, w, h, label, brand) {
+          ctx.save();
+          roundedRectPath(ctx, x, y, w, h, h / 2);
+          ctx.fillStyle = 'rgba(255,255,255,0.96)';
+          ctx.fill();
+          ctx.shadowColor = 'rgba(15,23,42,0.12)';
+          ctx.shadowBlur = 12;
+          ctx.shadowOffsetY = 4;
+          roundedRectPath(ctx, x, y, w, h, h / 2);
+          ctx.strokeStyle = 'rgba(15,23,42,0.06)';
+          ctx.lineWidth = 1.4;
+          ctx.stroke();
+          ctx.shadowColor = 'transparent';
+
+          const iconX = x + 18;
+          const iconY = y + h / 2;
+
+          if (brand === 'apple') {
+            ctx.save();
+            roundedRectPath(ctx, iconX, y + 12, 34, h - 24, 10);
+            ctx.fillStyle = '#111827';
+            ctx.fill();
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(iconX + 5, y + 18, 24, 5);
+            ctx.fillRect(iconX + 5, y + 28, 24, 3);
+            ctx.globalAlpha = 0.9;
+            ctx.fillRect(iconX + 5, y + 36, 16, 3);
+            ctx.restore();
+          } else {
+            const colors = ['#4285F4','#34A853','#FBBC05','#EA4335'];
+            colors.forEach((color, i) => {
+              ctx.fillStyle = color;
+              roundedRectPath(ctx, iconX + i * 9, y + 12, 7, h - 24, 3.5);
+              ctx.fill();
+            });
+            ctx.save();
+            roundedRectPath(ctx, iconX + 2, y + 16, 30, h - 32, 8);
+            ctx.strokeStyle = 'rgba(17,24,39,0.14)';
+            ctx.lineWidth = 1.2;
+            ctx.stroke();
+            ctx.restore();
+          }
+
+          ctx.textAlign = 'left';
+          ctx.textBaseline = 'middle';
+          ctx.fillStyle = '#111827';
+          ctx.font = '800 24px Inter, sans-serif';
+          ctx.fillText(label, x + 64, y + h / 2 + 1);
+          ctx.restore();
+        }
+
+        function drawWalletCompatibilityRow(ctx, centerX, y, kind) {
+          const gap = kind === 'a5' ? 26 : 20;
+          const badgeH = kind === 'a5' ? 52 : 48;
+          const appleW = kind === 'a5' ? 250 : 232;
+          const googleW = kind === 'a5' ? 272 : 250;
+          const totalW = appleW + googleW + gap;
+          const startX = centerX - totalW / 2;
+          drawWalletBadge(ctx, startX, y, appleW, badgeH, 'Apple Wallet', 'apple');
+          drawWalletBadge(ctx, startX + appleW + gap, y, googleW, badgeH, 'Google Wallet', 'google');
+        }
+
+        function drawCompactWalletBadges(ctx, centerX, y) {
+          const badgeW = 240;
+          const badgeH = 48;
+          const gap = 18;
+          const startX = centerX - ((badgeW * 2) + gap) / 2;
+          drawWalletBadge(ctx, startX, y, badgeW, badgeH, 'Apple Wallet', 'apple');
+          drawWalletBadge(ctx, startX + badgeW + gap, y, badgeW, badgeH, 'Google Wallet', 'google');
+        }
+
         async function loadImage(url) {
           return await new Promise((resolve, reject) => {
             const img = new Image();
@@ -490,8 +561,7 @@
             ctx.imageSmoothingEnabled = false;
             ctx.drawImage(qrSource, qrX + 35, qrY + 35, qrSize, qrSize);
 
-            ctx.font = '800 24px Inter, sans-serif';
-            ctx.fillText('Funciona con Apple Wallet y Google Wallet', specs.w / 2, 1100);
+            drawCompactWalletBadges(ctx, specs.w / 2, 1046);
             ctx.font = '600 22px Inter, sans-serif';
             ctx.fillText('Powered by rewards.enla.mx', specs.w / 2, 1152);
             return canvas;
@@ -550,8 +620,7 @@
             ctx.textAlign = 'center';
           });
 
-          ctx.font = '800 26px Inter, sans-serif';
-          ctx.fillText('Funciona con Apple Wallet y Google Wallet', specs.w / 2, kind === 'a5' ? 1510 : 1632);
+          drawWalletCompatibilityRow(ctx, specs.w / 2, kind === 'a5' ? 1468 : 1592, kind);
           ctx.font = '700 26px Inter, sans-serif';
           ctx.fillText('Powered by rewards.enla.mx', specs.w / 2, kind === 'a5' ? 1625 : specs.h - 92);
           return canvas;
