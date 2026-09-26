@@ -21,6 +21,10 @@ if (!configured) {
   }
 }
 
+function publicSiteUrl(){
+  const raw=String(CFG.PUBLIC_SITE_URL||'https://enlacards.com').trim();
+  try{return new URL(raw).origin}catch(_e){return 'https://enlacards.com'}
+}
 const $=(s,r=document)=>r.querySelector(s);
 const $$=(s,r=document)=>[...r.querySelectorAll(s)];
 
@@ -363,4 +367,4 @@ async function smartPublish(programId){
 
 function navActive(){buildNav()}
 
-window.ENLA={version:'20260907-publish2',sb,configured,configError,ensureConfigured,currentUser,requireAuth,getBusiness,getOwnedPrograms,getStaffPrograms,getPrograms,getProgram,getAccessProfile,saveProgram,uploadLogo,uploadProgramMedia,loyaltyMeta,bindShell,navActive,msg,initials,syncWallet,addStamp,useVisit,renewVisits,deactivateVisitCard,redeemReward,spendCashback,addCashbackAmount,setCashbackBalance,markAccess,renewAccess,setAccessExpiry,setAccessStatus,staffScanAction,isProgramStaff,sendWalletNotification,syncProgramWallets,programContext,getBilling,getAnnualPromoStatus,startCheckout,openBillingPortal,getPublicationOverview,publishProgram,unpublishProgram,smartPublish};
+window.ENLA={version:'20260926-enlacards-domain',sb,configured,configError,publicSiteUrl,ensureConfigured,currentUser,requireAuth,getBusiness,getOwnedPrograms,getStaffPrograms,getPrograms,getProgram,getAccessProfile,saveProgram,uploadLogo,uploadProgramMedia,loyaltyMeta,bindShell,navActive,msg,initials,syncWallet,addStamp,useVisit,renewVisits,deactivateVisitCard,redeemReward,spendCashback,addCashbackAmount,setCashbackBalance,markAccess,renewAccess,setAccessExpiry,setAccessStatus,staffScanAction,isProgramStaff,sendWalletNotification,syncProgramWallets,programContext,getBilling,getAnnualPromoStatus,startCheckout,openBillingPortal,getPublicationOverview,publishProgram,unpublishProgram,smartPublish};

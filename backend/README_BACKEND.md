@@ -6,7 +6,7 @@
 ## 1) Supabase
 1. Crea un proyecto nuevo de Supabase para Rewards (recomendado para mantenerlo separado de Sites/Links).
 2. En **SQL Editor**, ejecuta `backend/supabase-schema.sql` completo.
-3. En **Authentication > URL Configuration** agrega tus URLs de producción y local, por ejemplo `https://rewards.enla.mx/app/dashboard.html`.
+3. En **Authentication > URL Configuration** agrega tus URLs de producción y local, por ejemplo `https://enlacards.com/app/dashboard.html`.
 4. Copia **Project URL** y **anon public key** y reemplázalas en `app/assets/config.js`.
 5. Activa Email/Password en Authentication. Si quieres que entren inmediatamente en pruebas, puedes desactivar temporalmente la confirmación de email; para producción conviene dejarla activa.
 

@@ -1,0 +1,21 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [
+        { "type": "host", "value": "rewards.enla.mx" }
+      ],
+      "destination": "https://enlacards.com/:path*",
+      "permanent": true
+    },
+    {
+      "source": "/:path*",
+      "has": [
+        { "type": "host", "value": "www.enlacards.com" }
+      ],
+      "destination": "https://enlacards.com/:path*",
+      "permanent": true
+    }
+  ]
+}

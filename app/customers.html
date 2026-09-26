@@ -122,8 +122,8 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-  <script src="/app/assets/config.js?v=20260924-print-templates"></script>
-  <script src="/app/assets/app.js?v=20260924-print-templates"></script>
+  <script src="/app/assets/config.js?v=20260926-enlacards1"></script>
+  <script src="/app/assets/app.js?v=20260926-enlacards1"></script>
   <script>
     ENLA.bindShell();
     (async()=>{
@@ -278,7 +278,7 @@
         }
 
         function getJoinLink() {
-          return location.origin + '/join.html?p=' + encodeURIComponent(program.public_slug || program.id);
+          return ENLA.publicSiteUrl() + '/join.html?p=' + encodeURIComponent(program.public_slug || program.id);
         }
 
         function money(n) {
@@ -660,7 +660,7 @@
 
             drawCompactWalletBadges(ctx, specs.w / 2, 1046);
             ctx.font = '600 22px Inter, sans-serif';
-            ctx.fillText('Powered by rewards.enla.mx', specs.w / 2, 1152);
+            ctx.fillText('Powered by enlacards.com', specs.w / 2, 1152);
             return canvas;
           }
 
@@ -719,7 +719,7 @@
 
           drawWalletCompatibilityRow(ctx, specs.w / 2, kind === 'a5' ? 1498 : 1592, kind);
           ctx.font = '700 26px Inter, sans-serif';
-          ctx.fillText('Powered by rewards.enla.mx', specs.w / 2, kind === 'a5' ? 1625 : specs.h - 92);
+          ctx.fillText('Powered by enlacards.com', specs.w / 2, kind === 'a5' ? 1625 : specs.h - 92);
           return canvas;
         }
 

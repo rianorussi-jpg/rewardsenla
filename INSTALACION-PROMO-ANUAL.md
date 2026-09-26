@@ -57,7 +57,7 @@ Agrega:
 - `STRIPE_PRICE_PRO_ANNUAL_PROMO=price_...`
 - `STRIPE_PRICE_BUSINESS_ANNUAL_PROMO=price_...`
 
-No cambies `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` ni `APP_URL`.
+No cambies `STRIPE_SECRET_KEY` ni `STRIPE_WEBHOOK_SECRET`. Para producción en el dominio nuevo, establece `APP_URL=https://enlacards.com`.
 
 ## 4. Edge Functions
 

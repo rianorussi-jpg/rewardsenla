@@ -145,8 +145,8 @@ Deno.serve(async (req) => {
       if (customerUpdateError) throw customerUpdateError;
     }
 
-    const configured = Deno.env.get('APP_URL') || req.headers.get('origin') || 'https://rewards.enla.mx';
-    let site = 'https://rewards.enla.mx';
+    const configured = Deno.env.get('APP_URL') || req.headers.get('origin') || 'https://enlacards.com';
+    let site = 'https://enlacards.com';
     try { site = new URL(configured).origin; } catch (_) {}
 
     const publishQuery = publishProgramId ? `&publish=${encodeURIComponent(String(publishProgramId))}` : '';

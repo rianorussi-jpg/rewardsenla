@@ -344,7 +344,7 @@ Deno.serve(async (req) => {
         { key: "mode", label: "Control", value: program.access_mode === "entry_exit" ? "Entrada / salida" : "Acceso ilimitado durante la vigencia" },
         { key: "code", label: "Código", value: customer.public_code },
         ...(noticeBackField ? [noticeBackField] : []),
-        { key: "powered", label: "Tecnología", value: "Powered by rewards.enla.mx" },
+        { key: "powered", label: "Tecnología", value: "Powered by enlacards.com" },
       ],
     } : {
       headerFields: [{
@@ -377,7 +377,7 @@ Deno.serve(async (req) => {
         { key: "info", label: "Información", value: promoText || (isVisits ? `Incluye ${goal} visitas por ciclo.` : isCashback ? "Acumula saldo y úsalo en futuras compras." : `Acumula ${goal} sellos y recibe tu recompensa.`) },
         { key: "code", label: "Código de cliente", value: customer.public_code },
         ...(noticeBackField ? [noticeBackField] : []),
-        { key: "powered", label: "Tecnología", value: "Powered by rewards.enla.mx" },
+        { key: "powered", label: "Tecnología", value: "Powered by enlacards.com" },
       ],
     };
 
