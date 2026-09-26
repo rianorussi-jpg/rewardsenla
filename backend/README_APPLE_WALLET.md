@@ -1,4 +1,4 @@
-# Apple Wallet · Enla Rewards
+# Apple Wallet · Enla Cards
 
 ## Secretos requeridos en Supabase
 

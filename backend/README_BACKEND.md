@@ -1,4 +1,4 @@
-# Backend de rewards.enla
+# Backend de enla.cards
 
 > **Base compartida con EnlaceCorto:** este proyecto usa tablas separadas con prefijo `rewards_` para no mezclarlas con las del acortador. También usa un trigger y función exclusivos de Rewards para no sobrescribir lógica existente de `auth.users`.
 

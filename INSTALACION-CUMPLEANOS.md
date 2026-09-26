@@ -1,4 +1,4 @@
-# Rewards Enla · Registro, cumpleaños y geolocalización
+# Enla Cards · Registro, cumpleaños y geolocalización
 
 1. Ejecuta `backend/016I-birthday-notifications.sql` DESPUÉS de 016G y 016H. No vuelvas a ejecutar migraciones antiguas.
 2. Sube `join.html`, `index.html`, `app/billing.html`, `app/notifications.html` y `app/assets/app.js` a Vercel.

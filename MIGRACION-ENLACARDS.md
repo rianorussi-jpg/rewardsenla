@@ -1,6 +1,6 @@
-# Migración de Rewards Enla a enlacards.com
+# Migración de Enla Cards a enlacards.com
 
-Esta versión cambia el **dominio público principal** a `https://enlacards.com` sin cambiar la marca visible Rewards Enla, la base de datos, los IDs de tarjetas, Stripe, Supabase ni los pases ya emitidos.
+Esta versión deja `https://enlacards.com` como **dominio público principal** y completa el rebranding visible a **Enla Cards / enla.cards**, sin cambiar la base de datos, los IDs de tarjetas, Stripe, Supabase ni la lógica interna de Rewards.
 
 ## Cambios incluidos en el código
 
@@ -11,7 +11,7 @@ Esta versión cambia el **dominio público principal** a `https://enlacards.com`
 - Apple Wallet: el campo de tecnología cambia a `Powered by enlacards.com`.
 - Stripe Checkout: fallback de `APP_URL` cambia a `https://enlacards.com`.
 - Stripe Customer Portal: fallback de retorno cambia a `https://enlacards.com`.
-- Vercel: `vercel.json` redirige permanentemente `rewards.enla.mx/*` y `www.enlacards.com/*` al dominio principal conservando ruta y query string.
+- Vercel: `vercel.json` redirige permanentemente `enla.cards/*`, `www.enla.cards/*`, `rewards.enla.mx/*` y `www.enlacards.com/*` al dominio principal, conservando la ruta.
 - Documentación interna actualizada al dominio nuevo.
 
 ## Lo que NO cambia
@@ -23,14 +23,14 @@ Esta versión cambia el **dominio público principal** a `https://enlacards.com`
 - Pass Type ID/certificados de Apple Wallet y APNs.
 - Issuer/Class/Object IDs de Google Wallet.
 - Cron de cumpleaños, Vault y `BIRTHDAY_CRON_SECRET`.
-- Marca visual Rewards Enla. Esta migración es de dominio, no un rebranding a “Enla Cards”.
+- Marca visual actualizada a **Enla Cards / enla.cards**. `enla.cards` se usa únicamente como dominio corto de marca y redirige a `enlacards.com`.
 
 ## Pasos manuales obligatorios
 
 ### 1. Vercel y DNS
 
-1. En el mismo proyecto actual de Vercel agrega `enlacards.com` y `www.enlacards.com`.
-2. Configura los DNS exactamente como te los muestre Vercel.
+1. En el mismo proyecto actual de Vercel agrega `enlacards.com`, `www.enlacards.com`, `enla.cards` y `www.enla.cards`.
+2. Configura los DNS exactamente como te los muestre Vercel. `enla.cards` y `www.enla.cards` no alojan una versión distinta del sitio: solo redirigen a `enlacards.com`.
 3. Mantén `rewards.enla.mx` conectado al mismo proyecto. **No lo elimines**, porque los QR y enlaces antiguos necesitan llegar a Vercel para ser redirigidos.
 4. Despliega este proyecto incluyendo `vercel.json`.
 5. Verifica:

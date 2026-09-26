@@ -1,4 +1,4 @@
--- Rewards Enla: planes, publicación y límites
+-- Enla Cards: planes, publicación y límites
 alter table public.rewards_businesses
   add column if not exists rewards_plan text not null default 'trial',
   add column if not exists stripe_customer_id text,

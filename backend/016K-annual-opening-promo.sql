@@ -1,4 +1,4 @@
--- Rewards Enla · Promoción anual de apertura
+-- Enla Cards · Promoción anual de apertura
 -- Primeros 50 negocios con plan anual promocional.
 -- Ejecutar después de 016J-adminx.sql.
 

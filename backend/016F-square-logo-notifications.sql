@@ -1,4 +1,4 @@
--- Rewards Enla · 016F · Logo cuadrado opcional por tarjeta para Wallet.
+-- Enla Cards · 016F · Logo cuadrado opcional por tarjeta para Wallet.
 -- Ejecutar una vez después de 016E. No modifica los logos horizontales existentes.
 ALTER TABLE public.rewards_loyalty_programs
   ADD COLUMN IF NOT EXISTS square_logo_url text;

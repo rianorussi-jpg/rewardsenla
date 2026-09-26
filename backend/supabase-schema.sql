@@ -1,4 +1,4 @@
--- rewards.enla · Supabase schema
+-- enla.cards · Supabase schema
 -- Diseñado para convivir en la misma base de datos de EnlaceCorto: todas las tablas usan el prefijo rewards_.
 create extension if not exists pgcrypto;
 

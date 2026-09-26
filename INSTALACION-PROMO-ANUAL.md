@@ -1,4 +1,4 @@
-# Rewards Enla · Promoción anual de apertura
+# Enla Cards · Promoción anual de apertura
 
 ## Precios
 

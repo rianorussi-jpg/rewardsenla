@@ -1,4 +1,4 @@
--- rewards.enla · Puntos -> Cashback
+-- enla.cards · Puntos -> Cashback
 -- Ejecutar DESPUÉS de 007-loyalty-types-customization.sql.
 
 -- Convierte programas antiguos de puntos a cashback.

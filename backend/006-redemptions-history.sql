@@ -1,4 +1,4 @@
--- rewards.enla · Canjes e historial atómico
+-- enla.cards · Canjes e historial atómico
 -- Ejecutar después de 005-wallet-live-updates.sql.
 -- Esta versión corrige la ambigüedad de current_value dentro de PL/pgSQL.
 

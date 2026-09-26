@@ -1,4 +1,4 @@
-# Google Wallet · rewards.enla
+# Google Wallet · enla.cards
 
 Ya debes tener estos secretos en Supabase Edge Functions:
 

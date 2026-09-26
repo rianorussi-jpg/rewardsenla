@@ -1,4 +1,4 @@
--- rewards.enla · 016E · Color de texto por tarjeta
+-- enla.cards · 016E · Color de texto por tarjeta
 -- Ejecuta después de 016D.
 
 alter table public.rewards_loyalty_programs

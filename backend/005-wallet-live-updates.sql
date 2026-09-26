@@ -1,4 +1,4 @@
--- Rewards Enla: actualizaciones automáticas de Apple Wallet
+-- Enla Cards: actualizaciones automáticas de Apple Wallet
 -- Ejecuta una sola vez después de 004-apple-wallet.sql.
 
 alter table public.rewards_customers

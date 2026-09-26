@@ -2,7 +2,7 @@
 
 1. Haz una copia de seguridad de la base de datos. Verifica que el proyecto ya tiene las migraciones hasta `016I-birthday-notifications.sql` y `016G-new-plan-quotas.sql` (también `016H`), ejecutadas en el orden correspondiente.
 2. Ejecuta `backend/016J-adminx.sql` desde el SQL Editor de tu proyecto en Supabase. La migración busca en `auth.users` a `sanhost987@gmail.com` y autoriza **el ID exacto de esa cuenta**; falla si la cuenta no existe.
-3. Sube `adminx/index.html`, `adminx/adminx.css`, `adminx/adminx.js` y `app/billing.html` a Vercel, respetando las rutas. Usa el mismo `app/assets/config.js` de Rewards Enla; no publiques claves secretas.
+3. Sube `adminx/index.html`, `adminx/adminx.css`, `adminx/adminx.js` y `app/billing.html` a Vercel, respetando las rutas. Usa el mismo `app/assets/config.js` de Enla Cards; no publiques claves secretas.
 4. Actualiza las Edge Functions `stripe-webhook` y `create-checkout-session` con los archivos del ZIP (conserva la configuración anterior de JWT: webhook desactivado, checkout activado). Esto evita que Stripe sobrescriba planes de cortesía y evita abrir un checkout desde un plan gratuito otorgado manualmente.
 5. Entra a `https://enlacards.com/adminx/` con el usuario habitual `sanhost987@gmail.com` y su contraseña de siempre. No es necesario crear otra cuenta. Si el sitio redirige a login, inicia sesión y vuelve a /adminx/.
 

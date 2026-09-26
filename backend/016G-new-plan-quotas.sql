@@ -1,4 +1,4 @@
--- Rewards Enla · Actualizacion de cupos por plan (2026-09-24)
+-- Enla Cards · Actualizacion de cupos por plan (2026-09-24)
 -- Ejecutar DESPUES de 016A. No vuelve a ejecutar ni modifica las migraciones historicas.
 -- Los automatismos de cumpleaños/recordatorios y la segunda sucursal por tarjeta
 -- requieren implementacion independiente: esta migracion NO los crea.

@@ -1,4 +1,4 @@
--- Rewards Enla · FIX notificaciones Apple Wallet
+-- Enla Cards · FIX notificaciones Apple Wallet
 -- Ejecutar una sola vez después de 015-geolocation-and-notifications.sql
 -- Corrige dos cosas: marca el pase como actualizado al enviar una campaña y
 -- amplía el trigger para futuras actualizaciones relevantes de Wallet.

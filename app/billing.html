@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Plan y facturación — rewards.enla</title>
+  <title>Plan y facturación — enla.cards</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -15,7 +15,7 @@
 <body>
   <div class="app-shell">
     <aside class="sidebar">
-      <a class="side-brand" href="/">rewards.<span>enla</span></a>
+      <a class="side-brand" href="/">enla.<span>cards</span></a>
       <nav class="nav-list"></nav>
       <div class="side-bottom"><button class="btn btn-secondary" id="signOut" style="width:100%">Cerrar sesión</button></div>
     </aside>
@@ -150,7 +150,7 @@
       document.querySelector('#currentText').textContent=billing.plan==='trial'
         ? 'Crea hasta 15 borradores gratis. Contrata un plan cuando quieras publicar.'
         : ('Estado: '+billing.status+(billing.current_period_end?' · periodo hasta '+new Date(billing.current_period_end).toLocaleDateString('es-MX'):''));
-      if(courtesy)document.querySelector('#currentText').textContent='Plan de cortesía asignado por Rewards Enla. No genera cargos en Stripe.';
+      if(courtesy)document.querySelector('#currentText').textContent='Plan de cortesía asignado por Enla Cards. No genera cargos en Stripe.';
 
       if(overview){
         const draftLimit=billing.plan==='pro'||billing.plan==='business'?'∞':'15';

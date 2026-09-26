@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Clientes — rewards.enla</title>
+  <title>Clientes — enla.cards</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -12,7 +12,7 @@
 <body>
   <div class="app-shell">
     <aside class="sidebar">
-      <a class="side-brand" href="/">rewards.<span>enla</span></a>
+      <a class="side-brand" href="/">enla.<span>cards</span></a>
       <nav class="nav-list"></nav>
       <div class="side-bottom"><button class="btn btn-secondary" id="signOut" style="width:100%">Cerrar sesión</button></div>
     </aside>
@@ -476,7 +476,7 @@
           });
         }
 
-        async function saveBlobForDevice(blob, filename, title='Rewards Enla') {
+        async function saveBlobForDevice(blob, filename, title='Enla Cards') {
           const file = new File([blob], filename, { type: blob.type || 'application/octet-stream' });
           const isTouchDevice = window.matchMedia?.('(pointer: coarse)')?.matches || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '');
 
@@ -539,11 +539,11 @@
           const base = `${fileSafe(program.program_name)}-qr`;
           if (format === 'pdf') {
             const blob = pdfBlobFromCanvas(canvas, 'qr');
-            await saveBlobForDevice(blob, `${base}.pdf`, 'QR de Rewards Enla');
+            await saveBlobForDevice(blob, `${base}.pdf`, 'QR de Enla Cards');
             return;
           }
           const blob = await canvasToBlob(canvas, 'image/png');
-          await saveBlobForDevice(blob, `${base}.png`, 'QR de Rewards Enla');
+          await saveBlobForDevice(blob, `${base}.png`, 'QR de Enla Cards');
         }
 
         async function downloadTemplate(kind, format='image') {
@@ -552,11 +552,11 @@
           const base = `${fileSafe(program.program_name)}-${suffix}`;
           if (format === 'pdf') {
             const blob = pdfBlobFromCanvas(canvas, kind);
-            await saveBlobForDevice(blob, `${base}.pdf`, 'Plantilla de Rewards Enla');
+            await saveBlobForDevice(blob, `${base}.pdf`, 'Plantilla de Enla Cards');
             return;
           }
           const blob = await canvasToBlob(canvas, 'image/png');
-          await saveBlobForDevice(blob, `${base}.png`, 'Plantilla de Rewards Enla');
+          await saveBlobForDevice(blob, `${base}.png`, 'Plantilla de Enla Cards');
         }
 
         async function buildTemplateCanvas(kind) {

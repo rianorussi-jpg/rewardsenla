@@ -1,4 +1,4 @@
--- Rewards Enla · Geolocalización + notificaciones por tarjeta
+-- Enla Cards · Geolocalización + notificaciones por tarjeta
 
 alter table public.rewards_loyalty_programs
   add column if not exists geo_enabled boolean not null default false,

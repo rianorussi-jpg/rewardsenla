@@ -1,4 +1,4 @@
--- 016J · Administración global Rewards Enla. Ejecutar después de 016I.
+-- 016J · Administración global Enla Cards. Ejecutar después de 016I.
 -- Las cuentas administradoras se identifican por UUID de auth.users, no por correo enviado por el navegador.
 create table if not exists public.rewards_platform_admins (
   user_id uuid primary key references auth.users(id) on delete cascade,

@@ -1,4 +1,4 @@
--- Rewards Enla 016A: hasta 15 borradores para todos + límites por tarjetas PUBLICADAS
+-- Enla Cards 016A: hasta 15 borradores para todos + límites por tarjetas PUBLICADAS
 -- Ejecutar después de 016-billing-plans.sql.
 
 create or replace function public.rewards_plan_limits(p_plan text)

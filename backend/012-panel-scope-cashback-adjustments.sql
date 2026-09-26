@@ -1,4 +1,4 @@
--- rewards.enla · Panel contextual + cashback abierto
+-- enla.cards · Panel contextual + cashback abierto
 -- Ejecutar DESPUÉS de 011-barcode-format.sql.
 
 create or replace function public.rewards_add_cashback_amount(p_customer_id uuid,p_amount numeric)

@@ -4,7 +4,10 @@
     {
       "source": "/:path*",
       "has": [
-        { "type": "host", "value": "rewards.enla.mx" }
+        {
+          "type": "host",
+          "value": "enla.cards"
+        }
       ],
       "destination": "https://enlacards.com/:path*",
       "permanent": true
@@ -12,7 +15,32 @@
     {
       "source": "/:path*",
       "has": [
-        { "type": "host", "value": "www.enlacards.com" }
+        {
+          "type": "host",
+          "value": "www.enla.cards"
+        }
+      ],
+      "destination": "https://enlacards.com/:path*",
+      "permanent": true
+    },
+    {
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "rewards.enla.mx"
+        }
+      ],
+      "destination": "https://enlacards.com/:path*",
+      "permanent": true
+    },
+    {
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "www.enlacards.com"
+        }
       ],
       "destination": "https://enlacards.com/:path*",
       "permanent": true

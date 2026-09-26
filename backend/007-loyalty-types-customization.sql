@@ -1,4 +1,4 @@
--- rewards.enla · Más tipos de loyalty y personalización
+-- enla.cards · Más tipos de loyalty y personalización
 -- Ejecuta una sola vez después de 006A.
 
 alter table public.rewards_loyalty_programs drop constraint if exists rewards_loyalty_programs_program_type_check;
