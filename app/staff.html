@@ -141,7 +141,9 @@ ENLA.bindShell();
         await load();
         return;
       }
-      q('#inviteStatus').textContent=inviteResult.invite_sent?'Invitación enviada a '+email+'.':'La invitación quedó pendiente. Ese correo ya tiene cuenta en Enla Cards y podrá aceptarla al entrar a Scan.';
+      q('#inviteStatus').textContent=inviteResult.invite_sent
+        ?('Invitación enviada a '+email+(inviteResult.confirmation_sent_at?' · '+new Date(inviteResult.confirmation_sent_at).toLocaleString('es-MX'):'')+'.')
+        :(inviteResult.message||'La invitación quedó pendiente. Ese correo ya tiene cuenta en Enla Cards y podrá aceptarla al entrar a Scan.');
       await load();
     }catch(e){
       q('#inviteStatus').textContent='No se pudo enviar la invitación: '+(e.message||e);
@@ -161,8 +163,8 @@ ENLA.bindShell();
         q('#inviteStatus').textContent='Ese empleado ya tiene acceso activo a esta tarjeta.';
       }else{
         q('#inviteStatus').textContent=inviteResult.invite_sent
-          ?'Invitación enviada. El empleado aparecerá como pendiente hasta aceptarla.'
-          :'La invitación quedó pendiente. Ese correo ya tiene cuenta y podrá aceptarla al entrar a Scan.';
+          ?('Invitación enviada'+(inviteResult.confirmation_sent_at?' · '+new Date(inviteResult.confirmation_sent_at).toLocaleString('es-MX'):'')+'. El empleado aparecerá como pendiente hasta aceptarla.')
+          :(inviteResult.message||'La invitación quedó pendiente. Ese correo ya tiene cuenta y podrá aceptarla al entrar a Scan.');
       }
       q('#email').value='';
       await load();

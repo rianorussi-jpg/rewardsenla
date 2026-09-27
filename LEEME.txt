@@ -1,34 +1,37 @@
-ENLA CARDS · SCAN EN SUBDOMINIO SIN /scan VISIBLE
+FIX INVITACIÓN DE EMPLEADOS · CORREO INVITE USER
 
-Reemplaza en la raíz del proyecto:
-- vercel.json
-- index.html
+Reemplaza:
+- app/staff.html
 
-Qué hace:
+Redespliega:
+- supabase/functions/invite-program-staff/index.ts
 
-1. vercel.json
-La PRIMERA regla de rewrite es:
-scan.enlacards.com/ -> /scan/index.html
+Nombre:
+invite-program-staff
 
-Es un rewrite interno, no un redirect.
-La URL visible sigue siendo:
-https://scan.enlacards.com
+Verify JWT:
+OFF
 
-2. index.html
-Agrega un fallback adicional:
-si Vercel por alguna razón sirve la landing en scan.enlacards.com,
-el propio index carga /scan/index.html mediante fetch y reemplaza el documento.
+Qué cambia:
+- Busca primero si el email ya existe en Supabase Auth.
+- Si el usuario ya está CONFIRMADO:
+  no lo elimina ni intenta Invite user otra vez;
+  la asignación queda Pendiente para aceptar desde Scan.
+- Si existe un usuario NO confirmado y con invited_at:
+  se considera una invitación anterior atascada;
+  se elimina ese usuario Auth no confirmado y se vuelve a ejecutar inviteUserByEmail().
+- El panel muestra confirmation_sent_at cuando Supabase confirma el envío.
+- Los errores de Invite user ahora aparecen explícitamente.
 
-Esto NO cambia location.href.
-El navegador sigue mostrando:
-https://scan.enlacards.com
+PRUEBA:
+1. Usa un correo completamente nuevo que nunca haya estado en Authentication -> Users.
+2. Agrégalo como empleado.
+3. Debe mostrar "Invitación enviada" y fecha/hora.
+4. Revisa Authentication -> Users:
+   el nuevo usuario debe tener invited_at / confirmation_sent_at.
+5. Si no llega al buzón aunque confirmation_sent_at exista:
+   el problema ya es de entrega SMTP/spam, no de la función.
 
-También conserva query strings como:
-https://scan.enlacards.com/?invite=...
-
-Después de reemplazar los archivos:
-- haz commit/push;
-- espera un deployment nuevo de Production en Vercel;
-- prueba en ventana incógnita https://scan.enlacards.com
-
-No requiere SQL ni cambios en Supabase.
+IMPORTANTE:
+Supabase requiere Custom SMTP para enviar Auth emails a destinatarios arbitrarios en producción.
+Si tus OTP sí llegan a correos externos, probablemente ya lo tienes configurado.

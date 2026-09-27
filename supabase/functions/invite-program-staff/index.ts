@@ -121,9 +121,50 @@ Deno.serve(async (req) => {
 
     const redirectTo = `https://scan.enlacards.com/?invite=${encodeURIComponent(programId)}`;
 
-    // Supabase Auth usa aquí específicamente el template "Invite user".
-    // Importante: Supabase no permite volver a invitar con este endpoint
-    // a un correo que ya pertenece a un usuario Auth confirmado.
+    // Busca si Auth ya tiene ese correo. Esto permite distinguir:
+    // - usuario confirmado: no se vuelve a enviar Invite user;
+    // - usuario NO confirmado creado por una invitación previa: se elimina y reintenta,
+    //   evitando quedar atrapado en "User already registered" después de un envío fallido.
+    let authUser: any = null;
+    let page = 1;
+    const perPage = 1000;
+
+    while (!authUser && page <= 10) {
+      const { data: usersPage, error: usersError } = await admin.auth.admin.listUsers({
+        page,
+        perPage,
+      });
+      if (usersError) throw usersError;
+
+      authUser = (usersPage.users || []).find(
+        (u: any) => String(u.email || "").toLowerCase() === email
+      ) || null;
+
+      if (!usersPage.users || usersPage.users.length < perPage) break;
+      page++;
+    }
+
+    if (authUser?.confirmed_at) {
+      return new Response(JSON.stringify({
+        ok: true,
+        status: staffRow.status,
+        invite_sent: false,
+        existing_user: true,
+        confirmed_user: true,
+        message: "Ese correo ya tiene una cuenta confirmada. La tarjeta quedó pendiente y podrá aceptarla al entrar a Scan.",
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Si el usuario existe pero nunca confirmó y fue creado por una invitación anterior,
+    // limpiamos ese registro antes de reenviar. No tocamos usuarios confirmados.
+    if (authUser && !authUser.confirmed_at && authUser.invited_at) {
+      const { error: deleteError } = await admin.auth.admin.deleteUser(authUser.id);
+      if (deleteError) throw new Error(`No se pudo preparar el reenvío de la invitación: ${deleteError.message}`);
+      authUser = null;
+    }
+
     const { data: inviteData, error: inviteError } = await admin.auth.admin.inviteUserByEmail(email, {
       redirectTo,
       data: {
@@ -136,33 +177,31 @@ Deno.serve(async (req) => {
     });
 
     if (inviteError) {
-      const message = String(inviteError.message || inviteError).toLowerCase();
-      const existing =
-        message.includes("already") ||
-        message.includes("registered") ||
-        message.includes("exists") ||
-        message.includes("confirmed");
-
-      if (!existing) throw inviteError;
-
-      // La asignación sigue Pendiente. Un empleado que ya tiene cuenta la verá
-      // al entrar a Scan con OTP y podrá aceptarla desde ahí.
-      return new Response(JSON.stringify({
-        ok: true,
-        status: staffRow.status,
-        invite_sent: false,
-        existing_user: true,
-        message: "El correo ya tiene una cuenta de Enla Cards. La invitación quedó pendiente y aparecerá en Scan para aceptarla.",
-      }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      throw new Error(`Supabase no pudo enviar Invite user: ${inviteError.message}`);
     }
+
+    const invitedUser = inviteData.user || null;
+    const confirmationSentAt = invitedUser?.confirmation_sent_at || null;
+    const invitedAt = invitedUser?.invited_at || null;
+
+    console.log("Invite user result", {
+      email,
+      programId,
+      invited_user_id: invitedUser?.id || null,
+      confirmation_sent_at: confirmationSentAt,
+      invited_at: invitedAt,
+    });
 
     return new Response(JSON.stringify({
       ok: true,
       status: staffRow.status,
       invite_sent: true,
-      invited_user_id: inviteData.user?.id || null,
+      invited_user_id: invitedUser?.id || null,
+      confirmation_sent_at: confirmationSentAt,
+      invited_at: invitedAt,
+      message: confirmationSentAt
+        ? "Supabase registró el envío del correo de invitación."
+        : "Supabase creó la invitación, pero no reportó confirmation_sent_at.",
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
