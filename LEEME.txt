@@ -1,23 +1,14 @@
-ENLA CARDS SCAN · VISTAS PREVIAS DE TARJETAS
+ENLA CARDS SCAN · SELLOS REALES EN VISTA PREVIA
 
 Reemplaza:
 - scan/scan.js
 - scan/scan.css
 
 Ejecuta en Supabase SQL Editor:
-- backend/016N-scan-card-previews.sql
+- backend/016O-scan-stamp-image-preview.sql
 
-Después haz deploy.
+Ahora las tarjetas de sellos en la pantalla inicial de Scan usan:
+1. stamp_filled_image_url, si el negocio tiene una imagen de sello configurada.
+2. stamp_icon (emoji) únicamente como respaldo si no existe imagen.
 
-Qué cambia:
-- Después de iniciar sesión, cada programa se muestra como una mini tarjeta visual.
-- Respeta color principal y color de texto.
-- Muestra el logo real.
-- Sellos: muestra una fila de sellos.
-- Cashback: muestra saldo de ejemplo.
-- Visitas: muestra cantidad del paquete.
-- Acceso: muestra el nombre del servicio.
-- Si existe imagen central/promocional, se utiliza para cashback, visitas y acceso.
-- Debajo de cada preview sigue apareciendo el nombre, tipo y si el usuario es Dueño o Empleado.
-
-No cambia el funcionamiento del escáner ni las operaciones de clientes.
+Los sellos pendientes usan la misma imagen con opacidad baja, para parecerse a la tarjeta real.

@@ -212,3 +212,18 @@ button{cursor:pointer}
   .customer-head{align-items:start}
   .customer-code{display:none}
 }
+
+
+.wallet-stamps .stamp-image-wrap{
+  width:25px;height:25px;display:grid;place-items:center;
+  border-radius:50%;overflow:hidden;flex:0 0 auto;
+}
+.wallet-stamps .stamp-image-wrap img{
+  width:100%;height:100%;object-fit:contain;display:block;
+}
+.wallet-stamps .stamp-image-wrap.empty{
+  opacity:.24;filter:grayscale(1);
+}
+.wallet-stamps .stamp-image-wrap.filled{
+  opacity:1;filter:none;
+}

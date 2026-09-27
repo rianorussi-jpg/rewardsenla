@@ -56,9 +56,13 @@
     if (p.program_type === 'stamps') {
       middle = `
         <div class="wallet-stamps">
-          ${Array.from({length: shownStamps}).map((_, i) =>
-            `<span class="${i < Math.min(2, shownStamps) ? 'filled' : ''}">${stamp}</span>`
-          ).join('')}
+          ${Array.from({length: shownStamps}).map((_, i) => {
+            const filled = i < Math.min(2, shownStamps);
+            if (p.stamp_filled_image_url) {
+              return `<span class="stamp-image-wrap ${filled ? 'filled' : 'empty'}"><img src="${esc(p.stamp_filled_image_url)}" alt=""></span>`;
+            }
+            return `<span class="${filled ? 'filled' : ''}">${stamp}</span>`;
+          }).join('')}
           ${goal > shownStamps ? `<small>+${goal - shownStamps}</small>` : ''}
         </div>`;
     } else if (p.central_image_url) {
