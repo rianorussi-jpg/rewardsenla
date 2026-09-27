@@ -1,57 +1,137 @@
-<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" type="image/png" href="/assets/favicon.png"><link rel="apple-touch-icon" href="/assets/favicon.png"><title>Tarjeta — enla.cards</title><link rel="stylesheet" href="/app/assets/app.css?v=20260907-publish2"></head><body><div class="app-shell"><aside class="sidebar"><a class="side-brand" href="/">enla.<span>cards</span></a><nav class="nav-list">
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" type="image/png" href="/assets/favicon.png"><link rel="apple-touch-icon" href="/assets/favicon.png"><title>Tarjeta — enla.cards</title><link rel="stylesheet" href="/app/assets/app.css?v=20260927-detail-preview2"></head><body><div class="app-shell"><aside class="sidebar"><a class="side-brand" href="/">enla.<span>cards</span></a><nav class="nav-list">
 <a class="nav-item" href="/app/dashboard.html">▦ Mis tarjetas</a>
 <a class="nav-item" href="/app/customers.html">♙ Clientes</a>
 <a class="nav-item" href="/app/scan.html">⌗ Escanear</a>
 <a class="nav-item" href="/app/history.html">◴ Historial</a>
-<a class="nav-item" href="/app/settings.html">⚙ Ajustes</a></nav><div class="side-bottom"><button class="btn btn-secondary" id="signOut" style="width:100%">Cerrar sesión</button></div></aside><div class="overlay"></div><main class="main"><header class="topbar"><div style="display:flex;align-items:center;gap:10px"><button class="btn btn-secondary mobile-menu" id="mobileMenu">☰</button><h1>Detalle de tarjeta</h1></div><a class="btn btn-secondary btn-sm" href="/app/dashboard.html">← Mis tarjetas</a></header><div class="content"><div id="hero"></div><div id="shareCard"></div><div class="grid grid-4" style="margin-top:18px"><div class="card metric"><div class="label">Clientes</div><div class="value" id="clients">0</div></div><div class="card metric"><div class="label">Movimientos</div><div class="value" id="moves">0</div></div><div class="card metric"><div class="label">Canjes / usos</div><div class="value" id="redeems">0</div></div><div class="card metric"><div class="label">Actividad 30 días</div><div class="value" id="month">0</div></div></div><div class="section-title"><h2>Actividad reciente</h2></div><div class="card"><div class="table-wrap"><table class="table"><thead><tr><th>Cliente</th><th>Movimiento</th><th>Fecha</th></tr></thead><tbody id="activity"></tbody></table></div></div></div></main></div><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script><script src="/app/assets/config.js?v=20260907-publish2"></script><script src="/app/assets/app.js?v=20260907-publish2"></script><script>ENLA.bindShell();(async()=>{try{await ENLA.requireAuth();const id=new URLSearchParams(location.search).get('id');if(!id)throw new Error('Falta la tarjeta.');const p=await ENLA.getProgram(id);if(!p)throw new Error('No se encontró esta tarjeta.');const type=p.program_type==='cashback'?'Cashback':p.program_type==='visits'?'Visitas':p.program_type==='access'?'Identificación / Acceso':'Sellos';document.querySelector('#hero').innerHTML=`<div class="detail-hero" style="background:${p.primary_color||'#4b63f3'};color:${p.text_color||'#ffffff'}"><div style="display:flex;align-items:center;gap:16px">${p.logo_url?`<img class="detail-hero-logo" src="${p.logo_url}">`:''}<div><span class="badge">${type}</span><h2 style="margin:8px 0 4px">${p.program_name}</h2><div style="opacity:.8">${p.display_name||''}</div></div></div><div class="detail-actions"><span class="badge ${p.publication_status==='published'?'blue':''}">${p.publication_status==='published'?'Publicada':'Borrador'}</span>${p.publication_status==='published'?`<button class="btn btn-secondary btn-sm" id="publicationBtn">Apagar tarjeta</button>`:`<button class="btn btn-primary btn-sm" id="publicationBtn">Publicar tarjeta</button>`}<a class="btn btn-secondary btn-sm" href="/app/program.html?id=${p.id}">Personalizar tarjeta</a><a class="btn btn-secondary btn-sm" href="/app/customers.html?program=${p.id}">Clientes y QR</a><a class="btn btn-secondary btn-sm" href="/app/scan.html?program=${p.id}">Escanear</a><a class="btn btn-secondary btn-sm" href="/app/staff.html?program=${p.id}">Empleados</a><a class="btn btn-secondary btn-sm" href="/app/notifications.html?program=${p.id}">Notificaciones</a></div></div>`;
+<a class="nav-item" href="/app/settings.html">⚙ Ajustes</a></nav><div class="side-bottom"><button class="btn btn-secondary" id="signOut" style="width:100%">Cerrar sesión</button></div></aside><div class="overlay"></div><main class="main"><header class="topbar"><div style="display:flex;align-items:center;gap:10px"><button class="btn btn-secondary mobile-menu" id="mobileMenu">☰</button><h1>Detalle de tarjeta</h1></div><a class="btn btn-secondary btn-sm" href="/app/dashboard.html">← Mis tarjetas</a></header><div class="content"><div id="hero"></div><div id="shareCard"></div><div class="grid grid-4" style="margin-top:18px"><div class="card metric"><div class="label">Clientes</div><div class="value" id="clients">0</div></div><div class="card metric"><div class="label">Movimientos</div><div class="value" id="moves">0</div></div><div class="card metric"><div class="label">Canjes / usos</div><div class="value" id="redeems">0</div></div><div class="card metric"><div class="label">Actividad 30 días</div><div class="value" id="month">0</div></div></div><div class="section-title"><h2>Actividad reciente</h2></div><div class="card"><div class="table-wrap"><table class="table"><thead><tr><th>Cliente</th><th>Movimiento</th><th>Fecha</th></tr></thead><tbody id="activity"></tbody></table></div></div></div></main></div><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script><script src="/app/assets/config.js?v=20260907-publish2"></script><script src="/app/assets/app.js?v=20260927-card-summary"></script><script>ENLA.bindShell();(async()=>{try{await ENLA.requireAuth();const id=new URLSearchParams(location.search).get('id');if(!id)throw new Error('Falta la tarjeta.');const p=await ENLA.getProgram(id);if(!p)throw new Error('No se encontró esta tarjeta.');const type=p.program_type==='cashback'?'Cashback':p.program_type==='visits'?'Visitas':p.program_type==='access'?'Identificación / Acceso':'Sellos';document.querySelector('#hero').innerHTML=`<div class="detail-hero" style="background:${p.primary_color||'#4b63f3'};color:${p.text_color||'#ffffff'}"><div style="display:flex;align-items:center;gap:16px">${p.logo_url?`<img class="detail-hero-logo" src="${p.logo_url}">`:''}<div><span class="badge">${type}</span><h2 style="margin:8px 0 4px">${p.program_name}</h2><div style="opacity:.8">${p.display_name||''}</div></div></div><div class="detail-actions"><span class="badge ${p.publication_status==='published'?'blue':''}">${p.publication_status==='published'?'Publicada':'Borrador'}</span>${p.publication_status==='published'?`<button class="btn btn-secondary btn-sm" id="publicationBtn">Apagar tarjeta</button>`:`<button class="btn btn-primary btn-sm" id="publicationBtn">Publicar tarjeta</button>`}<a class="btn btn-secondary btn-sm" href="/app/program.html?id=${p.id}">Personalizar tarjeta</a><a class="btn btn-secondary btn-sm" href="/app/customers.html?program=${p.id}">Clientes y QR</a><a class="btn btn-secondary btn-sm" href="/app/scan.html?program=${p.id}">Escanear</a><a class="btn btn-secondary btn-sm" href="/app/staff.html?program=${p.id}">Empleados</a><a class="btn btn-secondary btn-sm" href="/app/notifications.html?program=${p.id}">Notificaciones</a></div></div>`;
 const joinUrl=ENLA.publicJoinUrl(p);
-const previewType=p.program_type==='cashback'?'SALDO':p.program_type==='visits'?'VISITAS RESTANTES':p.program_type==='access'?'VENCIMIENTO':'SELLOS';
-const previewValue=p.program_type==='cashback'?'$40.00':p.program_type==='visits'?String(p.goal_count||8):p.program_type==='access'?'ACTIVA':`2 / ${p.goal_count||6}`;
+const previewColor=p.primary_color||'#4b63f3';
+const previewText=p.text_color||'#ffffff';
 const promo=String(p.promo_text||'').trim();
-const stampsCount=Math.min(10,Math.max(2,Number(p.goal_count||6)));
-const stampFilled=p.stamp_filled_image_url||'';
-const stampEmpty=p.stamp_empty_image_url||'';
+const barcodeFormat=p.barcode_format||'qr';
+const goal=Math.min(10,Math.max(2,Number(p.goal_count||6)));
 const stampIcon=p.stamp_icon||'⭐';
-const previewMiddle=p.program_type==='stamps'
-  ? `<div class="summary-preview-stamps">${Array.from({length:stampsCount},(_,i)=>{const src=i<2?stampFilled:(stampEmpty||stampFilled);return src?`<span class="${i<2?'on':'off'}"><img src="${src}" alt=""></span>`:`<span class="${i<2?'on':'off'}">${stampIcon}</span>`}).join('')}</div>`
-  : (p.central_image_url?`<img class="summary-preview-strip" src="${p.central_image_url}" alt="">`:'');
+const filledStamp=p.stamp_filled_image_url
+  ? `<img src="${p.stamp_filled_image_url}" alt="">`
+  : stampIcon;
+const emptyStamp=p.stamp_empty_image_url
+  ? `<img src="${p.stamp_empty_image_url}" alt="">`
+  : filledStamp;
+const isStamp=p.program_type==='stamps';
+const isVisits=p.program_type==='visits';
+const isAccess=p.program_type==='access';
+const isCashback=p.program_type==='cashback';
+const hasMedia=!isStamp&&Boolean(p.central_image_url);
+
+const headerHtml=isStamp
+  ? `<small>SELLOS</small><strong>2 / ${goal}</strong>`
+  : isVisits
+    ? `<small>VISITAS RESTANTES</small><strong>6</strong>`
+    : isAccess
+      ? `<small>VENCIMIENTO</small><strong>06 OCT 2026</strong>`
+      : `<small>SALDO</small><strong>$40.00</strong>`;
+
+const progressHtml=isStamp
+  ? `<div class="wallet-field-label">TUS SELLOS</div>
+     <div class="stamps wallet-stamps ${goal<=5?'single-row':'two-rows'}">
+       ${Array.from({length:goal},(_,i)=>`<span class="stamp ${i<2?'on':'off'} ${i>=2&&p.stamp_empty_image_url?'custom-empty':''}">${i<2?filledStamp:emptyStamp}</span>`).join('')}
+     </div>`
+  : '';
+
+const fieldsHtml=isStamp
+  ? `<div><small>RECOMPENSA</small><b>${p.reward_text||'Tu recompensa'}</b></div>`
+  : isVisits
+    ? `<div><small>PAQUETE</small><b>${p.goal_count||8} visitas incluidas</b></div><div><small>CLIENTE</small><b>Cliente de ejemplo</b></div>`
+    : isAccess
+      ? `<div><small>SERVICIO</small><b>${p.service_name||p.program_name||'Membresía'}</b></div><div><small>CLIENTE</small><b>Cliente de ejemplo</b></div>`
+      : '';
+
+const codeHtml=barcodeFormat==='code128'
+  ? '<div class="wallet-barcode-demo" aria-hidden="true"></div><small>CÓDIGO DE CLIENTE</small>'
+  : '<div class="wallet-qr-demo" aria-hidden="true"></div><small>ESCANEA PARA IDENTIFICARTE</small>';
+
 document.querySelector('#shareCard').innerHTML=`
-  <section class="card card-share-center">
-    <div class="card-share-preview-wrap">
-      <div class="card-share-heading">
+  <section class="card detail-share-panel">
+    <div class="detail-preview-column">
+      <div class="detail-section-head">
         <span class="badge blue">Vista previa</span>
         <h2>Así se ve tu tarjeta</h2>
-        <p class="muted">Una referencia rápida de la tarjeta que recibirán tus clientes.</p>
+        <p class="muted">La misma vista previa que utilizas al personalizarla.</p>
       </div>
-      <div class="summary-wallet-card" style="background:${p.primary_color||'#4b63f3'};color:${p.text_color||'#ffffff'}">
-        <div class="summary-wallet-top">
-          <div class="summary-wallet-brand">${p.logo_url?`<img src="${p.logo_url}" alt="">`:`<b>${p.display_name||p.program_name}</b>`}</div>
-          <div class="summary-wallet-stat"><small>${previewType}</small><strong>${previewValue}</strong></div>
+
+      <div class="wallet-preview wallet-preview-real detail-wallet-preview">
+        <div class="wallet-preview-head">
+          <div>
+            <b>Vista previa en Apple Wallet</b>
+            <span>Simulación · iPhone</span>
+          </div>
+          <span class="wallet-preview-badge">APPLE WALLET</span>
         </div>
-        ${previewMiddle}
-        ${promo?`<div class="summary-wallet-promo">${promo}</div>`:''}
-        <div class="summary-wallet-foot">
-          <span>${p.program_type==='stamps'?(p.reward_text||'Recompensa'):p.program_type==='access'?(p.service_name||'Acceso'):p.program_name}</span>
-          <span>Wallet</span>
+
+        <div class="pass-card apple-pass-preview ${isStamp&&goal<=5?'stamps-single-row':''}" style="background:${previewColor};color:${previewText}">
+          <div class="pass-top apple-pass-top">
+            <div class="preview-brand">
+              ${p.logo_url
+                ? `<img class="logo-preview" src="${p.logo_url}" alt="">`
+                : `<div class="wallet-logo-text">${String(p.display_name||'MI NEGOCIO').toUpperCase()}</div>`}
+            </div>
+            <div class="wallet-header-field">${headerHtml}</div>
+          </div>
+
+          ${hasMedia
+            ? `<div class="preview-media apple-strip"><img src="${p.central_image_url}" alt=""></div>`
+            : ''}
+
+          ${promo
+            ? `<div aria-label="Texto promocional" class="wallet-promo-preview">${promo}</div>`
+            : ''}
+
+          <div class="wallet-primary-content">${progressHtml}</div>
+          <div class="wallet-field-row">${fieldsHtml}</div>
+          <div class="reward-line wallet-reward"></div>
+          <div class="wallet-code-area">${codeHtml}</div>
         </div>
       </div>
     </div>
-    <div class="card-share-tools">
-      <span class="badge">Compartir con clientes</span>
-      <h2>Registro de la tarjeta</h2>
-      <p class="muted">Este QR y enlace llevan directamente al registro de esta tarjeta.</p>
-      <div class="card-share-qr" id="joinQR"></div>
-      <a class="card-share-link" id="joinUrl" href="${joinUrl}" target="_blank" rel="noopener">${joinUrl}</a>
-      <div class="card-share-actions">
-        <button class="btn btn-secondary" id="copyJoin">Copiar enlace</button>
-        <a class="btn btn-primary" href="${joinUrl}" target="_blank" rel="noopener">Abrir registro ↗</a>
+
+    <div class="detail-share-column">
+      <div class="detail-section-head">
+        <span class="badge">Compartir con clientes</span>
+        <h2>Registro de la tarjeta</h2>
+        <p class="muted">Comparte este QR o el enlace corto para que tus clientes se registren.</p>
       </div>
-      <div class="small muted" id="copyJoinStatus"></div>
+
+      <div class="detail-qr-box">
+        <div class="card-share-qr" id="joinQR"></div>
+        <div class="detail-link-label">ENLACE DE REGISTRO</div>
+        <a class="card-share-link" id="joinUrl" href="${joinUrl}" target="_blank" rel="noopener">${joinUrl}</a>
+        <div class="card-share-actions">
+          <button class="btn btn-secondary" id="copyJoin">Copiar enlace</button>
+          <a class="btn btn-primary" href="${joinUrl}" target="_blank" rel="noopener">Abrir registro ↗</a>
+        </div>
+        <div class="small muted" id="copyJoinStatus"></div>
+      </div>
     </div>
   </section>`;
+
 if(typeof QRCode==='function'){
-  new QRCode(document.querySelector('#joinQR'),{text:joinUrl,width:180,height:180,colorDark:'#122f4d',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M});
+  const qrHost=document.querySelector('#joinQR');
+  qrHost.innerHTML='';
+  new QRCode(qrHost,{
+    text:joinUrl,
+    width:180,
+    height:180,
+    colorDark:'#122f4d',
+    colorLight:'#ffffff',
+    correctLevel:QRCode.CorrectLevel.M
+  });
+  // qrcodejs crea canvas + img. En navegadores modernos usamos solo el canvas.
+  const qrCanvas=qrHost.querySelector('canvas');
+  const qrImg=qrHost.querySelector('img');
+  if(qrCanvas)qrCanvas.style.display='block';
+  if(qrImg)qrImg.style.display='none';
 }
+
 document.querySelector('#copyJoin').onclick=async()=>{
   try{
     await navigator.clipboard.writeText(joinUrl);
