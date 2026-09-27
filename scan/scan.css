@@ -227,3 +227,22 @@ button{cursor:pointer}
 .wallet-stamps .stamp-image-wrap.filled{
   opacity:1;filter:none;
 }
+
+
+/* Enla Cards Scan · OTP + invitaciones de empleados */
+.login-security-mark{width:42px;height:42px;border-radius:13px;background:#edf7ff;color:var(--blue-dark);display:grid;place-items:center;font-size:18px;font-weight:900;margin-bottom:15px}
+.otp-input{text-align:center;font-size:25px!important;font-weight:800;letter-spacing:.22em;padding-left:18px!important}
+.otp-actions{display:flex;justify-content:center;gap:18px;flex-wrap:wrap;margin-top:17px}
+.link-button{border:0;background:transparent;color:var(--blue-dark);font-size:11px;font-weight:800;padding:4px;cursor:pointer}
+.link-button:disabled{opacity:.5}
+.pending-invites{margin:0 0 26px;padding:21px;border:1px solid #cfe7f8;border-radius:22px;background:linear-gradient(135deg,#f4faff,#f7fcfa)}
+.pending-invites-head h2{font-size:20px;margin:6px 0 4px}
+.pending-invites-head p{margin:0;color:var(--muted);font-size:11px}
+.pending-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px;margin-top:16px}
+.pending-card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:13px;display:flex;align-items:center;justify-content:space-between;gap:14px}
+.pending-card-brand{display:flex;align-items:center;gap:10px;min-width:0}
+.pending-card-brand img{width:44px;height:44px;border-radius:11px;object-fit:contain;background:#f6f9fc;padding:4px}
+.pending-card-brand b{display:block;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pending-card-brand span{display:block;color:var(--muted);font-size:9px;margin-top:3px}
+.pending-card .btn{white-space:nowrap;font-size:10px;padding:10px 12px}
+@media(max-width:700px){.pending-grid{grid-template-columns:1fr}.pending-card{align-items:flex-start;flex-direction:column}.pending-card .btn{width:100%}}

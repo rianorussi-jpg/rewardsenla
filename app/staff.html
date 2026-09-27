@@ -1,1 +1,173 @@
-<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" type="image/png" href="/assets/favicon.png"><link rel="apple-touch-icon" href="/assets/favicon.png"><title>Empleados — enla.cards</title><link rel="stylesheet" href="/app/assets/app.css?v=20260907-publish2"></head><body><div class="app-shell"><aside class="sidebar"><a class="side-brand" href="/">enla.<span>cards</span></a><nav class="nav-list"></nav><div class="side-bottom"><button class="btn btn-secondary" id="signOut" style="width:100%">Cerrar sesión</button></div></aside><div class="overlay"></div><main class="main"><header class="topbar"><div><h1>Empleados de la tarjeta</h1><div class="topbar-sub" id="programName"></div></div><a class="btn btn-secondary btn-sm" id="back">← Volver</a></header><div class="content"><div class="card staff-hero"><div><span class="badge blue">Acceso limitado</span><h2>Personal que puede escanear</h2><p class="muted">Cada empleado solo puede operar esta tarjeta: escanear y registrar sellos, cashback, visitas o accesos. No puede editar clientes, saldos, configuración ni vencimientos.</p></div><div class="staff-invite"><input id="email" type="email" placeholder="empleado@negocio.com"><button class="btn btn-primary" id="invite">Agregar empleado</button></div></div><div class="section-title"><h2>Accesos</h2></div><div class="card"><div class="table-wrap"><table class="table"><thead><tr><th>Empleado</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="rows"></tbody></table></div></div></div></main></div><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="/app/assets/config.js?v=20260907-publish2"></script><script src="/app/assets/app.js?v=20260907-publish2"></script><script>ENLA.bindShell();(async()=>{await ENLA.requireAuth();const id=new URLSearchParams(location.search).get('program');const p=await ENLA.getProgram(id);if(!p)throw new Error('Tarjeta no encontrada');document.querySelector('#programName').textContent=p.program_name;document.querySelector('#back').href='/app/card-detail.html?id='+id;async function load(){const {data,error}=await ENLA.sb.from('rewards_program_staff').select('*').eq('program_id',id).order('created_at');if(error)throw error;document.querySelector('#rows').innerHTML=(data||[]).map(x=>`<tr><td><b>${x.email}</b></td><td><span class="badge ${x.status==='active'?'green':'red'}">${x.status==='active'?'Activo':'Suspendido'}</span></td><td><button class="btn btn-secondary btn-sm" onclick="toggleStaff('${x.id}','${x.status==='active'?'inactive':'active'}')">${x.status==='active'?'Suspender':'Reactivar'}</button></td></tr>`).join('')||'<tr><td colspan="3" class="muted">Aún no agregas empleados.</td></tr>'}window.toggleStaff=async(id,status)=>{const {error}=await ENLA.sb.from('rewards_program_staff').update({status}).eq('id',id);if(error)alert(error.message);else load()};document.querySelector('#invite').onclick=async()=>{const email=document.querySelector('#email').value.trim();if(!email)return;const {error}=await ENLA.sb.rpc('rewards_add_program_staff',{p_program_id:id,p_email:email});if(error)alert(error.message);else{document.querySelector('#email').value='';load()}};load()})().catch(e=>alert(e.message));</script></body></html>
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="icon" type="image/png" href="/assets/favicon.png">
+  <link rel="apple-touch-icon" href="/assets/favicon.png">
+  <title>Empleados — enla.cards</title>
+  <link rel="stylesheet" href="/app/assets/app.css?v=20260927-staff-invites">
+  <style>
+    .staff-info{margin-bottom:18px;padding:20px 22px;border:1px solid #dcebf7;border-radius:18px;background:linear-gradient(135deg,#f4faff,#f7fcfa);display:flex;gap:15px;align-items:flex-start}
+    .staff-info-icon{width:40px;height:40px;border-radius:12px;background:#e3f2ff;color:#2885db;display:grid;place-items:center;font-weight:900;flex:0 0 auto}
+    .staff-info h3{margin:0 0 5px;font-size:15px}.staff-info p{margin:0;color:var(--muted);font-size:11px;line-height:1.6}
+    .staff-info a{color:#2582dc;font-weight:800;text-decoration:none}
+    .staff-status-pending{background:#fff7df!important;color:#9a6811!important;border:1px solid #f3dea3!important}
+    .staff-actions{display:flex;gap:7px;flex-wrap:wrap}
+    .staff-send-status{font-size:10px;color:var(--muted);margin-top:8px;min-height:15px}
+    .staff-hero{gap:20px}
+    @media(max-width:760px){.staff-info{padding:16px}.staff-actions{min-width:160px}.staff-hero{display:block}.staff-invite{margin-top:16px}}
+  </style>
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <a class="side-brand" href="/">enla.<span>cards</span></a>
+    <nav class="nav-list"></nav>
+    <div class="side-bottom"><button class="btn btn-secondary" id="signOut" style="width:100%">Cerrar sesión</button></div>
+  </aside>
+  <div class="overlay"></div>
+  <main class="main">
+    <header class="topbar">
+      <div><h1>Empleados de la tarjeta</h1><div class="topbar-sub" id="programName"></div></div>
+      <a class="btn btn-secondary btn-sm" id="back">← Volver</a>
+    </header>
+    <div class="content">
+      <div class="staff-info">
+        <div class="staff-info-icon">↗</div>
+        <div>
+          <h3>Los empleados operan la tarjeta desde Enla Cards Scan</h3>
+          <p>Para escanear clientes y registrar sellos, cashback, visitas o accesos deben entrar en <a href="https://scan.enlacards.com" target="_blank" rel="noopener">scan.enlacards.com</a>. No necesitan contraseña: escriben su correo y reciben un código de acceso.</p>
+        </div>
+      </div>
+
+      <div class="card staff-hero">
+        <div>
+          <span class="badge blue">Acceso limitado</span>
+          <h2>Invita a tu equipo</h2>
+          <p class="muted">El empleado recibirá un correo para aceptar esta tarjeta. Hasta que la acepte aparecerá como <b>Pendiente</b> y no podrá operarla.</p>
+        </div>
+        <div class="staff-invite">
+          <input id="email" type="email" placeholder="empleado@negocio.com">
+          <button class="btn btn-primary" id="invite">Enviar invitación</button>
+          <div class="staff-send-status" id="inviteStatus"></div>
+        </div>
+      </div>
+
+      <div class="section-title"><h2>Accesos</h2></div>
+      <div class="card">
+        <div class="table-wrap">
+          <table class="table">
+            <thead><tr><th>Empleado</th><th>Estado</th><th>Acción</th></tr></thead>
+            <tbody id="rows"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/app/assets/config.js?v=20260927-staff-invites"></script>
+<script src="/app/assets/app.js?v=20260927-staff-invites"></script>
+<script>
+ENLA.bindShell();
+(async()=>{
+  await ENLA.requireAuth();
+  const id=new URLSearchParams(location.search).get('program');
+  const p=await ENLA.getProgram(id);
+  if(!p)throw new Error('Tarjeta no encontrada');
+
+  const q=s=>document.querySelector(s);
+  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  q('#programName').textContent=p.program_name;
+  q('#back').href='/app/card-detail.html?id='+id;
+
+  function statusBadge(status){
+    if(status==='active') return '<span class="badge green">Activo</span>';
+    if(status==='pending') return '<span class="badge staff-status-pending">Pendiente</span>';
+    return '<span class="badge red">Suspendido</span>';
+  }
+
+  async function sendInviteEmail(email){
+    const redirect='https://scan.enlacards.com/?invite='+encodeURIComponent(id);
+    const {error}=await ENLA.sb.auth.signInWithOtp({
+      email,
+      options:{shouldCreateUser:true,emailRedirectTo:redirect}
+    });
+    if(error) throw error;
+  }
+
+  async function load(){
+    const {data,error}=await ENLA.sb.from('rewards_program_staff').select('*').eq('program_id',id).order('created_at');
+    if(error)throw error;
+    q('#rows').innerHTML=(data||[]).map(x=>{
+      let actions='';
+      if(x.status==='active'){
+        actions=`<button class="btn btn-secondary btn-sm" onclick="suspendStaff('${x.id}')">Suspender</button>`;
+      }else if(x.status==='pending'){
+        actions=`<button class="btn btn-secondary btn-sm" onclick="resendInvite('${esc(x.email)}')">Reenviar invitación</button>`;
+      }else{
+        actions=`<button class="btn btn-secondary btn-sm" onclick="resendInvite('${esc(x.email)}')">Invitar nuevamente</button>`;
+      }
+      return `<tr><td><b>${esc(x.email)}</b></td><td>${statusBadge(x.status)}</td><td><div class="staff-actions">${actions}</div></td></tr>`;
+    }).join('')||'<tr><td colspan="3" class="muted">Aún no agregas empleados.</td></tr>';
+  }
+
+  window.suspendStaff=async(staffId)=>{
+    const {error}=await ENLA.sb.from('rewards_program_staff').update({status:'inactive'}).eq('id',staffId);
+    if(error)alert(error.message);else load();
+  };
+
+  window.resendInvite=async(email)=>{
+    q('#inviteStatus').textContent='Enviando invitación...';
+    try{
+      const {data,error}=await ENLA.sb.rpc('rewards_add_program_staff',{p_program_id:id,p_email:email});
+      if(error)throw error;
+      const row=Array.isArray(data)?data[0]:data;
+      if(row?.status==='active'){
+        q('#inviteStatus').textContent='Este empleado ya tiene acceso activo.';
+        await load();
+        return;
+      }
+      await sendInviteEmail(email);
+      q('#inviteStatus').textContent='Invitación enviada a '+email+'.';
+      await load();
+    }catch(e){
+      q('#inviteStatus').textContent='La invitación quedó pendiente, pero no se pudo enviar el correo: '+(e.message||e);
+      await load().catch(()=>{});
+    }
+  };
+
+  q('#invite').onclick=async()=>{
+    const email=q('#email').value.trim().toLowerCase();
+    if(!email)return;
+    q('#invite').disabled=true;
+    q('#invite').textContent='Enviando...';
+    q('#inviteStatus').textContent='';
+    try{
+      const {data,error}=await ENLA.sb.rpc('rewards_add_program_staff',{p_program_id:id,p_email:email});
+      if(error)throw error;
+      const row=Array.isArray(data)?data[0]:data;
+      if(row?.status==='active'){
+        q('#inviteStatus').textContent='Ese empleado ya tiene acceso activo a esta tarjeta.';
+      }else{
+        await sendInviteEmail(email);
+        q('#inviteStatus').textContent='Invitación enviada. El empleado aparecerá como pendiente hasta aceptarla.';
+      }
+      q('#email').value='';
+      await load();
+    }catch(e){
+      alert(e.message||e);
+      await load().catch(()=>{});
+    }finally{
+      q('#invite').disabled=false;
+      q('#invite').textContent='Enviar invitación';
+    }
+  };
+
+  await load();
+})().catch(e=>alert(e.message));
+</script>
+</body>
+</html>

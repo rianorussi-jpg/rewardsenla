@@ -1,45 +1,25 @@
-ENLA CARDS · FIX PKPASS + LINKS CORTOS
+ENLA CARDS · EMPLEADOS + INVITACIONES + LOGIN POR CÓDIGO
 
-1) SUPABASE SQL
-Ejecuta:
-backend/016P-short-join-links.sql
+1. Ejecuta:
+backend/016Q-staff-invitations-otp.sql
 
-Esto agrega short_code de 4 caracteres a TODAS las tarjetas existentes y futuras.
-No elimina public_slug, por lo que los links y QR antiguos siguen funcionando.
+2. Configura la plantilla Magic Link de Supabase con:
+SUPABASE-EMAIL-TEMPLATE-SCAN.txt
 
-Ejemplo nuevo:
-https://enla.cards/k7m2
+3. Revisa las Redirect URLs indicadas en ese archivo.
 
-2) FRONTEND
-Reemplaza:
-- app/assets/app.js
-- app/customers.html
-- app/program.html
-- join.html
-- vercel.json
+4. Reemplaza:
+- app/staff.html
+- scan/index.html
+- scan/scan.js
+- scan/scan.css
+- index.html
 
-El QR para compartir, el enlace que aparece en Clientes y el QR al publicar una tarjeta
-usan ahora https://enla.cards/XXXX.
-
-3) APPLE WALLET
-Despliega de nuevo esta Edge Function:
-supabase/functions/apple-wallet-pass/index.ts
-
-Se corrigió:
-Content-Disposition: attachment; filename="Negocio-Cliente.pkpass"
-
-Antes el header enviaba las comillas con backslashes literales y algunos navegadores
-las convertían en __, provocando que el archivo terminara con caracteres después de .pkpass.
-
-4) VERCEL / ENLA.CARDS
-No tienes que cambiar DNS si enla.cards ya apunta al mismo proyecto de Vercel.
-
-El nuevo vercel.json hace:
-- https://enla.cards/ -> https://enlacards.com/
-- https://enla.cards/AB12 -> sirve join.html manteniendo la URL corta en el navegador
-- www.enla.cards/* -> enla.cards/*
-- conserva las reglas de scan.enlacards.com que ya habíamos preparado.
-
-IMPORTANTE
-Haz el SQL antes del deploy frontend. Así las tarjetas existentes ya tendrán short_code
-cuando la interfaz intente mostrar/copiar su nuevo enlace corto.
+FLUJO
+- Nuevo empleado = Pendiente.
+- Se envía correo con código y enlace seguro.
+- Scan ya no pide contraseña.
+- El empleado puede aceptar desde su cuenta en Scan.
+- Si abre el enlace de invitación, Scan intenta aceptar esa tarjeta automáticamente.
+- Solo después de aceptar pasa a Activo y puede operar.
+- La sesión sigue recordándose hasta cerrar sesión.

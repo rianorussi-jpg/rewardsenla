@@ -1,0 +1,43 @@
+SUPABASE AUTH · PLANTILLA PARA ENLA CARDS SCAN
+
+En Supabase:
+Authentication → Email Templates → Magic Link
+
+ASUNTO
+Tu acceso a Enla Cards Scan
+
+CUERPO HTML
+
+<h2>Tu acceso a Enla Cards Scan</h2>
+<p>Usa este código para iniciar sesión:</p>
+
+<div style="font-size:32px;font-weight:800;letter-spacing:6px;margin:24px 0;">
+  {{ .Token }}
+</div>
+
+<p>O entra directamente con este enlace seguro:</p>
+
+<p>
+  <a href="{{ .ConfirmationURL }}"
+     style="display:inline-block;padding:12px 20px;border-radius:10px;background:#4499F7;color:#ffffff;text-decoration:none;font-weight:700;">
+    Entrar a Enla Cards Scan
+  </a>
+</p>
+
+<p style="color:#66788a;font-size:13px;">
+  Si un negocio te invitó a operar una tarjeta, al entrar podrás aceptar la invitación.
+</p>
+
+<p style="color:#66788a;font-size:12px;">
+  Si no solicitaste este acceso, puedes ignorar este correo.
+</p>
+
+REDIRECT URLs
+Agrega en Authentication → URL Configuration:
+
+https://scan.enlacards.com
+https://scan.enlacards.com/**
+https://scan.enlacards.com/scan/
+https://scan.enlacards.com/scan/**
+
+Tu SMTP personalizado sigue enviando estos correos.

@@ -131,7 +131,7 @@
     el.classList.remove('hidden');
   }
 
-  function renderLogin() {
+  function renderLogin(prefillEmail='') {
     app.innerHTML = `
       <div class="scan-login">
         <section class="login-visual">
@@ -143,48 +143,124 @@
             <div class="login-pills">
               <span>⌁ Escáner rápido</span>
               <span>◎ Búsqueda de clientes</span>
-              <span>✓ Acceso por empleado</span>
+              <span>✓ Sin contraseñas</span>
             </div>
           </div>
           <div></div>
         </section>
         <main class="login-main">
           <form class="login-card" id="loginForm">
-            <h2>Iniciar sesión</h2>
-            <p>Entra como dueño o empleado. Este dispositivo recordará tu sesión hasta que cierres sesión manualmente.</p>
+            <div class="login-security-mark">✉</div>
+            <h2>Entrar a Scan</h2>
+            <p>Escribe tu correo. Te enviaremos un código de acceso para entrar sin contraseña.</p>
             <div id="loginNotice" class="hidden"></div>
             <div class="field">
               <label>Correo</label>
-              <input id="loginEmail" type="email" autocomplete="username" required placeholder="tu@negocio.com">
+              <input id="loginEmail" type="email" autocomplete="email" required placeholder="tu@negocio.com" value="${esc(prefillEmail)}">
             </div>
-            <div class="field">
-              <label>Contraseña</label>
-              <input id="loginPassword" type="password" autocomplete="current-password" required placeholder="••••••••">
-            </div>
-            <button class="btn btn-primary btn-block" id="loginBtn" type="submit">Entrar a Scan</button>
-            <div class="login-foot"><a href="https://enlacards.com/app/forgot-password.html">¿Olvidaste tu contraseña?</a></div>
+            <button class="btn btn-primary btn-block" id="loginBtn" type="submit">Enviar código</button>
+            <div class="login-foot">La sesión quedará guardada en este dispositivo hasta que cierres sesión.</div>
           </form>
         </main>
       </div>`;
 
     document.querySelector('#loginForm').onsubmit = async e => {
       e.preventDefault();
+      const email = document.querySelector('#loginEmail').value.trim().toLowerCase();
       const btn = document.querySelector('#loginBtn');
-      btn.disabled = true; btn.textContent = 'Entrando...';
+      btn.disabled = true; btn.textContent = 'Enviando código...';
       try {
-        const {data,error} = await sb.auth.signInWithPassword({
-          email: document.querySelector('#loginEmail').value.trim().toLowerCase(),
-          password: document.querySelector('#loginPassword').value
+        const redirect = location.origin + location.pathname + location.search;
+        const {error} = await sb.auth.signInWithOtp({
+          email,
+          options: {shouldCreateUser:true,emailRedirectTo:redirect}
         });
         if (error) throw error;
-        session = data.session;
-        await loadPrograms();
+        renderOtp(email);
       } catch (err) {
         showInline('#loginNotice', err.message || String(err));
-      } finally {
-        btn.disabled = false; btn.textContent = 'Entrar a Scan';
+        btn.disabled = false; btn.textContent = 'Enviar código';
       }
     };
+  }
+
+  function renderOtp(email) {
+    app.innerHTML = `
+      <div class="scan-login">
+        <section class="login-visual">
+          <div class="login-brand"><img src="/assets/enla-cards-logo.png" alt="Enla Cards"></div>
+          <div class="login-copy">
+            <div class="eyebrow">Código enviado</div>
+            <h1>Revisa tu<br>correo.</h1>
+            <p>Enviamos un código de acceso a ${esc(email)}. También puedes usar el enlace seguro incluido en el correo.</p>
+          </div>
+          <div></div>
+        </section>
+        <main class="login-main">
+          <form class="login-card" id="otpForm">
+            <div class="login-security-mark">✓</div>
+            <h2>Escribe tu código</h2>
+            <p>Ingresa el código que te enviamos a <b>${esc(email)}</b>.</p>
+            <div id="otpNotice" class="hidden"></div>
+            <div class="field">
+              <label>Código de acceso</label>
+              <input id="otpCode" class="otp-input" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="8" required placeholder="000000">
+            </div>
+            <button class="btn btn-primary btn-block" id="otpBtn" type="submit">Entrar a Scan</button>
+            <div class="otp-actions">
+              <button class="link-button" type="button" id="resendOtp">Reenviar código</button>
+              <button class="link-button" type="button" id="changeEmail">Usar otro correo</button>
+            </div>
+          </form>
+        </main>
+      </div>`;
+
+    document.querySelector('#otpForm').onsubmit = async e => {
+      e.preventDefault();
+      const btn=document.querySelector('#otpBtn');
+      btn.disabled=true;btn.textContent='Verificando...';
+      try{
+        const token=document.querySelector('#otpCode').value.trim();
+        const {data,error}=await sb.auth.verifyOtp({email,token,type:'email'});
+        if(error)throw error;
+        session=data.session;
+        await loadPrograms();
+      }catch(err){
+        showInline('#otpNotice',err.message||String(err));
+        btn.disabled=false;btn.textContent='Entrar a Scan';
+      }
+    };
+
+    document.querySelector('#changeEmail').onclick=()=>renderLogin(email);
+    document.querySelector('#resendOtp').onclick=async()=>{
+      const b=document.querySelector('#resendOtp');
+      b.disabled=true;b.textContent='Enviando...';
+      try{
+        const redirect=location.origin+location.pathname+location.search;
+        const {error}=await sb.auth.signInWithOtp({email,options:{shouldCreateUser:true,emailRedirectTo:redirect}});
+        if(error)throw error;
+        showInline('#otpNotice','Te enviamos un código nuevo.','success');
+      }catch(err){
+        showInline('#otpNotice',err.message||String(err));
+      }finally{
+        b.disabled=false;b.textContent='Reenviar código';
+      }
+    };
+  }
+
+  async function acceptInvitation(programId, quiet=false) {
+    const {data,error}=await sb.rpc('rewards_accept_staff_invitation',{p_program_id:programId});
+    if(error) {
+      if(!quiet) alert(error.message);
+      throw error;
+    }
+    return data===true || (Array.isArray(data) && data[0]===true);
+  }
+
+  async function loadPendingInvitations() {
+    const {data,error}=await sb.rpc('rewards_scan_pending_invitations');
+    if(error) throw error;
+    return data || [];
   }
 
   async function loadPrograms() {
@@ -192,13 +268,27 @@
     bindLogout();
 
     try {
-      // Vincula invitaciones antiguas por correo si todavía no tenían user_id.
+      const params = new URLSearchParams(location.search);
+      const invitedProgram = params.get('invite');
+
+      if (invitedProgram) {
+        try {
+          await acceptInvitation(invitedProgram, true);
+          params.delete('invite');
+          const clean = location.pathname + (params.toString() ? '?' + params.toString() : '') + location.hash;
+          history.replaceState({}, '', clean);
+        } catch (_) {}
+      }
+
       try { await sb.rpc('rewards_claim_staff_assignments'); } catch (_) {}
 
-      const {data,error} = await sb.rpc('rewards_scan_programs');
+      const [{data,error}, pending] = await Promise.all([
+        sb.rpc('rewards_scan_programs'),
+        loadPendingInvitations()
+      ]);
       if (error) throw error;
       programs = data || [];
-      renderPrograms();
+      renderPrograms(pending);
     } catch (err) {
       app.innerHTML = shell(`
         <div class="notice error">${esc(err.message || err)}</div>
@@ -208,7 +298,7 @@
     }
   }
 
-  function renderPrograms() {
+  function renderPrograms(pending=[]) {
     app.innerHTML = shell(`
       <div class="screen-head">
         <div>
@@ -217,6 +307,29 @@
           <p>Solo aparecen las tarjetas de las que eres dueño o empleado autorizado.</p>
         </div>
       </div>
+
+      ${pending.length ? `
+        <section class="pending-invites">
+          <div class="pending-invites-head">
+            <div>
+              <div class="screen-eyebrow">Invitaciones pendientes</div>
+              <h2>Te invitaron a operar ${pending.length===1?'una tarjeta':pending.length+' tarjetas'}</h2>
+              <p>Acepta la tarjeta para que aparezca entre tus accesos de Scan.</p>
+            </div>
+          </div>
+          <div class="pending-grid">
+            ${pending.map(inv=>`
+              <article class="pending-card">
+                <div class="pending-card-brand">
+                  ${inv.logo_url?`<img src="${esc(inv.logo_url)}" alt="">`:`<div class="program-icon">${typeIcon(inv.program_type)}</div>`}
+                  <div><b>${esc(inv.display_name||inv.program_name)}</b><span>${esc(inv.program_name)} · ${typeName(inv.program_type)}</span></div>
+                </div>
+                <button class="btn btn-primary accept-invite" data-invite="${inv.program_id}">Aceptar tarjeta</button>
+              </article>
+            `).join('')}
+          </div>
+        </section>
+      ` : ''}
 
       <div class="program-grid">
         ${programs.map(p => `
@@ -239,6 +352,20 @@
       </div>
     `);
     bindLogout();
+
+    document.querySelectorAll('.accept-invite').forEach(btn => {
+      btn.onclick = async () => {
+        const original=btn.textContent;
+        btn.disabled=true;btn.textContent='Aceptando...';
+        try{
+          await acceptInvitation(btn.dataset.invite);
+          await loadPrograms();
+        }catch(err){
+          btn.disabled=false;btn.textContent=original;
+          alert(err.message||String(err));
+        }
+      };
+    });
 
     document.querySelectorAll('[data-program]').forEach(btn => {
       btn.onclick = () => {
@@ -594,6 +721,11 @@
   }
 
   async function boot() {
+    const code = new URLSearchParams(location.search).get('code');
+    if (code) {
+      try { await sb.auth.exchangeCodeForSession(code); } catch (_) {}
+    }
+
     const {data} = await sb.auth.getSession();
     session = data.session;
 
