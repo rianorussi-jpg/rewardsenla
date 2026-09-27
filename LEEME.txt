@@ -1,0 +1,21 @@
+ENLA CARDS · FIX SUBDOMINIO SCAN + FALLBACK
+
+Reemplaza en la raíz:
+- vercel.json
+- index.html
+
+Después haz un nuevo deploy en Vercel.
+
+COMPORTAMIENTO ESPERADO
+
+1. Preferido:
+   https://scan.enlacards.com
+   carga directamente la app que está en /scan/index.html,
+   manteniendo scan.enlacards.com en la barra.
+
+2. Fallback:
+   Si Vercel sirve por error el index principal en scan.enlacards.com,
+   el navegador detecta ese host y redirige automáticamente a:
+   https://enlacards.com/scan
+
+El fallback NO afecta enlacards.com ni ninguna otra URL.

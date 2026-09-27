@@ -48,6 +48,16 @@
   ],
   "rewrites": [
     {
+      "source": "/",
+      "has": [
+        {
+          "type": "host",
+          "value": "scan.enlacards.com"
+        }
+      ],
+      "destination": "/scan/index.html"
+    },
+    {
       "source": "/:path*",
       "has": [
         {
