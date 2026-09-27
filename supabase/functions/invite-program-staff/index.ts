@@ -18,9 +18,7 @@ Deno.serve(async (req) => {
   try {
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
     const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-    const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY");
-
-    if (!SUPABASE_URL || !SERVICE_ROLE || !ANON_KEY) {
+    if (!SUPABASE_URL || !SERVICE_ROLE) {
       throw new Error("Faltan secretos internos de Supabase.");
     }
 
@@ -32,14 +30,20 @@ Deno.serve(async (req) => {
       });
     }
 
-    const userClient = createClient(SUPABASE_URL, ANON_KEY, {
-      global: { headers: { Authorization: authHeader } },
-      auth: { persistSession: false },
+    const token = authHeader.slice("Bearer ".length).trim();
+    const admin = createClient(SUPABASE_URL, SERVICE_ROLE, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+        detectSessionInUrl: false,
+      },
     });
 
-    const { data: userData, error: userError } = await userClient.auth.getUser();
+    // La función se despliega con Verify JWT OFF, pero NO queda pública:
+    // validamos aquí explícitamente el access token del usuario.
+    const { data: userData, error: userError } = await admin.auth.getUser(token);
     if (userError || !userData.user) {
-      return new Response(JSON.stringify({ error: "Sesión no válida." }), {
+      return new Response(JSON.stringify({ error: "Sesión no válida o expirada." }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -51,14 +55,6 @@ Deno.serve(async (req) => {
 
     if (!programId) throw new Error("Falta la tarjeta.");
     if (!email || !email.includes("@")) throw new Error("Escribe un correo válido.");
-
-    const admin = createClient(SUPABASE_URL, SERVICE_ROLE, {
-      auth: {
-        persistSession: false,
-        autoRefreshToken: false,
-        detectSessionInUrl: false,
-      },
-    });
 
     const { data: program, error: programError } = await admin
       .from("rewards_loyalty_programs")
@@ -156,6 +152,7 @@ Deno.serve(async (req) => {
         status: staffRow.status,
         invite_sent: false,
         existing_user: true,
+        message: "El correo ya tiene una cuenta de Enla Cards. La invitación quedó pendiente y aparecerá en Scan para aceptarla.",
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });

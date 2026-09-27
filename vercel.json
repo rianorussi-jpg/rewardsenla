@@ -66,16 +66,6 @@
         }
       ],
       "destination": "/scan/index.html"
-    },
-    {
-      "source": "/:path*",
-      "has": [
-        {
-          "type": "host",
-          "value": "scan.enlacards.com"
-        }
-      ],
-      "destination": "/scan/:path*"
     }
   ]
 }

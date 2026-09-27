@@ -204,7 +204,7 @@
             <div id="otpNotice" class="hidden"></div>
             <div class="field">
               <label>Código de acceso</label>
-              <input id="otpCode" class="otp-input" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="8" required placeholder="000000">
+              <input id="otpCode" class="otp-input" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" minlength="6" pattern="[0-9]{6}" required placeholder="000000">
             </div>
             <button class="btn btn-primary btn-block" id="otpBtn" type="submit">Entrar a Scan</button>
             <div class="otp-actions">
@@ -215,12 +215,18 @@
         </main>
       </div>`;
 
+    const otpInput=document.querySelector('#otpCode');
+    otpInput.addEventListener('input',()=>{
+      otpInput.value=otpInput.value.replace(/\D/g,'').slice(0,6);
+    });
+
     document.querySelector('#otpForm').onsubmit = async e => {
       e.preventDefault();
       const btn=document.querySelector('#otpBtn');
       btn.disabled=true;btn.textContent='Verificando...';
       try{
-        const token=document.querySelector('#otpCode').value.trim();
+        const token=document.querySelector('#otpCode').value.replace(/\D/g,'').slice(0,6);
+        if(token.length!==6)throw new Error('El código debe tener 6 dígitos.');
         const {data,error}=await sb.auth.verifyOtp({email,token,type:'email'});
         if(error)throw error;
         session=data.session;

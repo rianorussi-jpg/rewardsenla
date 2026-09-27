@@ -93,18 +93,22 @@ ENLA.bindShell();
     const {data:{session}}=await ENLA.sb.auth.getSession();
     if(!session)throw new Error('Tu sesión expiró. Vuelve a iniciar sesión.');
 
-    const url=`${window.ENLA_CONFIG?.SUPABASE_URL||''}/functions/v1/invite-program-staff`;
-    const res=await fetch(url,{
-      method:'POST',
-      headers:{
-        'Content-Type':'application/json',
-        'Authorization':`Bearer ${session.access_token}`
-      },
-      body:JSON.stringify({program_id:id,email})
+    const {data,error}=await ENLA.sb.functions.invoke('invite-program-staff',{
+      body:{program_id:id,email}
     });
-    const payload=await res.json().catch(()=>({}));
-    if(!res.ok)throw new Error(payload.error||'No se pudo enviar la invitación.');
-    return payload;
+    if(error){
+      let message=error.message||'No se pudo enviar la invitación.';
+      try{
+        const context=error.context;
+        if(context && typeof context.json==='function'){
+          const payload=await context.json();
+          if(payload?.error)message=payload.error;
+        }
+      }catch(_e){}
+      throw new Error(message);
+    }
+    if(data?.error)throw new Error(data.error);
+    return data||{};
   }
 
   async function load(){
@@ -140,7 +144,7 @@ ENLA.bindShell();
       q('#inviteStatus').textContent=inviteResult.invite_sent?'Invitación enviada a '+email+'.':'La invitación quedó pendiente. Ese correo ya tiene cuenta en Enla Cards y podrá aceptarla al entrar a Scan.';
       await load();
     }catch(e){
-      q('#inviteStatus').textContent='La invitación quedó pendiente, pero no se pudo enviar el correo: '+(e.message||e);
+      q('#inviteStatus').textContent='No se pudo enviar la invitación: '+(e.message||e);
       await load().catch(()=>{});
     }
   };

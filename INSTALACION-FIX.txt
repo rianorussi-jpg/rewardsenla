@@ -1,0 +1,86 @@
+ENLA CARDS · FIX SCAN + INVITACIONES + OTP 6 DÍGITOS
+
+PROBLEMAS CORREGIDOS
+
+1) scan.enlacards.com abría la landing
+Se corrigió vercel.json.
+Ya NO existe el catch-all:
+scan.enlacards.com/:path* -> /scan/:path*
+
+Ese catch-all podía reescribir también:
+ /scan/scan.js -> /scan/scan/scan.js
+
+Ahora únicamente:
+scan.enlacards.com/ -> /scan/index.html
+
+Los assets /scan/* y /assets/* se sirven directamente.
+
+También se conserva un fallback en index.html:
+si por alguna razón Vercel sirve la landing en scan.enlacards.com,
+redirige inmediatamente a /scan/ conservando ?invite=... y el hash.
+
+2) No salía el correo de invitación
+app/staff.html ahora usa:
+ENLA.sb.functions.invoke('invite-program-staff')
+
+Esto hace que Supabase añada correctamente las cabeceras de la sesión.
+
+La Edge Function ahora valida manualmente el Bearer token con:
+admin.auth.getUser(token)
+
+IMPORTANTE:
+DESPLIEGA invite-program-staff CON "Verify JWT" APAGADO.
+
+No queda abierta anónimamente:
+la propia función rechaza cualquier llamada sin un access token válido y además
+verifica que el usuario autenticado sea dueño de la tarjeta.
+
+Si el correo ya tiene una cuenta Auth confirmada, Supabase Invite User no vuelve
+a mandar el template Invite user. En ese caso la asignación queda Pendiente y
+esa persona la verá al iniciar sesión en Scan para aceptarla.
+
+3) OTP DE 6 DÍGITOS
+scan.js ahora:
+- acepta solamente números;
+- máximo 6;
+- exige exactamente 6 antes de verificar.
+
+PERO la longitud del código la genera Supabase Auth.
+En Supabase Dashboard configura también:
+Authentication -> Providers -> Email -> OTP length = 6
+
+Si tu Dashboard muestra el ajuste dentro de Email OTP / Security, selecciona 6.
+
+ORDEN
+
+1. Reemplaza en Vercel:
+- vercel.json
+- index.html
+- app/staff.html
+- scan/index.html
+- scan/scan.js
+
+2. Redespliega Edge Function:
+supabase/functions/invite-program-staff/index.ts
+
+Nombre:
+invite-program-staff
+
+Verify JWT:
+OFF
+
+3. En Supabase cambia OTP length a 6.
+
+4. Redeploy de Vercel.
+
+PRUEBA RECOMENDADA
+
+A) Abre una ventana incógnita:
+https://scan.enlacards.com
+Debe mostrar Enla Cards Scan, no la landing.
+
+B) Prueba agregar como empleado un correo que NUNCA haya iniciado sesión en Enla Cards.
+Debe llegar el template "Invite user".
+
+C) Prueba iniciar sesión en Scan.
+Debe recibir un código de 6 dígitos.
