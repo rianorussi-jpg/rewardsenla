@@ -1,0 +1,50 @@
+ENLA CARDS SCAN · INSTALACIÓN
+
+Archivos nuevos:
+- scan/index.html
+- scan/scan.css
+- scan/scan.js
+- backend/016M-scan-subdomain.sql
+
+Archivo modificado:
+- vercel.json
+
+PASOS
+
+1) Ejecuta en Supabase SQL Editor:
+   backend/016M-scan-subdomain.sql
+
+2) Sube al proyecto las carpetas/archivos del ZIP y reemplaza vercel.json.
+
+3) En Vercel > Project > Domains agrega:
+   scan.enlacards.com
+
+4) En DNS crea el registro que Vercel te indique para:
+   scan.enlacards.com
+
+5) Haz deploy.
+
+FUNCIONAMIENTO
+
+- scan.enlacards.com muestra únicamente Login cuando no existe sesión.
+- Supabase guarda la sesión en localStorage y la renueva automáticamente.
+- Tras iniciar sesión se muestran las tarjetas donde la persona es dueño o empleado activo.
+- Al elegir una tarjeta aparecen:
+  * Escáner de QR/código.
+  * Búsqueda por código.
+  * Búsqueda por correo.
+  * Búsqueda por nombre.
+  * Ficha del cliente.
+  * Acciones de sellos, cashback, visitas o acceso según el tipo.
+- El botón "Cambiar tarjeta" vuelve a la selección sin cerrar sesión.
+- Cerrar sesión es la única acción que elimina la sesión guardada.
+
+SEGURIDAD
+
+La seguridad no depende del frontend. Los RPC del SQL vuelven a comprobar en Supabase
+que auth.uid() sea dueño del negocio o empleado activo de esa tarjeta antes de:
+- listar tarjetas;
+- buscar clientes;
+- efectuar movimientos.
+
+No se cambian ni se eliminan las funciones existentes del dashboard.

@@ -45,5 +45,17 @@
       "destination": "https://enlacards.com/:path*",
       "permanent": true
     }
+  ],
+  "rewrites": [
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "host",
+          "value": "scan.enlacards.com"
+        }
+      ],
+      "destination": "/scan/index.html"
+    }
   ]
 }
