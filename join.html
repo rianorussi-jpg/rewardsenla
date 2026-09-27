@@ -35,7 +35,11 @@
   try {
     ENLA.ensureConfigured();
 
-    const programSlug = new URLSearchParams(location.search).get('p');
+    const queryProgram = new URLSearchParams(location.search).get('p');
+    const shortPath = location.hostname.replace(/^www\./,'') === 'enla.cards'
+      ? location.pathname.split('/').filter(Boolean)[0] || ''
+      : '';
+    const programSlug = queryProgram || shortPath;
     if (!programSlug) throw new Error('Falta la tarjeta en este enlace.');
 
     const { data, error } = await ENLA.sb.rpc('rewards_public_program_card', {

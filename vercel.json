@@ -2,14 +2,14 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "redirects": [
     {
-      "source": "/:path*",
+      "source": "/",
       "has": [
         {
           "type": "host",
           "value": "enla.cards"
         }
       ],
-      "destination": "https://enlacards.com/:path*",
+      "destination": "https://enlacards.com/",
       "permanent": true
     },
     {
@@ -20,7 +20,7 @@
           "value": "www.enla.cards"
         }
       ],
-      "destination": "https://enlacards.com/:path*",
+      "destination": "https://enla.cards/:path*",
       "permanent": true
     },
     {
@@ -47,6 +47,16 @@
     }
   ],
   "rewrites": [
+    {
+      "source": "/:code([A-Za-z0-9]{3,4})",
+      "has": [
+        {
+          "type": "host",
+          "value": "enla.cards"
+        }
+      ],
+      "destination": "/join.html"
+    },
     {
       "source": "/",
       "has": [

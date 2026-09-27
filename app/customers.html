@@ -278,7 +278,7 @@
         }
 
         function getJoinLink() {
-          return ENLA.publicSiteUrl() + '/join.html?p=' + encodeURIComponent(program.public_slug || program.id);
+          return ENLA.publicJoinUrl(program);
         }
 
         function money(n) {
