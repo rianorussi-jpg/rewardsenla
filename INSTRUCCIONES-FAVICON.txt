@@ -1,0 +1,10 @@
+FAVICON ENLA CARDS
+
+1. Coloca tu favicon PNG en:
+   assets/favicon.png
+
+2. Mantén exactamente ese nombre: favicon.png
+
+3. Los HTML incluidos ya apuntan a /assets/favicon.png.
+
+4. Si Vercel ya está desplegado y no ves el cambio inmediatamente, haz hard refresh o limpia la caché del navegador; los favicons suelen quedar cacheados.
