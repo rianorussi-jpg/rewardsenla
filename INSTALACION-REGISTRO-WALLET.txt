@@ -1,0 +1,17 @@
+ENLA CARDS · REGISTRO DIRECTO A WALLET
+
+Archivos:
+- join.html
+- app/assets/app.css
+- backend/016L-direct-wallet-join.sql
+
+1. Ejecuta backend/016L-direct-wallet-join.sql en Supabase SQL Editor.
+2. Reemplaza join.html y app/assets/app.css.
+3. En Supabase > Authentication > Email Templates > Magic Link / OTP,
+   asegúrate de que el correo muestre el token numérico con {{ .Token }}.
+   Ejemplo de texto:
+   "Tu código de Enla Cards es: {{ .Token }}"
+4. No hace falta desplegar ninguna Edge Function para este cambio.
+
+El OTP sólo se solicita cuando el correo ya tiene una tarjeta en el mismo programa.
+Para correos nuevos, el botón de Wallet crea el cliente y abre Wallet en una sola acción.

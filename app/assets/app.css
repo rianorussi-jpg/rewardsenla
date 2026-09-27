@@ -299,3 +299,279 @@ body{font-family:Manrope,Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe
     margin-bottom:14px;
   }
 }
+
+
+/* =========================================================
+   Enla Cards · Registro público directo a Wallet · 2026-09-27
+   ========================================================= */
+.join-public-shell{
+  padding:28px 18px 34px;
+  align-items:start;
+}
+.join-public-wrap{
+  width:min(560px,100%);
+  margin:20px auto 0;
+}
+.join-public-wrap .join-card{
+  padding:30px;
+  border-radius:28px;
+}
+.join-public-wrap .join-head{
+  margin-bottom:18px;
+}
+.join-public-wrap .join-logo{
+  width:82px;
+  height:82px;
+  border-radius:21px;
+  padding:7px;
+  margin:0 auto;
+  display:block;
+}
+.join-public-wrap .join-head h1{
+  margin-top:15px;
+}
+.join-public-wrap .join-promo{
+  border-left:4px solid var(--program-color,#4499f7);
+  background:linear-gradient(135deg,#f2f9ff,#f8fbfd);
+}
+.join-promo-image{
+  margin-bottom:18px;
+}
+.join-form{
+  gap:17px;
+}
+.birthday-fields{
+  display:grid;
+  grid-template-columns:.72fr 1.35fr 1fr;
+  gap:9px;
+}
+.birthday-fields>div{
+  min-width:0;
+}
+.birthday-fields span{
+  display:block;
+  margin:0 0 6px;
+  color:#718096;
+  font-size:10px;
+  font-weight:800;
+  text-transform:uppercase;
+  letter-spacing:.06em;
+}
+.birthday-fields input,
+.birthday-fields select{
+  width:100%;
+  min-width:0;
+}
+.wallet-join-zone{
+  margin-top:24px;
+  padding-top:22px;
+  border-top:1px solid #e5edf3;
+}
+.wallet-join-label{
+  margin-bottom:11px;
+  color:#123455;
+  font-size:12px;
+  font-weight:800;
+  text-align:center;
+}
+.wallet-join-buttons{
+  display:grid;
+  gap:10px;
+}
+.wallet-action{
+  width:100%;
+  min-height:62px;
+  border:0;
+  border-radius:16px;
+  padding:10px 18px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:12px;
+  cursor:pointer;
+  transition:transform .18s ease,box-shadow .18s ease,opacity .18s ease;
+  font-family:inherit;
+}
+.wallet-action:hover{
+  transform:translateY(-1px);
+}
+.wallet-action:active{
+  transform:translateY(0);
+}
+.wallet-action:disabled{
+  cursor:wait;
+  opacity:.72;
+}
+.wallet-action span:last-child{
+  display:grid;
+  text-align:left;
+  line-height:1.05;
+}
+.wallet-action small{
+  font-size:10px;
+  font-weight:600;
+  opacity:.8;
+}
+.wallet-action strong{
+  margin-top:3px;
+  font-size:17px;
+  font-weight:800;
+}
+.wallet-action-apple{
+  background:#050505;
+  color:#fff;
+  box-shadow:0 12px 26px rgba(0,0,0,.13);
+}
+.wallet-apple-mark{
+  font-size:28px;
+  line-height:1;
+}
+.wallet-action-google{
+  background:#fff;
+  color:#172b3c;
+  border:1px solid #dce6ee;
+  box-shadow:0 10px 24px rgba(18,52,85,.07);
+}
+.wallet-google-mark{
+  width:30px;
+  height:30px;
+  border-radius:9px;
+  display:grid;
+  place-items:center;
+  background:linear-gradient(135deg,#4285f4,#22be99);
+  color:#fff;
+  font-size:16px;
+  font-weight:900;
+}
+.wallet-hint{
+  margin:9px 0 0;
+  color:#8a98a8;
+  text-align:center;
+  font-size:10px;
+}
+.wallet-unavailable{
+  padding:14px;
+  border-radius:14px;
+  background:#f7f9fb;
+  color:#66788a;
+  text-align:center;
+  font-size:12px;
+}
+.wallet-loader{
+  width:22px;
+  height:22px;
+  border:2px solid currentColor;
+  border-right-color:transparent;
+  border-radius:50%;
+  animation:walletSpin .7s linear infinite;
+}
+@keyframes walletSpin{to{transform:rotate(360deg)}}
+
+.otp-panel{
+  padding:17px;
+  border:1px solid #cfe3f6;
+  border-radius:18px;
+  background:#f4faff;
+  display:grid;
+  grid-template-columns:36px 1fr;
+  gap:10px 12px;
+}
+.otp-panel.hidden{display:none!important}
+.otp-icon{
+  width:36px;
+  height:36px;
+  border-radius:12px;
+  display:grid;
+  place-items:center;
+  background:#e5f3ff;
+}
+.otp-panel b{
+  color:#123455;
+  font-size:12px;
+}
+.otp-panel p{
+  margin:4px 0 0;
+  color:#66788a;
+  font-size:10px;
+  line-height:1.5;
+}
+.otp-entry{
+  grid-column:1/-1;
+  display:grid;
+  grid-template-columns:1fr auto;
+  gap:8px;
+}
+.otp-entry input{
+  min-width:0;
+  text-align:center;
+  letter-spacing:.14em;
+  font-weight:800;
+}
+.otp-resend{
+  grid-column:1/-1;
+  justify-self:center;
+  appearance:none;
+  border:0;
+  background:transparent;
+  color:#3389dd;
+  font:inherit;
+  font-size:10px;
+  font-weight:800;
+  cursor:pointer;
+}
+.join-powered{
+  margin:25px auto 0;
+  padding:8px 18px 6px;
+  display:grid;
+  justify-items:center;
+  gap:6px;
+}
+.join-powered span{
+  color:#8a98a8;
+  font-size:9px;
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:.08em;
+}
+.join-powered img{
+  display:block;
+  width:172px;
+  height:auto;
+  max-height:64px;
+  object-fit:contain;
+  padding:8px 14px;
+  box-sizing:content-box;
+}
+
+@media(max-width:640px){
+  .join-public-shell{
+    padding:18px 13px 28px;
+  }
+  .join-public-wrap{
+    margin-top:7px;
+  }
+  .join-public-wrap .join-card{
+    padding:22px 17px;
+    border-radius:23px;
+  }
+  .birthday-fields{
+    grid-template-columns:.7fr 1.3fr 1fr;
+    gap:7px;
+  }
+  .birthday-fields input,
+  .birthday-fields select{
+    padding-left:9px;
+    padding-right:9px;
+  }
+  .otp-entry{
+    grid-template-columns:1fr;
+  }
+  .join-powered{
+    margin-top:22px;
+    padding:12px 18px 10px;
+  }
+  .join-powered img{
+    width:166px;
+    padding:10px 18px;
+  }
+}
