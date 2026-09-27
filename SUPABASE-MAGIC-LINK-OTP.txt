@@ -1,0 +1,19 @@
+MAGIC LINK / OTP · NO CAMBIAR EL USO ACTUAL
+
+Este template debe seguir siendo GENÉRICO porque se usa para DOS cosas:
+
+1. Iniciar sesión en https://scan.enlacards.com
+   - el empleado escribe su correo
+   - recibe {{ .Token }}
+   - escribe el código en Scan
+
+2. Verificar el correo al recuperar / volver a guardar una tarjeta
+   - conserva el flujo que ya tienes actualmente
+
+NO pongas aquí texto como "te invitaron a trabajar".
+Ese mensaje va en el template separado "Invite user".
+
+Asegúrate únicamente de que tu template actual siga incluyendo:
+{{ .Token }}
+
+Si además ya usa {{ .ConfirmationURL }}, puedes conservarlo.

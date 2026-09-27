@@ -89,13 +89,22 @@ ENLA.bindShell();
     return '<span class="badge red">Suspendido</span>';
   }
 
-  async function sendInviteEmail(email){
-    const redirect='https://scan.enlacards.com/?invite='+encodeURIComponent(id);
-    const {error}=await ENLA.sb.auth.signInWithOtp({
-      email,
-      options:{shouldCreateUser:true,emailRedirectTo:redirect}
+  async function sendStaffInvitation(email){
+    const {data:{session}}=await ENLA.sb.auth.getSession();
+    if(!session)throw new Error('Tu sesión expiró. Vuelve a iniciar sesión.');
+
+    const url=`${window.ENLA_CONFIG?.SUPABASE_URL||''}/functions/v1/invite-program-staff`;
+    const res=await fetch(url,{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'Authorization':`Bearer ${session.access_token}`
+      },
+      body:JSON.stringify({program_id:id,email})
     });
-    if(error) throw error;
+    const payload=await res.json().catch(()=>({}));
+    if(!res.ok)throw new Error(payload.error||'No se pudo enviar la invitación.');
+    return payload;
   }
 
   async function load(){
@@ -122,16 +131,13 @@ ENLA.bindShell();
   window.resendInvite=async(email)=>{
     q('#inviteStatus').textContent='Enviando invitación...';
     try{
-      const {data,error}=await ENLA.sb.rpc('rewards_add_program_staff',{p_program_id:id,p_email:email});
-      if(error)throw error;
-      const row=Array.isArray(data)?data[0]:data;
-      if(row?.status==='active'){
+      const inviteResult=await sendStaffInvitation(email);
+      if(inviteResult.status==='active'){
         q('#inviteStatus').textContent='Este empleado ya tiene acceso activo.';
         await load();
         return;
       }
-      await sendInviteEmail(email);
-      q('#inviteStatus').textContent='Invitación enviada a '+email+'.';
+      q('#inviteStatus').textContent=inviteResult.invite_sent?'Invitación enviada a '+email+'.':'La invitación quedó pendiente. Ese correo ya tiene cuenta en Enla Cards y podrá aceptarla al entrar a Scan.';
       await load();
     }catch(e){
       q('#inviteStatus').textContent='La invitación quedó pendiente, pero no se pudo enviar el correo: '+(e.message||e);
@@ -146,14 +152,13 @@ ENLA.bindShell();
     q('#invite').textContent='Enviando...';
     q('#inviteStatus').textContent='';
     try{
-      const {data,error}=await ENLA.sb.rpc('rewards_add_program_staff',{p_program_id:id,p_email:email});
-      if(error)throw error;
-      const row=Array.isArray(data)?data[0]:data;
-      if(row?.status==='active'){
+      const inviteResult=await sendStaffInvitation(email);
+      if(inviteResult.status==='active'){
         q('#inviteStatus').textContent='Ese empleado ya tiene acceso activo a esta tarjeta.';
       }else{
-        await sendInviteEmail(email);
-        q('#inviteStatus').textContent='Invitación enviada. El empleado aparecerá como pendiente hasta aceptarla.';
+        q('#inviteStatus').textContent=inviteResult.invite_sent
+          ?'Invitación enviada. El empleado aparecerá como pendiente hasta aceptarla.'
+          :'La invitación quedó pendiente. Ese correo ya tiene cuenta y podrá aceptarla al entrar a Scan.';
       }
       q('#email').value='';
       await load();

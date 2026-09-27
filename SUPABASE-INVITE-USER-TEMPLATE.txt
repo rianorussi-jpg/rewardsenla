@@ -1,0 +1,45 @@
+SUPABASE AUTH · TEMPLATE "INVITE USER"
+
+Ruta:
+Supabase Dashboard
+→ Authentication
+→ Email Templates
+→ Invite user
+
+ASUNTO
+Te invitaron a trabajar en una tarjeta de Enla Cards
+
+CUERPO HTML SUGERIDO
+
+<h2>Te invitaron a trabajar en Enla Cards</h2>
+
+<p>
+  Un negocio te agregó como empleado para operar una de sus tarjetas desde Enla Cards Scan.
+</p>
+
+<p>
+  Al aceptar podrás escanear clientes y registrar sellos, cashback, visitas o accesos
+  según la tarjeta asignada.
+</p>
+
+<p style="margin:28px 0;">
+  <a href="{{ .ConfirmationURL }}"
+     style="display:inline-block;padding:13px 22px;border-radius:10px;background:#4499F7;color:#ffffff;text-decoration:none;font-weight:700;">
+    Aceptar invitación
+  </a>
+</p>
+
+<p>
+  Después podrás entrar cuando quieras en <b>scan.enlacards.com</b> usando solamente
+  tu correo y el código que recibirás por email. No necesitas crear una contraseña.
+</p>
+
+<p style="color:#66788a;font-size:12px;">
+  Si no reconoces esta invitación, puedes ignorar este correo.
+</p>
+
+NOTA
+El enlace de {{ .ConfirmationURL }} llevará a:
+https://scan.enlacards.com/?invite=ID_DE_LA_TARJETA
+
+La Edge Function envía ese redirect automáticamente.

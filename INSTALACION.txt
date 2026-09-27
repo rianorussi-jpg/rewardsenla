@@ -1,25 +1,69 @@
-ENLA CARDS · EMPLEADOS + INVITACIONES + LOGIN POR CÓDIGO
+ENLA CARDS · EMPLEADOS CON INVITE USER + SCAN OTP
+
+ARQUITECTURA FINAL
+
+MAGIC LINK / OTP
+Se usa para:
+- iniciar sesión en scan.enlacards.com con correo + código;
+- verificar el correo al recuperar / volver a guardar una tarjeta.
+
+INVITE USER
+Se usa únicamente para:
+- "Te invitaron a trabajar en una tarjeta de Enla Cards".
+
+INSTALACIÓN
 
 1. Ejecuta:
 backend/016Q-staff-invitations-otp.sql
 
-2. Configura la plantilla Magic Link de Supabase con:
-SUPABASE-EMAIL-TEMPLATE-SCAN.txt
+2. Despliega la nueva Edge Function:
+supabase/functions/invite-program-staff/index.ts
 
-3. Revisa las Redirect URLs indicadas en ese archivo.
+Nombre de la función:
+invite-program-staff
 
-4. Reemplaza:
+Usa los secretos normales:
+- SUPABASE_URL
+- SUPABASE_ANON_KEY
+- SUPABASE_SERVICE_ROLE_KEY
+
+3. En Authentication → Email Templates:
+
+A) Magic Link / OTP
+NO reemplaces el flujo que ya usas.
+Consulta:
+SUPABASE-MAGIC-LINK-OTP.txt
+
+B) Invite user
+Pega el template de:
+SUPABASE-INVITE-USER-TEMPLATE.txt
+
+4. En Authentication → URL Configuration permite:
+https://scan.enlacards.com
+https://scan.enlacards.com/**
+https://scan.enlacards.com/scan/
+https://scan.enlacards.com/scan/**
+
+5. Reemplaza:
 - app/staff.html
 - scan/index.html
 - scan/scan.js
 - scan/scan.css
 - index.html
 
-FLUJO
-- Nuevo empleado = Pendiente.
-- Se envía correo con código y enlace seguro.
-- Scan ya no pide contraseña.
-- El empleado puede aceptar desde su cuenta en Scan.
-- Si abre el enlace de invitación, Scan intenta aceptar esa tarjeta automáticamente.
-- Solo después de aceptar pasa a Activo y puede operar.
-- La sesión sigue recordándose hasta cerrar sesión.
+COMPORTAMIENTO
+
+Nuevo empleado que todavía NO tiene cuenta Auth:
+- queda Pendiente;
+- la Edge Function usa Supabase Admin inviteUserByEmail();
+- recibe el template "Invite user";
+- toca Aceptar invitación;
+- llega a Scan y se activa la tarjeta.
+
+Empleado que YA tiene una cuenta Auth confirmada:
+- Supabase no permite enviarle nuevamente el template "Invite user";
+- la tarjeta sí queda Pendiente;
+- al entrar a Scan con OTP verá "Invitaciones pendientes";
+- pulsa "Aceptar tarjeta" y se activa.
+
+Esto último es una limitación del endpoint Invite User de Supabase, no de Enla Cards.
