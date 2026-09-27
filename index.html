@@ -1,6 +1,38 @@
 <!doctype html>
 <html lang="es">
 <head>
+<script>
+  // Fallback definitivo para scan.enlacards.com:
+  // si Vercel llega a servir este index raíz, cargamos la app Scan
+  // DENTRO de la misma URL sin redirigir a /scan.
+  (function () {
+    if (location.hostname !== 'scan.enlacards.com' || location.pathname.startsWith('/scan')) return;
+
+    document.documentElement.style.visibility = 'hidden';
+
+    fetch('/scan/index.html', { cache: 'no-store' })
+      .then(function (res) {
+        if (!res.ok) throw new Error('No se pudo cargar Enla Cards Scan.');
+        return res.text();
+      })
+      .then(function (html) {
+        document.open();
+        document.write(html);
+        document.close();
+      })
+      .catch(function (err) {
+        document.documentElement.style.visibility = '';
+        document.documentElement.innerHTML =
+          '<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">' +
+          '<title>Enla Cards Scan</title></head>' +
+          '<body style="font-family:system-ui,sans-serif;padding:40px;color:#123455">' +
+          '<h2>No se pudo abrir Enla Cards Scan</h2>' +
+          '<p>Recarga la página. Si continúa, revisa el deployment de Vercel.</p>' +
+          '</body>';
+        console.error(err);
+      });
+  })();
+</script>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" /><link rel="icon" type="image/png" href="/assets/favicon.png"><link rel="apple-touch-icon" href="/assets/favicon.png">
   <meta name="theme-color" content="#ffffff" />

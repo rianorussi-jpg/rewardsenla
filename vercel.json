@@ -48,16 +48,6 @@
   ],
   "rewrites": [
     {
-      "source": "/:code([A-Za-z0-9]{3,4})",
-      "has": [
-        {
-          "type": "host",
-          "value": "enla.cards"
-        }
-      ],
-      "destination": "/join.html"
-    },
-    {
       "source": "/",
       "has": [
         {
@@ -66,6 +56,16 @@
         }
       ],
       "destination": "/scan/index.html"
+    },
+    {
+      "source": "/:code([A-Za-z0-9]{3,4})",
+      "has": [
+        {
+          "type": "host",
+          "value": "enla.cards"
+        }
+      ],
+      "destination": "/join.html"
     }
   ]
 }

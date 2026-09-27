@@ -1,14 +1,34 @@
-ENLA CARDS SCAN · SELLOS REALES EN VISTA PREVIA
+ENLA CARDS · SCAN EN SUBDOMINIO SIN /scan VISIBLE
 
-Reemplaza:
-- scan/scan.js
-- scan/scan.css
+Reemplaza en la raíz del proyecto:
+- vercel.json
+- index.html
 
-Ejecuta en Supabase SQL Editor:
-- backend/016O-scan-stamp-image-preview.sql
+Qué hace:
 
-Ahora las tarjetas de sellos en la pantalla inicial de Scan usan:
-1. stamp_filled_image_url, si el negocio tiene una imagen de sello configurada.
-2. stamp_icon (emoji) únicamente como respaldo si no existe imagen.
+1. vercel.json
+La PRIMERA regla de rewrite es:
+scan.enlacards.com/ -> /scan/index.html
 
-Los sellos pendientes usan la misma imagen con opacidad baja, para parecerse a la tarjeta real.
+Es un rewrite interno, no un redirect.
+La URL visible sigue siendo:
+https://scan.enlacards.com
+
+2. index.html
+Agrega un fallback adicional:
+si Vercel por alguna razón sirve la landing en scan.enlacards.com,
+el propio index carga /scan/index.html mediante fetch y reemplaza el documento.
+
+Esto NO cambia location.href.
+El navegador sigue mostrando:
+https://scan.enlacards.com
+
+También conserva query strings como:
+https://scan.enlacards.com/?invite=...
+
+Después de reemplazar los archivos:
+- haz commit/push;
+- espera un deployment nuevo de Production en Vercel;
+- prueba en ventana incógnita https://scan.enlacards.com
+
+No requiere SQL ni cambios en Supabase.
