@@ -630,12 +630,14 @@ html.program-editing.program-ready .rewards-wizard-enla .wizard-mobile-progress{
   box-shadow:0 10px 26px rgba(18,52,85,.07);
   overflow:hidden;
 }
-.card-share-qr canvas{
-  display:block;
+.card-share-qr canvas,
+.card-share-qr img{
   width:180px!important;
   height:180px!important;
+  max-width:180px;
+  max-height:180px;
+  margin:0 auto;
 }
-.card-share-qr img{display:none!important}
 .detail-link-label{
   width:100%;
   margin-top:18px;

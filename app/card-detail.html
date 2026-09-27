@@ -1,4 +1,4 @@
-<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" type="image/png" href="/assets/favicon.png"><link rel="apple-touch-icon" href="/assets/favicon.png"><title>Tarjeta — enla.cards</title><link rel="stylesheet" href="/app/assets/app.css?v=20260927-detail-preview2"></head><body><div class="app-shell"><aside class="sidebar"><a class="side-brand" href="/">enla.<span>cards</span></a><nav class="nav-list">
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" type="image/png" href="/assets/favicon.png"><link rel="apple-touch-icon" href="/assets/favicon.png"><title>Tarjeta — enla.cards</title><link rel="stylesheet" href="/app/assets/app.css?v=20260927-detail-qr-visible"></head><body><div class="app-shell"><aside class="sidebar"><a class="side-brand" href="/">enla.<span>cards</span></a><nav class="nav-list">
 <a class="nav-item" href="/app/dashboard.html">▦ Mis tarjetas</a>
 <a class="nav-item" href="/app/customers.html">♙ Clientes</a>
 <a class="nav-item" href="/app/scan.html">⌗ Escanear</a>
@@ -125,11 +125,20 @@ if(typeof QRCode==='function'){
     colorLight:'#ffffff',
     correctLevel:QRCode.CorrectLevel.M
   });
-  // qrcodejs crea canvas + img. En navegadores modernos usamos solo el canvas.
-  const qrCanvas=qrHost.querySelector('canvas');
-  const qrImg=qrHost.querySelector('img');
-  if(qrCanvas)qrCanvas.style.display='block';
-  if(qrImg)qrImg.style.display='none';
+  // qrcodejs puede terminar mostrando IMG o CANVAS según el navegador.
+  // Dejamos visible el elemento que realmente haya generado.
+  requestAnimationFrame(()=>{
+    const qrCanvas=qrHost.querySelector('canvas');
+    const qrImg=qrHost.querySelector('img');
+    const imgReady=Boolean(qrImg && qrImg.getAttribute('src'));
+    if(imgReady){
+      qrImg.style.display='block';
+      if(qrCanvas)qrCanvas.style.display='none';
+    }else if(qrCanvas){
+      qrCanvas.style.display='block';
+      if(qrImg)qrImg.style.display='none';
+    }
+  });
 }
 
 document.querySelector('#copyJoin').onclick=async()=>{
