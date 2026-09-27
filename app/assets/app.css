@@ -575,3 +575,48 @@ body{font-family:Manrope,Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe
     padding:10px 18px;
   }
 }
+
+
+/* Enla Cards · resumen compartible de tarjeta */
+.card-share-center{margin-top:18px;display:grid;grid-template-columns:minmax(0,1.15fr) minmax(300px,.85fr);gap:26px;align-items:center;padding:26px}
+.card-share-heading h2,.card-share-tools h2{margin:8px 0 5px;letter-spacing:-.025em}
+.card-share-heading p,.card-share-tools p{margin:0 0 16px}
+.summary-wallet-card{width:min(410px,100%);min-height:225px;border-radius:23px;padding:18px;box-shadow:0 20px 48px rgba(16,24,40,.20);overflow:hidden;position:relative}
+.summary-wallet-card:after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(145deg,rgba(255,255,255,.10),transparent 48%,rgba(0,0,0,.06))}
+.summary-wallet-card>*{position:relative;z-index:1}
+.summary-wallet-top{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;min-height:48px}
+.summary-wallet-brand{max-width:65%;min-width:0}
+.summary-wallet-brand img{max-width:150px;max-height:42px;object-fit:contain;object-position:left center;display:block}
+.summary-wallet-brand b{font-size:15px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.summary-wallet-stat{text-align:right;display:grid;gap:2px}
+.summary-wallet-stat small{font-size:8px;font-weight:800;letter-spacing:.07em;opacity:.76}
+.summary-wallet-stat strong{font-size:16px}
+.summary-preview-strip{display:block;width:calc(100% + 36px);height:auto;aspect-ratio:375/123;object-fit:cover;margin:8px -18px 5px}
+.summary-preview-stamps{min-height:92px;display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:8px;padding:10px 8px}
+.summary-preview-stamps span{width:31px;height:31px;display:grid;place-items:center;font-size:20px}
+.summary-preview-stamps img{width:27px;height:27px;object-fit:contain}
+.summary-preview-stamps .off{opacity:.27;filter:grayscale(1)}
+.summary-wallet-promo{text-align:center;font-size:11px;font-weight:700;line-height:1.35;margin:7px auto 2px;max-width:92%}
+.summary-wallet-foot{display:flex;justify-content:space-between;gap:14px;align-items:end;margin-top:12px;font-size:9px;font-weight:750;opacity:.86}
+.summary-wallet-foot span:first-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:78%}
+.card-share-tools{display:flex;flex-direction:column;align-items:flex-start}
+.card-share-qr{width:196px;min-height:196px;background:#fff;padding:8px;border-radius:17px;border:1px solid #e5ebf0;box-shadow:0 10px 26px rgba(18,52,85,.07)}
+.card-share-qr img,.card-share-qr canvas{display:block!important;width:180px!important;height:180px!important}
+.card-share-link{margin:14px 0 10px;width:100%;padding:12px 13px;border-radius:12px;background:#f7fafc;border:1px solid #e3ebf1;color:#317fc7;font-weight:800;font-size:11px;text-decoration:none;overflow-wrap:anywhere}
+.card-share-actions{display:flex;gap:9px;flex-wrap:wrap}
+
+/* Evita mostrar el paso 1 mientras carga una tarjeta existente. */
+html.program-editing .rewards-wizard-enla .step-panel[data-step="1"]{display:none!important}
+html.program-editing .rewards-wizard-enla .step-panel[data-step="2"]{display:block!important}
+html.program-editing .rewards-wizard-enla .step-panel[data-step="2"].hidden{display:block!important}
+
+/* Promo centrada como en Apple Wallet real. */
+.rewards-wizard-enla .wallet-promo-preview{width:100%;text-align:center!important;justify-content:center;margin-left:auto!important;margin-right:auto!important}
+
+@media(max-width:850px){
+  .card-share-center{grid-template-columns:1fr}
+  .card-share-tools{align-items:center;text-align:center}
+  .card-share-link{text-align:left}
+  .card-share-actions{justify-content:center}
+  .summary-wallet-card{margin:0 auto}
+}

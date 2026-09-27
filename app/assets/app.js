@@ -25,14 +25,12 @@ function publicSiteUrl(){
   const raw=String(CFG.PUBLIC_SITE_URL||'https://enlacards.com').trim();
   try{return new URL(raw).origin}catch(_e){return 'https://enlacards.com'}
 }
-function publicJoinUrl(programOrCode){
-  const code=typeof programOrCode==='string'
-    ? programOrCode
-    : (programOrCode?.short_code||programOrCode?.public_slug||programOrCode?.id||'');
-  if(!code)return 'https://enla.cards';
-  return 'https://enla.cards/'+encodeURIComponent(String(code).trim());
+function publicJoinUrl(program){
+  const shortCode=String(program?.short_code||'').trim();
+  if(shortCode)return 'https://enla.cards/'+encodeURIComponent(shortCode);
+  const slug=String(program?.public_slug||program?.id||'').trim();
+  return publicSiteUrl()+'/join.html?p='+encodeURIComponent(slug);
 }
-
 const $=(s,r=document)=>r.querySelector(s);
 const $$=(s,r=document)=>[...r.querySelectorAll(s)];
 
@@ -76,7 +74,8 @@ const NAV_ICONS={
   activity:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 18V9M10 18V5M16 18v-7M22 18V3"/></svg>',
   edit:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 16-.7 4.7L8 20l10.5-10.5-4-4L4 16Z"/><path d="m13.5 6.5 4 4"/></svg>',
   back:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>',
-  bell:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg>'
+  bell:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg>',
+  staff:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3 19c.5-4 2.5-6 6-6s5.5 2 6 6M17 9v6M14 12h6"/></svg>'
 };
 function navLink(icon,label,href,active=false){return `<a class="nav-item${active?' active':''}" href="${href}"><span class="nav-icon">${NAV_ICONS[icon]||''}</span><span>${label}</span></a>`}
 function programContext(){const q=new URLSearchParams(location.search),page=location.pathname.split('/').pop();return q.get('program')||(['card-detail.html','program.html'].includes(page)?q.get('id'):null)||null}
@@ -84,7 +83,7 @@ function buildNav(){
   const nav=$('.nav-list'); if(!nav)return;
   const page=location.pathname.split('/').pop(), pid=programContext();
   if(pid){
-    nav.innerHTML=`<div class="nav-caption">Tarjeta seleccionada</div>${navLink('overview','Resumen',`/app/card-detail.html?id=${pid}`,page==='card-detail.html')}${navLink('customers','Clientes',`/app/customers.html?program=${pid}`,page==='customers.html')}${navLink('scan','Escanear',`/app/scan.html?program=${pid}`,page==='scan.html')}${navLink('bell','Notificaciones',`/app/notifications.html?program=${pid}`,page==='notifications.html')}${navLink('activity','Actividad',`/app/history.html?program=${pid}`,page==='history.html')}${navLink('edit','Ajustes de tarjeta',`/app/program.html?id=${pid}`,page==='program.html')}<div class="nav-divider"></div>${navLink('back','Mis tarjetas','/app/dashboard.html',false)}`;
+    nav.innerHTML=`<div class="nav-caption">Tarjeta seleccionada</div>${navLink('overview','Resumen',`/app/card-detail.html?id=${pid}`,page==='card-detail.html')}${navLink('customers','Clientes',`/app/customers.html?program=${pid}`,page==='customers.html')}${navLink('scan','Escanear',`/app/scan.html?program=${pid}`,page==='scan.html')}${navLink('staff','Empleados',`/app/staff.html?program=${pid}`,page==='staff.html')}${navLink('bell','Notificaciones',`/app/notifications.html?program=${pid}`,page==='notifications.html')}${navLink('activity','Actividad',`/app/history.html?program=${pid}`,page==='history.html')}${navLink('edit','Personalizar tarjeta',`/app/program.html?id=${pid}`,page==='program.html')}<div class="nav-divider"></div>${navLink('back','Mis tarjetas','/app/dashboard.html',false)}`;
   }else{
     nav.innerHTML=`${navLink('cards','Mis tarjetas','/app/dashboard.html',page==='dashboard.html')}${navLink('scan','Escanear','/app/scan.html',page==='scan.html')}${navLink('history','Historial','/app/history.html',page==='history.html')}<div class="nav-divider"></div>${navLink('billing','Plan y facturación','/app/billing.html',page==='billing.html')}${navLink('settings','Ajustes de cuenta','/app/settings.html',page==='settings.html')}`;
   }
@@ -375,4 +374,4 @@ async function smartPublish(programId){
 
 function navActive(){buildNav()}
 
-window.ENLA={version:'20260927-short-links',sb,configured,configError,publicSiteUrl,publicJoinUrl,ensureConfigured,currentUser,requireAuth,getBusiness,getOwnedPrograms,getStaffPrograms,getPrograms,getProgram,getAccessProfile,saveProgram,uploadLogo,uploadProgramMedia,loyaltyMeta,bindShell,navActive,msg,initials,syncWallet,addStamp,useVisit,renewVisits,deactivateVisitCard,redeemReward,spendCashback,addCashbackAmount,setCashbackBalance,markAccess,renewAccess,setAccessExpiry,setAccessStatus,staffScanAction,isProgramStaff,sendWalletNotification,syncProgramWallets,programContext,getBilling,getAnnualPromoStatus,startCheckout,openBillingPortal,getPublicationOverview,publishProgram,unpublishProgram,smartPublish};
+window.ENLA={version:'20260927-card-summary',sb,configured,configError,publicSiteUrl,publicJoinUrl,ensureConfigured,currentUser,requireAuth,getBusiness,getOwnedPrograms,getStaffPrograms,getPrograms,getProgram,getAccessProfile,saveProgram,uploadLogo,uploadProgramMedia,loyaltyMeta,bindShell,navActive,msg,initials,syncWallet,addStamp,useVisit,renewVisits,deactivateVisitCard,redeemReward,spendCashback,addCashbackAmount,setCashbackBalance,markAccess,renewAccess,setAccessExpiry,setAccessStatus,staffScanAction,isProgramStaff,sendWalletNotification,syncProgramWallets,programContext,getBilling,getAnnualPromoStatus,startCheckout,openBillingPortal,getPublicationOverview,publishProgram,unpublishProgram,smartPublish};
