@@ -605,10 +605,6 @@ body{font-family:Manrope,Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe
 .card-share-link{margin:14px 0 10px;width:100%;padding:12px 13px;border-radius:12px;background:#f7fafc;border:1px solid #e3ebf1;color:#317fc7;font-weight:800;font-size:11px;text-decoration:none;overflow-wrap:anywhere}
 .card-share-actions{display:flex;gap:9px;flex-wrap:wrap}
 
-/* Evita mostrar el paso 1 mientras carga una tarjeta existente. */
-html.program-editing .rewards-wizard-enla .step-panel[data-step="1"]{display:none!important}
-html.program-editing .rewards-wizard-enla .step-panel[data-step="2"]{display:block!important}
-html.program-editing .rewards-wizard-enla .step-panel[data-step="2"].hidden{display:block!important}
 
 /* Promo centrada como en Apple Wallet real. */
 .rewards-wizard-enla .wallet-promo-preview{width:100%;text-align:center!important;justify-content:center;margin-left:auto!important;margin-right:auto!important}
@@ -619,4 +615,15 @@ html.program-editing .rewards-wizard-enla .step-panel[data-step="2"].hidden{disp
   .card-share-link{text-align:left}
   .card-share-actions{justify-content:center}
   .summary-wallet-card{margin:0 auto}
+}
+
+
+/* Edición de tarjeta: evita el destello del paso 1 sin forzar ningún paso después. */
+html.program-editing:not(.program-ready) .rewards-wizard-enla .wizard-stage,
+html.program-editing:not(.program-ready) .rewards-wizard-enla .wizard-mobile-progress{
+  visibility:hidden;
+}
+html.program-editing.program-ready .rewards-wizard-enla .wizard-stage,
+html.program-editing.program-ready .rewards-wizard-enla .wizard-mobile-progress{
+  visibility:visible;
 }
