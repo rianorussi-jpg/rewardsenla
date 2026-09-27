@@ -1,21 +1,23 @@
-ENLA CARDS · FIX SUBDOMINIO SCAN + FALLBACK
+ENLA CARDS SCAN · VISTAS PREVIAS DE TARJETAS
 
-Reemplaza en la raíz:
-- vercel.json
-- index.html
+Reemplaza:
+- scan/scan.js
+- scan/scan.css
 
-Después haz un nuevo deploy en Vercel.
+Ejecuta en Supabase SQL Editor:
+- backend/016N-scan-card-previews.sql
 
-COMPORTAMIENTO ESPERADO
+Después haz deploy.
 
-1. Preferido:
-   https://scan.enlacards.com
-   carga directamente la app que está en /scan/index.html,
-   manteniendo scan.enlacards.com en la barra.
+Qué cambia:
+- Después de iniciar sesión, cada programa se muestra como una mini tarjeta visual.
+- Respeta color principal y color de texto.
+- Muestra el logo real.
+- Sellos: muestra una fila de sellos.
+- Cashback: muestra saldo de ejemplo.
+- Visitas: muestra cantidad del paquete.
+- Acceso: muestra el nombre del servicio.
+- Si existe imagen central/promocional, se utiliza para cashback, visitas y acceso.
+- Debajo de cada preview sigue apareciendo el nombre, tipo y si el usuario es Dueño o Empleado.
 
-2. Fallback:
-   Si Vercel sirve por error el index principal en scan.enlacards.com,
-   el navegador detecta ese host y redirige automáticamente a:
-   https://enlacards.com/scan
-
-El fallback NO afecta enlacards.com ni ninguna otra URL.
+No cambia el funcionamiento del escáner ni las operaciones de clientes.

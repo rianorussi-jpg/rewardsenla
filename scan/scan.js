@@ -40,6 +40,59 @@
     return ({stamps:'⭐',cashback:'💵',visits:'🎟️',access:'🪪'})[type] || '💳';
   }
 
+  function safeColor(value, fallback) {
+    return /^#[0-9a-f]{6}$/i.test(String(value || '')) ? value : fallback;
+  }
+
+  function programPreview(p) {
+    const bg = safeColor(p.primary_color, '#4499f7');
+    const fg = safeColor(p.text_color, '#ffffff');
+    const stamp = esc(p.stamp_icon || '⭐');
+    const goal = Math.max(1, Number(p.goal_count || 6));
+    const shownStamps = Math.min(goal, 8);
+
+    let middle = '';
+
+    if (p.program_type === 'stamps') {
+      middle = `
+        <div class="wallet-stamps">
+          ${Array.from({length: shownStamps}).map((_, i) =>
+            `<span class="${i < Math.min(2, shownStamps) ? 'filled' : ''}">${stamp}</span>`
+          ).join('')}
+          ${goal > shownStamps ? `<small>+${goal - shownStamps}</small>` : ''}
+        </div>`;
+    } else if (p.central_image_url) {
+      middle = `<img class="wallet-strip" src="${esc(p.central_image_url)}" alt="">`;
+    } else if (p.program_type === 'cashback') {
+      middle = `<div class="wallet-big-value">$0.00</div>`;
+    } else if (p.program_type === 'visits') {
+      middle = `<div class="wallet-big-value">${goal} visitas</div>`;
+    } else {
+      middle = `<div class="wallet-big-value">${esc(p.service_name || 'Acceso')}</div>`;
+    }
+
+    const footer =
+      p.program_type === 'stamps'
+        ? `<span>${esc(p.reward_text || 'Recompensa')}</span><b>2 / ${goal}</b>`
+      : p.program_type === 'cashback'
+        ? `<span>${esc(p.promo_text || 'Acumula cashback')}</span><b>SALDO</b>`
+      : p.program_type === 'visits'
+        ? `<span>${esc(p.promo_text || 'Paquete de visitas')}</span><b>${goal}</b>`
+      : `<span>${esc(p.promo_text || 'Identificación / acceso')}</span><b>ACTIVA</b>`;
+
+    return `
+      <div class="wallet-preview" style="--card-bg:${bg};--card-fg:${fg}">
+        <div class="wallet-preview-top">
+          ${p.logo_url
+            ? `<img src="${esc(p.logo_url)}" alt="">`
+            : `<strong>${esc(p.display_name || p.program_name)}</strong>`}
+          <span>${typeName(p.program_type)}</span>
+        </div>
+        <div class="wallet-preview-middle">${middle}</div>
+        <div class="wallet-preview-bottom">${footer}</div>
+      </div>`;
+  }
+
   function shell(inner) {
     return `
       <div class="scan-shell">
@@ -164,15 +217,15 @@
       <div class="program-grid">
         ${programs.map(p => `
           <button class="program-card" data-program="${p.id}">
-            <div class="program-card-head">
-              ${p.logo_url
-                ? `<img class="program-logo" src="${esc(p.logo_url)}" alt="">`
-                : `<div class="program-icon">${typeIcon(p.program_type)}</div>`}
+            ${programPreview(p)}
+            <div class="program-meta">
+              <div>
+                <h3>${esc(p.display_name || p.program_name)}</h3>
+                <p>${esc(p.program_name)} · ${typeName(p.program_type)}</p>
+              </div>
               <span class="role-chip">${p.access_role === 'owner' ? 'Dueño' : 'Empleado'}</span>
             </div>
-            <h3>${esc(p.display_name || p.program_name)}</h3>
-            <p>${esc(p.program_name)} · <span class="type-chip">${typeName(p.program_type)}</span></p>
-            <div class="enter">Entrar a esta tarjeta →</div>
+            <div class="enter">Abrir para escanear →</div>
           </button>
         `).join('') || `
           <div class="panel" style="grid-column:1/-1;text-align:center;padding:44px">
