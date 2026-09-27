@@ -270,3 +270,32 @@ body{font-family:Manrope,Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe
 .public-shell{background:radial-gradient(700px 420px at 50% 0,rgba(68,153,247,.14),transparent 70%),linear-gradient(180deg,#fbfdff,#f6f9fc)}.join-card{border-color:#e2ebf2;box-shadow:0 22px 60px rgba(18,52,85,.09)}.join-promo{background:#eef8ff}.customer-pass{box-shadow:0 24px 55px rgba(18,52,85,.17)}
 .rewards-wizard-enla .wizard-rail{border-color:#e3ecf3;background:#fff;box-shadow:0 12px 34px rgba(18,52,85,.045)}.rewards-wizard-enla .wizard-rail-step.active{background:#eaf5ff;color:#277cc4}.rewards-wizard-enla .wizard-rail-step.active .wizard-rail-index{background:linear-gradient(135deg,#4499f7,#287fe6);box-shadow:0 5px 14px rgba(68,153,247,.22)}.rewards-wizard-enla .wizard-rail-step.done .wizard-rail-index{background:#ecfbf6;border-color:#b7eadc;color:#13836a}.rewards-wizard-enla .wizard-color-icon,.rewards-wizard-enla .wizard-final-link-icon{background:#eaf5ff;color:#287fc7}.rewards-wizard-enla .barcode-option.selected{border-color:#68adf7;background:#f0f8ff;box-shadow:0 0 0 3px rgba(68,153,247,.08)}.rewards-wizard-enla .wizard-finish-mark{background:#ecfbf6;color:#13836a}.rewards-wizard-enla .wizard-join-url a{color:#277dc5}
 @media(max-width:760px){.app-shell{grid-template-columns:1fr}.sidebar{width:258px;left:-278px}.content{padding:18px}.side-brand{margin-left:3px}}
+
+/* Enla Cards — logo breathing room fix */
+.auth-brand{
+  width:210px;
+  height:76px;
+  padding:10px 14px;
+  background-size:172px auto;
+  background-position:center;
+  background-repeat:no-repeat;
+  border-radius:16px;
+  margin:-4px 0 10px;
+}
+.side-brand{
+  width:188px;
+  height:70px;
+  padding:6px 10px;
+  background-size:158px auto;
+  background-position:center;
+  background-repeat:no-repeat;
+  margin:0 auto 16px;
+}
+@media(max-width:760px){
+  .side-brand{
+    width:186px;
+    height:68px;
+    margin-left:0;
+    margin-bottom:14px;
+  }
+}
