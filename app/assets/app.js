@@ -53,9 +53,13 @@ async function currentUser(){
   return data.user||null;
 }
 async function requireAuth(){
-  const u=await currentUser();
-  if(!u){location.href='/app/login.html';return null}
-  return u;
+  ensureConfigured();
+  const {data:{session},error}=await sb.auth.getSession();
+  if(error||!session?.user){
+    location.replace('/app/login.html');
+    return null;
+  }
+  return session.user;
 }
 async function signOut(){
   ensureConfigured();
