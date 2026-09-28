@@ -1,56 +1,65 @@
-<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" type="image/png" href="/assets/favicon.png"><link rel="apple-touch-icon" href="/assets/favicon.png"><title>Mis tarjetas — enla.cards</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"><link rel="stylesheet" href="/app/assets/app.css?v=20260907-publish2"></head><body><div class="app-shell"><aside class="sidebar"><a class="side-brand" href="/">enla.<span>cards</span></a><nav class="nav-list">
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" type="image/png" href="/assets/favicon.png"><link rel="apple-touch-icon" href="/assets/favicon.png"><title>Mis tarjetas — enla.cards</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"><link rel="stylesheet" href="/app/assets/app.css?v=20260927-roles-dashboard"></head><body><div class="app-shell"><aside class="sidebar"><a class="side-brand" href="/">enla.<span>cards</span></a><nav class="nav-list">
 <a class="nav-item" href="/app/dashboard.html">▦ Mis tarjetas</a>
 <a class="nav-item" href="/app/customers.html">♙ Clientes</a>
 <a class="nav-item" href="/app/scan.html">⌗ Escanear</a>
 <a class="nav-item" href="/app/history.html">◴ Historial</a>
-<a class="nav-item" href="/app/settings.html">⚙ Ajustes</a></nav><div class="side-bottom"><button class="btn btn-secondary" id="signOut" style="width:100%">Cerrar sesión</button></div></aside><div class="overlay"></div><main class="main"><header class="topbar"><div style="display:flex;align-items:center;gap:10px"><button class="btn btn-secondary mobile-menu" id="mobileMenu">☰</button><h1>Mis tarjetas</h1></div><a class="btn btn-primary btn-sm" id="createCardTop" href="/app/program.html">＋ Crear tarjeta</a></header><div class="content"><div id="billingBanner"></div><div class="cards-hero"><div><h2>Tus programas de lealtad</h2><p class="muted" style="margin:0">Crea distintas tarjetas para diferentes promociones. Cada una tiene sus propios clientes, estadísticas y Wallet.</p></div></div><div class="cards-grid" id="cards"><a href="/app/program.html" class="card create-tile" id="createTile"><div><div class="plus">＋</div><b>Crear nueva tarjeta</b><p class="muted small">Sellos, visitas, cashback o identificación</p></div></a></div></div></main></div><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="/app/assets/config.js?v=20260907-publish2"></script><script src="/app/assets/app.js?v=20260907-publish2"></script><script>ENLA.bindShell();ENLA.navActive();(async()=>{try{
+<a class="nav-item" href="/app/settings.html">⚙ Ajustes</a></nav><div class="side-bottom"><button class="btn btn-secondary" id="signOut" style="width:100%">Cerrar sesión</button></div></aside><div class="overlay"></div><main class="main"><header class="topbar"><div style="display:flex;align-items:center;gap:10px"><button class="btn btn-secondary mobile-menu" id="mobileMenu">☰</button><h1>Mis tarjetas</h1></div><a class="btn btn-primary btn-sm" id="createCardTop" href="/app/program.html">＋ Crear tarjeta</a></header><div class="content"><div id="billingBanner"></div><div class="cards-hero"><div><h2>Tus tarjetas</h2><p class="muted" style="margin:0">Administra tus propias tarjetas y accede al escáner de las tarjetas donde colaboras como empleado.</p></div></div>
+<section class="dashboard-card-section"><div class="dashboard-section-head"><div><span class="dashboard-section-kicker">ACTIVAS</span><h2>Publicadas</h2></div><span class="muted small" id="publishedCount"></span></div><div class="cards-grid" id="publishedCards"></div></section>
+<section class="dashboard-card-section dashboard-drafts"><div class="dashboard-section-head"><div><span class="dashboard-section-kicker">EN PREPARACIÓN</span><h2>Borradores</h2></div><span class="muted small" id="draftCount"></span></div><div class="cards-grid" id="draftCards"><a href="/app/program.html" class="card create-tile" id="createTile"><div><div class="plus">＋</div><b>Crear nueva tarjeta</b><p class="muted small">Sellos, visitas, cashback o identificación</p></div></a></div></section></div></main></div><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="/app/assets/config.js?v=20260907-publish2"></script><script src="/app/assets/app.js?v=20260927-roles-dashboard"></script><script>ENLA.bindShell();ENLA.navActive();(async()=>{try{
 await ENLA.requireAuth();
-const cards=document.querySelector('#cards');
+const publishedCards=document.querySelector('#publishedCards');
+const draftCards=document.querySelector('#draftCards');
 
-// Cargamos permisos una sola vez. Antes getAccessProfile() + getPrograms()
-// repetían las mismas consultas de tarjetas y asignaciones.
 const profile=await ENLA.getAccessProfile();
 const programMap=new Map();
 for(const p of profile.owned||[])programMap.set(p.id,{...p,_access_role:'owner'});
 for(const p of profile.staff||[])if(!programMap.has(p.id))programMap.set(p.id,{...p,_access_role:'staff'});
 const programs=[...programMap.values()];
 
-// Negocio, plan y estadísticas se cargan en paralelo. Las estadísticas de todas
-// las tarjetas del dueño llegan en un solo RPC, en vez de 2 consultas por tarjeta.
+// Toda cuenta, incluso una creada originalmente como empleado, dispone de su
+// propio espacio/plan. getBusiness() crea ese espacio si se trata de una cuenta antigua.
 const [b,billing,statsRes]=await Promise.all([
-  ENLA.getBusiness().catch(()=>null),
-  profile.isStaffOnly?Promise.resolve(null):ENLA.getBilling().catch(()=>null),
-  profile.owned?.length?Promise.resolve(ENLA.sb.rpc('rewards_program_dashboard_stats')).catch(()=>({data:[]})):Promise.resolve({data:[]})
+  ENLA.getBusiness(),
+  ENLA.getBilling().catch(()=>null),
+  profile.owned?.length?ENLA.sb.rpc('rewards_program_dashboard_stats').catch(()=>({data:[]})):Promise.resolve({data:[]})
 ]);
 
-if(billing?.plan==='trial'){document.querySelector('#billingBanner').innerHTML='<div class="trial-banner"><div><b>Modo prueba</b><span>Puedes crear hasta 15 tarjetas en borrador y probar con máximo 3 clientes. Contrata un plan cuando quieras publicar.</span></div><a class="btn btn-primary btn-sm" href="/app/billing.html">Ver planes</a></div>'}
+if(billing?.plan==='trial')document.querySelector('#billingBanner').innerHTML='<div class="trial-banner"><div><b>Modo prueba</b><span>Puedes crear hasta 15 tarjetas en borrador y probar con máximo 3 clientes. Contrata un plan cuando quieras publicar.</span></div><a class="btn btn-primary btn-sm" href="/app/billing.html">Ver planes</a></div>';
 
 const statsMap=new Map((statsRes?.data||[]).map(x=>[x.program_id,{clients:Number(x.clients||0),moves:Number(x.moves||0),red:Number(x.redemptions||0)}]));
+const ownedIds=new Set((profile.owned||[]).map(x=>x.id));
 
-if(profile.isStaffOnly){
-  const top=document.querySelector('#createCardTop'),tile=document.querySelector('#createTile');
-  if(top)top.classList.add('hidden'); if(tile)tile.remove();
-  document.querySelector('.cards-hero').innerHTML='<div><span class="badge blue">Acceso de empleado</span><h2>Tarjetas asignadas</h2><p class="muted" style="margin:0">Solo puedes escanear y registrar operaciones en las tarjetas que te asignó el negocio.</p></div>';
-}
-
-// Construimos todas las tarjetas en memoria y las insertamos juntas para evitar
-// que visualmente aparezcan una por una.
-const fragment=document.createDocumentFragment();
-for(const p of programs){
-  const isStaff=p._access_role==='staff' && !profile.owned.some(x=>x.id===p.id);
+function makeCard(p){
+  const isStaff=p._access_role==='staff'&&!ownedIds.has(p.id);
   const stat=isStaff?null:(statsMap.get(p.id)||{clients:0,moves:0,red:0});
-  const clients=isStaff?'—':stat.clients, moves=isStaff?'—':stat.moves, red=isStaff?'—':stat.red;
   const type=p.program_type==='cashback'?'Cashback':p.program_type==='visits'?'Visitas':p.program_type==='access'?'Identificación / Acceso':'Sellos';
   const el=document.createElement('a');
-  el.href=isStaff?'/app/scan.html?program='+p.id:'/app/card-detail.html?id='+p.id;
-  el.className='card program-tile';
-  el.innerHTML=`<div class="program-cover" style="background:${p.primary_color||'#4b63f3'};color:${p.text_color||'#ffffff'}"><div>${p.logo_url?`<img class="mini-logo" src="${p.logo_url}">`:`<span class="badge">${type}</span>`}</div><div><b>${p.program_name}</b><div class="small" style="opacity:.8">${type}</div></div></div><div class="program-tile-body"><h3>${p.display_name||b?.business_name||'Mi negocio'}</h3><p class="muted small" style="margin:0">${isStaff?'Asignada para escaneo':p.program_type==='cashback'?'Saldo acumulable':p.program_type==='visits'?(p.goal_count||8)+' visitas incluidas':p.program_type==='access'?((p.service_name||'Acceso')+' · '+(p.validity_days||30)+' días'):(p.goal_count||6)+' sellos para la meta'}</p>${!isStaff?`<div class="draft-row"><span class="badge ${p.publication_status==='published'?'blue':''}">${p.publication_status==='published'?'Publicada':'Borrador'}</span>${p.publication_status==='draft'?`<button type="button" class="btn btn-primary btn-sm js-publish" data-id="${p.id}">Publicar</button>`:`<button type="button" class="btn btn-secondary btn-sm js-unpublish" data-id="${p.id}">Apagar</button>`}</div>`:''}${isStaff?`<div class="staff-card-action"><span class="badge blue">Empleado</span><span class="btn btn-primary btn-sm">Escanear ahora</span></div>`:`<div class="tile-stats"><div class="tile-stat"><b>${clients}</b><small>Clientes</small></div><div class="tile-stat"><b>${moves}</b><small>Movimientos</small></div><div class="tile-stat"><b>${red}</b><small>Canjes</small></div></div>`}</div>`;
-  fragment.appendChild(el);
+  el.href=isStaff?'/app/scan.html?program='+encodeURIComponent(p.id):'/app/card-detail.html?id='+encodeURIComponent(p.id);
+  el.className='card program-tile'+(isStaff?' employee-program-tile':'');
+  const description=isStaff
+    ?'Solo tienes permiso para escanear y registrar operaciones.'
+    :p.program_type==='cashback'?'Saldo acumulable':p.program_type==='visits'?(p.goal_count||8)+' visitas incluidas':p.program_type==='access'?((p.service_name||'Acceso')+' · '+(p.validity_days||30)+' días'):(p.goal_count||6)+' sellos para la meta';
+  el.innerHTML=`<div class="program-cover" style="background:${p.primary_color||'#4b63f3'};color:${p.text_color||'#ffffff'}"><div>${p.logo_url?`<img class="mini-logo" src="${p.logo_url}" alt="">`:`<span class="badge">${type}</span>`}</div><div><b>${p.program_name||'Tarjeta'}</b><div class="small" style="opacity:.8">${type}</div></div></div><div class="program-tile-body"><h3>${p.display_name||(isStaff?'Tarjeta asignada':b?.business_name||'Mi negocio')}</h3>${isStaff?'<div class="employee-note"><span>Empleado</span><small>Eres empleado en esta tarjeta</small></div>':''}<p class="muted small program-description">${description}</p>${!isStaff?`<div class="draft-row"><span class="badge ${p.publication_status==='published'?'blue':''}">${p.publication_status==='published'?'Publicada':'Borrador'}</span>${p.publication_status==='draft'?`<button type="button" class="btn btn-primary btn-sm js-publish" data-id="${p.id}">Publicar</button>`:`<button type="button" class="btn btn-secondary btn-sm js-unpublish" data-id="${p.id}">Apagar</button>`}</div><div class="tile-stats"><div class="tile-stat"><b>${stat.clients}</b><small>Clientes</small></div><div class="tile-stat"><b>${stat.moves}</b><small>Movimientos</small></div><div class="tile-stat"><b>${stat.red}</b><small>Canjes</small></div></div>`:`<div class="staff-card-action"><span class="muted small">Acceso operativo</span><span class="btn btn-primary btn-sm">Escanear</span></div>`}</div>`;
+  return el;
 }
-const create=document.querySelector('#createTile');
-if(create)cards.insertBefore(fragment,create); else cards.appendChild(fragment);
 
-if(!programs.length){cards.insertAdjacentHTML('afterbegin','<div class="card"><b>No tienes tarjetas asignadas.</b><p class="muted small">Pide al administrador que agregue el mismo correo con el que iniciaste sesión.</p></div>')}
-document.querySelectorAll('.js-publish').forEach(btn=>btn.addEventListener('click',async e=>{e.preventDefault();e.stopPropagation();btn.disabled=true;btn.textContent='Revisando…';try{const r=await ENLA.smartPublish(btn.dataset.id);if(r.published)location.reload()}catch(err){alert(err.message);btn.disabled=false;btn.textContent='Publicar'}}));
-document.querySelectorAll('.js-unpublish').forEach(btn=>btn.addEventListener('click',async e=>{e.preventDefault();e.stopPropagation();if(!confirm('¿Apagar esta tarjeta? Volverá a borrador y liberará un espacio de publicación de tu plan.'))return;btn.disabled=true;try{await ENLA.unpublishProgram(btn.dataset.id);location.reload()}catch(err){alert(err.message);btn.disabled=false}}));
-}catch(e){document.querySelector('#cards').insertAdjacentHTML('afterbegin',`<div class="error">${e.message}</div>`);}})();</script></body></html>
+const published=programs.filter(p=>p.publication_status==='published');
+const drafts=programs.filter(p=>p.publication_status!=='published');
+const pubFrag=document.createDocumentFragment();
+for(const p of published)pubFrag.appendChild(makeCard(p));
+publishedCards.appendChild(pubFrag);
+const draftFrag=document.createDocumentFragment();
+for(const p of drafts)draftFrag.appendChild(makeCard(p));
+const createTile=document.querySelector('#createTile');
+draftCards.insertBefore(draftFrag,createTile);
+
+document.querySelector('#publishedCount').textContent=published.length===1?'1 tarjeta':published.length+' tarjetas';
+document.querySelector('#draftCount').textContent=drafts.length===1?'1 borrador':drafts.length+' borradores';
+if(!published.length)publishedCards.innerHTML='<div class="card dashboard-empty"><b>Todavía no tienes tarjetas publicadas.</b><p class="muted small">Cuando publiques una tarjeta aparecerá aquí. Las tarjetas donde eres empleado también se muestran en esta sección si están publicadas.</p></div>';
+
+function bindActions(){
+ document.querySelectorAll('.js-publish').forEach(btn=>btn.addEventListener('click',async e=>{e.preventDefault();e.stopPropagation();btn.disabled=true;btn.textContent='Revisando…';try{const r=await ENLA.smartPublish(btn.dataset.id);if(r.published)location.reload()}catch(err){alert(err.message);btn.disabled=false;btn.textContent='Publicar'}}));
+ document.querySelectorAll('.js-unpublish').forEach(btn=>btn.addEventListener('click',async e=>{e.preventDefault();e.stopPropagation();if(!confirm('¿Apagar esta tarjeta? Volverá a borrador y liberará un espacio de publicación de tu plan.'))return;btn.disabled=true;try{await ENLA.unpublishProgram(btn.dataset.id);location.reload()}catch(err){alert(err.message);btn.disabled=false}}));
+}
+bindActions();
+}catch(e){const target=document.querySelector('#publishedCards')||document.querySelector('.content');target.insertAdjacentHTML('afterbegin',`<div class="error">${e.message}</div>`);}})();</script></body></html>

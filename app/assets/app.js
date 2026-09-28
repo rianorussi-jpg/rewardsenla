@@ -90,14 +90,20 @@ function buildNav(){
 }
 function bindShell(){
   buildNav();
-  // Si la cuenta solo es empleado invitado, simplifica el menú a las funciones operativas.
+  // Ser empleado es un permiso por tarjeta, no un tipo de cuenta.
+  // La navegación general siempre permanece disponible. Si la tarjeta seleccionada
+  // es ajena y el usuario solo es empleado en ella, mostramos únicamente Escanear.
   (async()=>{try{
     const u=await currentUser(); if(!u)return;
+    const pid=programContext();
+    if(!pid)return;
     const profile=await getAccessProfile();
-    if(profile.isStaffOnly){
+    const owns=profile.owned.some(p=>p.id===pid);
+    const staffs=profile.staff.some(p=>p.id===pid);
+    if(!owns&&staffs){
       const nav=$('.nav-list'); if(nav){
-        const page=location.pathname.split('/').pop(),pid=programContext();
-        nav.innerHTML=`${navLink('cards','Mis tarjetas','/app/dashboard.html',page==='dashboard.html')}${navLink('scan','Escanear',pid?`/app/scan.html?program=${pid}`:'/app/scan.html',page==='scan.html')}`;
+        const page=location.pathname.split('/').pop();
+        nav.innerHTML=`<div class="nav-caption">Tarjeta de empleado</div>${navLink('scan','Escanear',`/app/scan.html?program=${pid}`,page==='scan.html')}<div class="nav-divider"></div>${navLink('back','Mis tarjetas','/app/dashboard.html',false)}`;
       }
     }
   }catch(_e){}})();
@@ -111,9 +117,25 @@ async function getBusiness(){
   ensureConfigured();
   const u=await currentUser();
   if(!u)return null;
-  const {data,error}=await sb.from('rewards_businesses').select('*').eq('owner_id',u.id).maybeSingle();
+  let {data,error}=await sb.from('rewards_businesses').select('*').eq('owner_id',u.id).maybeSingle();
   if(error)throw error;
-  return data;
+  if(data)return data;
+
+  // Algunas cuentas nacieron originalmente como empleados invitados. Si todavía
+  // no tienen un negocio propio, se crea su espacio personal de Enla Cards para
+  // que puedan crear borradores, contratar un plan y publicar sus propias tarjetas.
+  const fallbackName=String(u.user_metadata?.business_name||u.user_metadata?.full_name||'Mi negocio').trim()||'Mi negocio';
+  const created=await sb.from('rewards_businesses')
+    .insert({owner_id:u.id,business_name:fallbackName})
+    .select('*')
+    .maybeSingle();
+  if(!created.error&&created.data)return created.data;
+
+  // Si el trigger de alta lo creó al mismo tiempo, recuperamos el registro existente.
+  const retry=await sb.from('rewards_businesses').select('*').eq('owner_id',u.id).maybeSingle();
+  if(retry.error)throw retry.error;
+  if(retry.data)return retry.data;
+  throw created.error||new Error('No se pudo preparar tu espacio de Enla Cards.');
 }
 async function getOwnedPrograms(){
   ensureConfigured();
