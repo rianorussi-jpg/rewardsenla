@@ -19,7 +19,7 @@
 const f=document.querySelector('#form'),n=document.querySelector('#notice'),g=document.querySelector('#googleAuth');
 function existingAccountNotice(email){
   n.className='existing-account';
-  n.innerHTML='<b>Tú ya tienes una cuenta en Enla Cards.</b><p>Este correo ya está registrado, posiblemente porque tienes acceso como empleado a una tarjeta. Recupera tu contraseña para entrar a tu cuenta normal de Enla Cards.</p><button type="button" class="btn btn-secondary" id="recoverExisting">Recuperar contraseña</button>';
+  n.innerHTML='<b>Tú ya tienes una cuenta en Enla Cards.</b><p>Este correo ya está registrado, recupera tu contraseña para entrar a tu cuenta normal de Enla Cards.</p><button type="button" class="btn btn-secondary" id="recoverExisting">Recuperar contraseña</button>';
   const btn=document.querySelector('#recoverExisting');
   btn.onclick=async()=>{try{btn.disabled=true;btn.textContent='Enviando…';const {error}=await ENLA.sb.auth.resetPasswordForEmail(email,{redirectTo:location.origin+'/app/reset-password.html'});if(error)throw error;n.className='success';n.innerHTML='Te enviamos un correo a <b>'+email.replace(/</g,'&lt;')+'</b> para crear o recuperar tu contraseña. Revisa también Spam.';}catch(err){btn.disabled=false;btn.textContent='Recuperar contraseña';ENLA.msg(n,err.message)}};
 }
