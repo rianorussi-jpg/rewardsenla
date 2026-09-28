@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="icon" type="image/png" href="/assets/favicon.png">
+  <link rel="apple-touch-icon" href="/assets/favicon.png">
+  <title>Completa tu negocio — Enla Cards</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/app/assets/app.css?v=20260906-geonotify1">
+  <style>
+    .google-business-shell{min-height:100vh;display:grid;place-items:center;padding:28px;background:linear-gradient(145deg,#f7fbff 0%,#ffffff 48%,#f5fffb 100%)}
+    .google-business-card{width:min(470px,100%);background:#fff;border:1px solid #e3ebf2;border-radius:24px;padding:30px;box-shadow:0 24px 70px rgba(18,52,85,.11)}
+    .google-business-logo{display:block;width:148px;max-width:58%;margin:0 auto 24px}
+    .google-business-card h1{margin:0 0 9px;color:#123455;font-size:27px;line-height:1.15;letter-spacing:-.035em;text-align:center}
+    .google-business-card>p{margin:0 auto 24px;text-align:center;max-width:370px;line-height:1.55}
+    .google-business-card .field{margin-bottom:15px}
+    .google-business-card .field label{display:block;margin-bottom:7px;color:#123455;font-size:13px;font-weight:800}
+    .google-business-card input{width:100%;height:50px;padding:0 14px;border:1px solid #dbe5ee;border-radius:13px;font:inherit;color:#123455;outline:none}
+    .google-business-card input:focus{border-color:#4499f7;box-shadow:0 0 0 3px rgba(68,153,247,.12)}
+    .google-business-card .btn{width:100%;min-height:49px}
+    .loading{text-align:center;color:#6d8194;font-weight:700;padding:8px 0}
+  </style>
+</head>
+<body>
+  <main class="google-business-shell">
+    <section class="google-business-card">
+      <img class="google-business-logo" src="/assets/enla-cards-logo.png" alt="Enla Cards">
+      <div id="loading" class="loading">Preparando tu cuenta…</div>
+      <form id="businessForm" hidden>
+        <h1>¿Cómo se llama tu negocio?</h1>
+        <p class="muted">Solo nos falta este dato para preparar tu cuenta antes de crear tu primera tarjeta.</p>
+        <div id="notice" class="hidden"></div>
+        <div class="field">
+          <label for="businessName">Nombre del negocio</label>
+          <input id="businessName" autocomplete="organization" maxlength="120" placeholder="Ej. Área Café" required>
+        </div>
+        <button class="btn btn-primary" id="saveBtn" type="submit">Continuar</button>
+      </form>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/app/assets/config.js?v=20260906-geonotify1"></script>
+  <script src="/app/assets/app.js?v=20260927-card-summary"></script>
+  <script>
+    const form=document.querySelector('#businessForm');
+    const loading=document.querySelector('#loading');
+    const notice=document.querySelector('#notice');
+    const input=document.querySelector('#businessName');
+    const saveBtn=document.querySelector('#saveBtn');
+
+    function goToFirstCard(){
+      location.replace('/app/program.html');
+    }
+
+    (async()=>{
+      try{
+        ENLA.ensureConfigured();
+
+        const {data:{session},error:sessionError}=await ENLA.sb.auth.getSession();
+        if(sessionError)throw sessionError;
+        const user=session?.user;
+
+        if(!user){
+          location.replace('/app/login.html');
+          return;
+        }
+
+        const businessName=String(user.user_metadata?.business_name||'').trim();
+        if(businessName){
+          goToFirstCard();
+          return;
+        }
+
+        loading.hidden=true;
+        form.hidden=false;
+        setTimeout(()=>input.focus(),50);
+      }catch(err){
+        loading.textContent='No pudimos preparar tu cuenta.';
+        ENLA.msg(notice,err.message||'Ocurrió un error.');
+      }
+    })();
+
+    form.addEventListener('submit',async e=>{
+      e.preventDefault();
+      const businessName=input.value.trim();
+      if(!businessName){
+        ENLA.msg(notice,'Escribe el nombre de tu negocio.');
+        return;
+      }
+
+      saveBtn.disabled=true;
+      saveBtn.textContent='Guardando…';
+      notice.className='hidden';
+
+      try{
+        const {data:{session},error:sessionError}=await ENLA.sb.auth.getSession();
+        if(sessionError)throw sessionError;
+        const user=session?.user;
+        if(!user){
+          location.replace('/app/login.html');
+          return;
+        }
+
+        const business=await ENLA.getBusiness();
+        if(!business)throw new Error('No pudimos preparar tu negocio.');
+
+        const {error:businessError}=await ENLA.sb
+          .from('rewards_businesses')
+          .update({business_name:businessName})
+          .eq('id',business.id)
+          .eq('owner_id',user.id);
+        if(businessError)throw businessError;
+
+        const {error:metaError}=await ENLA.sb.auth.updateUser({
+          data:{business_name:businessName}
+        });
+        if(metaError)throw metaError;
+
+        goToFirstCard();
+      }catch(err){
+        saveBtn.disabled=false;
+        saveBtn.textContent='Continuar';
+        ENLA.msg(notice,err.message||'No se pudo guardar el nombre del negocio.');
+      }
+    });
+  </script>
+</body>
+</html>
