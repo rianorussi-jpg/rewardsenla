@@ -14,14 +14,19 @@ const profile=await ENLA.getAccessProfile();
 const programMap=new Map();
 for(const p of profile.owned||[])programMap.set(p.id,{...p,_access_role:'owner'});
 for(const p of profile.staff||[])if(!programMap.has(p.id))programMap.set(p.id,{...p,_access_role:'staff'});
-const programs=[...programMap.values()];
+const programs=[...programMap.values()].filter(p=>{
+  const isEmployeeOnly=p._access_role==='staff' && !(profile.owned||[]).some(x=>x.id===p.id);
+  // Una tarjeta ajena en borrador no forma parte de "Mis borradores".
+  // El empleado la verá aquí cuando el dueño la publique.
+  return !isEmployeeOnly || p.publication_status==='published';
+});
 
 // Toda cuenta, incluso una creada originalmente como empleado, dispone de su
 // propio espacio/plan. getBusiness() crea ese espacio si se trata de una cuenta antigua.
 const [b,billing,statsRes]=await Promise.all([
   ENLA.getBusiness(),
   ENLA.getBilling().catch(()=>null),
-  profile.owned?.length?ENLA.sb.rpc('rewards_program_dashboard_stats').catch(()=>({data:[]})):Promise.resolve({data:[]})
+  profile.owned?.length?Promise.resolve(ENLA.sb.rpc('rewards_program_dashboard_stats')).catch(()=>({data:[]})):Promise.resolve({data:[]})
 ]);
 
 if(billing?.plan==='trial')document.querySelector('#billingBanner').innerHTML='<div class="trial-banner"><div><b>Modo prueba</b><span>Puedes crear hasta 15 tarjetas en borrador y probar con máximo 3 clientes. Contrata un plan cuando quieras publicar.</span></div><a class="btn btn-primary btn-sm" href="/app/billing.html">Ver planes</a></div>';
@@ -44,7 +49,7 @@ function makeCard(p){
 }
 
 const published=programs.filter(p=>p.publication_status==='published');
-const drafts=programs.filter(p=>p.publication_status!=='published');
+const drafts=programs.filter(p=>p._access_role==='owner' && p.publication_status!=='published');
 const pubFrag=document.createDocumentFragment();
 for(const p of published)pubFrag.appendChild(makeCard(p));
 publishedCards.appendChild(pubFrag);
@@ -55,7 +60,7 @@ draftCards.insertBefore(draftFrag,createTile);
 
 document.querySelector('#publishedCount').textContent=published.length===1?'1 tarjeta':published.length+' tarjetas';
 document.querySelector('#draftCount').textContent=drafts.length===1?'1 borrador':drafts.length+' borradores';
-if(!published.length)publishedCards.innerHTML='<div class="card dashboard-empty"><b>Todavía no tienes tarjetas publicadas.</b><p class="muted small">Cuando publiques una tarjeta aparecerá aquí. Las tarjetas donde eres empleado también se muestran en esta sección si están publicadas.</p></div>';
+if(!published.length)publishedCards.innerHTML='<div class="card dashboard-empty"><b>Todavía no tienes tarjetas publicadas.</b><p class="muted small">Cuando publiques una tarjeta aparecerá aquí. También verás aquí las tarjetas publicadas donde eres empleado.</p></div>';
 
 function bindActions(){
  document.querySelectorAll('.js-publish').forEach(btn=>btn.addEventListener('click',async e=>{e.preventDefault();e.stopPropagation();btn.disabled=true;btn.textContent='Revisando…';try{const r=await ENLA.smartPublish(btn.dataset.id);if(r.published)location.reload()}catch(err){alert(err.message);btn.disabled=false;btn.textContent='Publicar'}}));
