@@ -121,24 +121,57 @@ async function getBusiness(){
   ensureConfigured();
   const u=await currentUser();
   if(!u)return null;
+
+  const metadataBusinessName=String(u.user_metadata?.business_name||'').trim();
   let {data,error}=await sb.from('rewards_businesses').select('*').eq('owner_id',u.id).maybeSingle();
   if(error)throw error;
-  if(data)return data;
+
+  if(data){
+    // Si el trigger alcanzó a crear el registro como "Mi negocio" antes de recibir
+    // el metadata del registro, reconciliamos el nombre en cuanto el usuario inicia sesión.
+    const currentName=String(data.business_name||'').trim();
+    const isDefaultName=!currentName||currentName.toLowerCase()==='mi negocio';
+    if(metadataBusinessName&&isDefaultName&&currentName!==metadataBusinessName){
+      const synced=await sb.from('rewards_businesses')
+        .update({business_name:metadataBusinessName})
+        .eq('id',data.id)
+        .eq('owner_id',u.id)
+        .select('*')
+        .maybeSingle();
+      if(synced.error)throw synced.error;
+      if(synced.data)data=synced.data;
+    }
+    return data;
+  }
 
   // Algunas cuentas nacieron originalmente como empleados invitados. Si todavía
   // no tienen un negocio propio, se crea su espacio personal de Enla Cards para
   // que puedan crear borradores, contratar un plan y publicar sus propias tarjetas.
-  const fallbackName=String(u.user_metadata?.business_name||u.user_metadata?.full_name||'Mi negocio').trim()||'Mi negocio';
+  const fallbackName=metadataBusinessName||'Mi negocio';
   const created=await sb.from('rewards_businesses')
     .insert({owner_id:u.id,business_name:fallbackName})
     .select('*')
     .maybeSingle();
   if(!created.error&&created.data)return created.data;
 
-  // Si el trigger de alta lo creó al mismo tiempo, recuperamos el registro existente.
+  // Si el trigger de alta lo creó al mismo tiempo, recuperamos el registro existente
+  // y volvemos a reconciliar el nombre por si quedó con el valor genérico.
   const retry=await sb.from('rewards_businesses').select('*').eq('owner_id',u.id).maybeSingle();
   if(retry.error)throw retry.error;
-  if(retry.data)return retry.data;
+  if(retry.data){
+    const retryName=String(retry.data.business_name||'').trim();
+    if(metadataBusinessName&&(!retryName||retryName.toLowerCase()==='mi negocio')){
+      const synced=await sb.from('rewards_businesses')
+        .update({business_name:metadataBusinessName})
+        .eq('id',retry.data.id)
+        .eq('owner_id',u.id)
+        .select('*')
+        .maybeSingle();
+      if(synced.error)throw synced.error;
+      if(synced.data)return synced.data;
+    }
+    return retry.data;
+  }
   throw created.error||new Error('No se pudo preparar tu espacio de Enla Cards.');
 }
 async function getOwnedPrograms(){
@@ -400,4 +433,4 @@ async function smartPublish(programId){
 
 function navActive(){buildNav()}
 
-window.ENLA={version:'20260927-card-summary',sb,configured,configError,publicSiteUrl,publicJoinUrl,ensureConfigured,currentUser,requireAuth,getBusiness,getOwnedPrograms,getStaffPrograms,getPrograms,getProgram,getAccessProfile,saveProgram,uploadLogo,uploadProgramMedia,loyaltyMeta,bindShell,navActive,msg,initials,syncWallet,addStamp,useVisit,renewVisits,deactivateVisitCard,redeemReward,spendCashback,addCashbackAmount,setCashbackBalance,markAccess,renewAccess,setAccessExpiry,setAccessStatus,staffScanAction,isProgramStaff,sendWalletNotification,syncProgramWallets,programContext,getBilling,getAnnualPromoStatus,startCheckout,openBillingPortal,getPublicationOverview,publishProgram,unpublishProgram,smartPublish};
+window.ENLA={version:'20260928-business-name',sb,configured,configError,publicSiteUrl,publicJoinUrl,ensureConfigured,currentUser,requireAuth,getBusiness,getOwnedPrograms,getStaffPrograms,getPrograms,getProgram,getAccessProfile,saveProgram,uploadLogo,uploadProgramMedia,loyaltyMeta,bindShell,navActive,msg,initials,syncWallet,addStamp,useVisit,renewVisits,deactivateVisitCard,redeemReward,spendCashback,addCashbackAmount,setCashbackBalance,markAccess,renewAccess,setAccessExpiry,setAccessStatus,staffScanAction,isProgramStaff,sendWalletNotification,syncProgramWallets,programContext,getBilling,getAnnualPromoStatus,startCheckout,openBillingPortal,getPublicationOverview,publishProgram,unpublishProgram,smartPublish};
