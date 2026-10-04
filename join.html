@@ -10,6 +10,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/app/assets/app.css?v=20260927-walletjoin1">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@29.5.3/dist/css/intlTelInput.min.css">
+  <style>.join-form .iti{width:100%}.join-form .iti input{width:100%;padding-left:92px!important}.join-form .iti__country-container{border-radius:13px 0 0 13px}.join-phone-help{display:block;margin-top:6px;color:#7b8d9f;font-size:11px;line-height:1.4}</style>
 </head>
 <body>
 <main class="public-shell join-public-shell">
@@ -26,6 +28,7 @@
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/intl-tel-input@29.5.3/dist/js/intlTelInputWithUtils.min.js"></script>
 <script src="/app/assets/config.js?v=20260906-geonotify1"></script>
 <script src="/app/assets/app.js?v=20260906-geonotify1"></script>
 <script>
@@ -116,7 +119,8 @@
         ${p.registration_phone_enabled ? `
         <div class="field">
           <label for="phone">Número de teléfono</label>
-          <input id="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="442 123 4567" required>
+          <input id="phone" type="tel" inputmode="tel" autocomplete="tel" required>
+          <small class="join-phone-help">México (+52) aparece por defecto. Puedes elegir otro país tocando la bandera.</small>
         </div>` : ''}
 
         ${(p.registration_birth_date_enabled || p.birthday_enabled) ? `
@@ -177,6 +181,10 @@
     const resendOtpBtn = document.querySelector('#resendOtpBtn');
     const walletButtons = document.querySelector('#walletButtons');
     const walletHint = document.querySelector('#walletHint');
+    const phoneInput = document.querySelector('#phone');
+    const phonePicker = phoneInput && window.intlTelInput
+      ? window.intlTelInput(phoneInput,{initialCountry:'mx',separateDialCode:true,nationalMode:true,autoPlaceholder:'aggressive'})
+      : null;
 
     let photoFile = null;
     let pendingWallet = null;
@@ -314,11 +322,22 @@
         throw new Error('Primero sube tu foto.');
       }
 
-      const phoneInput = document.querySelector('#phone');
-      const phone = phoneInput ? phoneInput.value.trim() : null;
-      if (phoneInput && phone.length < 7) {
-        phoneInput.focus();
-        throw new Error('Primero escribe un número de teléfono válido.');
+      let phone = null;
+      if (phoneInput) {
+        try { phone = phonePicker ? phonePicker.getNumber() : phoneInput.value.trim(); } catch (_e) { phone = phoneInput.value.trim(); }
+        phone = String(phone || '').trim();
+        if (!phone) {
+          phoneInput.focus();
+          throw new Error('Primero escribe un número de teléfono válido.');
+        }
+        try {
+          if (phonePicker && typeof phonePicker.isValidNumber === 'function' && !phonePicker.isValidNumber()) {
+            phoneInput.focus();
+            throw new Error('Revisa que el número de teléfono sea válido.');
+          }
+        } catch (e) {
+          if (e instanceof Error && e.message.includes('Revisa')) throw e;
+        }
       }
       const birthDate = buildBirthDate();
 
