@@ -29,7 +29,7 @@
       <div id="loading" class="loading">Preparando tu cuenta…</div>
       <form id="businessForm" hidden>
         <h1>¿Cómo se llama tu negocio?</h1>
-        <p class="muted">Solo nos falta este dato para preparar tu cuenta antes de crear tu primera tarjeta.</p>
+        <p class="muted">Solo nos falta este dato para preparar correctamente tu cuenta de Enla Cards.</p>
         <div id="notice" class="hidden"></div>
         <div class="field">
           <label for="businessName">Nombre del negocio</label>
@@ -42,7 +42,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="/app/assets/config.js?v=20260906-geonotify1"></script>
-  <script src="/app/assets/app.js?v=20260928-business-name"></script>
+  <script src="/app/assets/app.js?v=20260927-card-summary"></script>
   <script>
     const form=document.querySelector('#businessForm');
     const loading=document.querySelector('#loading');
@@ -50,23 +50,16 @@
     const input=document.querySelector('#businessName');
     const saveBtn=document.querySelector('#saveBtn');
 
-    function goToFirstCard(){
-      location.replace('/app/program.html');
+    const params=new URLSearchParams(location.search);
+    const next=params.get('next')==='dashboard'?'dashboard':'program';
+
+    function goNext(){
+      location.replace(next==='dashboard'?'/app/dashboard.html':'/app/program.html');
     }
 
-    async function getBusinessRow(userId){
-      const {data,error}=await ENLA.sb
-        .from('rewards_businesses')
-        .select('*')
-        .eq('owner_id',userId)
-        .maybeSingle();
-      if(error)throw error;
-      return data||null;
-    }
-
-    function isDefaultBusinessName(value){
-      const name=String(value||'').trim();
-      return !name||name.toLowerCase()==='mi negocio';
+    function isPlaceholderBusinessName(value){
+      const normalized=String(value||'').trim().toLowerCase();
+      return !normalized || normalized==='mi negocio';
     }
 
     (async()=>{
@@ -83,42 +76,23 @@
         }
 
         const metadataName=String(user.user_metadata?.business_name||'').trim();
-        const business=await getBusinessRow(user.id);
+        const business=await ENLA.getBusiness();
+        const storedName=String(business?.business_name||'').trim();
 
-        // Registro normal: el nombre ya viene en metadata. Si el trigger dejó
-        // "Mi negocio", lo corregimos antes de continuar.
-        if(metadataName){
-          if(!business){
-            const {error:createError}=await ENLA.sb
-              .from('rewards_businesses')
-              .insert({owner_id:user.id,business_name:metadataName});
-            if(createError)throw createError;
-          }else if(isDefaultBusinessName(business.business_name)){
-            const {error:updateError}=await ENLA.sb
-              .from('rewards_businesses')
-              .update({business_name:metadataName})
-              .eq('id',business.id)
-              .eq('owner_id',user.id);
-            if(updateError)throw updateError;
+        // Si ya existe un nombre real, no molestamos al usuario y continuamos.
+        if(!isPlaceholderBusinessName(metadataName)||!isPlaceholderBusinessName(storedName)){
+          // Si uno de los dos lados ya tiene el nombre correcto, mantenemos ambos sincronizados.
+          const resolvedName=!isPlaceholderBusinessName(storedName)?storedName:metadataName;
+          if(isPlaceholderBusinessName(storedName)&&business?.id){
+            await ENLA.sb.from('rewards_businesses').update({business_name:resolvedName}).eq('id',business.id).eq('owner_id',user.id);
           }
-          goToFirstCard();
+          if(isPlaceholderBusinessName(metadataName)){
+            await ENLA.sb.auth.updateUser({data:{business_name:resolvedName}});
+          }
+          goNext();
           return;
         }
 
-        // Si por alguna razón la cuenta ya tiene un nombre real en la tabla,
-        // conservamos ese valor y también lo guardamos en metadata.
-        if(business&&!isDefaultBusinessName(business.business_name)){
-          const existingName=String(business.business_name).trim();
-          const {error:metaError}=await ENLA.sb.auth.updateUser({
-            data:{business_name:existingName}
-          });
-          if(metaError)throw metaError;
-          goToFirstCard();
-          return;
-        }
-
-        // Google no entrega el nombre del negocio. En una cuenta nueva el trigger
-        // crea temporalmente "Mi negocio"; aquí obligamos a capturar el nombre real.
         loading.hidden=true;
         form.hidden=false;
         setTimeout(()=>input.focus(),50);
@@ -149,27 +123,22 @@
           return;
         }
 
-        const business=await getBusinessRow(user.id);
-        if(business){
-          const {error:businessError}=await ENLA.sb
-            .from('rewards_businesses')
-            .update({business_name:businessName})
-            .eq('id',business.id)
-            .eq('owner_id',user.id);
-          if(businessError)throw businessError;
-        }else{
-          const {error:businessError}=await ENLA.sb
-            .from('rewards_businesses')
-            .insert({owner_id:user.id,business_name:businessName});
-          if(businessError)throw businessError;
-        }
+        const business=await ENLA.getBusiness();
+        if(!business)throw new Error('No pudimos preparar tu negocio.');
+
+        const {error:businessError}=await ENLA.sb
+          .from('rewards_businesses')
+          .update({business_name:businessName})
+          .eq('id',business.id)
+          .eq('owner_id',user.id);
+        if(businessError)throw businessError;
 
         const {error:metaError}=await ENLA.sb.auth.updateUser({
           data:{business_name:businessName}
         });
         if(metaError)throw metaError;
 
-        goToFirstCard();
+        goNext();
       }catch(err){
         saveBtn.disabled=false;
         saveBtn.textContent='Continuar';
