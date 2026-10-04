@@ -401,12 +401,12 @@
       <div class="operator-grid">
         <section class="panel">
           <h2>Encuentra al cliente</h2>
-          <p class="panel-sub">Escanea su Wallet o busca por código, correo o nombre.</p>
+          <p class="panel-sub">Escanea su Wallet o busca por código, correo, teléfono o nombre.</p>
 
           <div class="search-wrap">
             <span class="search-icon">⌕</span>
             <input class="input search-input" id="customerSearch"
-              placeholder="Código, correo o nombre..." autocomplete="off">
+              placeholder="Código, correo, teléfono o nombre..." autocomplete="off">
           </div>
           <div class="search-results" id="searchResults"></div>
 
@@ -503,7 +503,7 @@
       <button class="search-row" data-customer="${c.id}">
         <span>
           <b>${esc(c.name)}</b>
-          <small>${esc(c.email || 'Sin correo')}</small>
+          <small>${esc(c.email || 'Sin correo')}${c.phone?` · ${esc(c.phone)}`:''}</small>
         </span>
         <span class="search-code">${esc(c.public_code)}</span>
       </button>
@@ -581,7 +581,7 @@
             : `<div class="avatar">${initials(c.name)}</div>`}
           <div>
             <h2>${esc(c.name)}</h2>
-            <p>${esc(c.email || 'Sin correo')}</p>
+            <p>${esc(c.email || 'Sin correo')}${c.phone?` · ${esc(c.phone)}`:''}</p>
           </div>
           <div class="customer-code"><small>Código</small><b>${esc(c.public_code)}</b></div>
         </div>

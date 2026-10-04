@@ -82,12 +82,12 @@ const NAV_ICONS={
   staff:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3 19c.5-4 2.5-6 6-6s5.5 2 6 6M17 9v6M14 12h6"/></svg>'
 };
 function navLink(icon,label,href,active=false){return `<a class="nav-item${active?' active':''}" href="${href}"><span class="nav-icon">${NAV_ICONS[icon]||''}</span><span>${label}</span></a>`}
-function programContext(){const q=new URLSearchParams(location.search),page=location.pathname.split('/').pop();return q.get('program')||(['card-detail.html','program.html'].includes(page)?q.get('id'):null)||null}
+function programContext(){const q=new URLSearchParams(location.search),page=location.pathname.split('/').pop();return q.get('program')||(['card-detail.html','program.html'].includes(page)?q.get('id'):page==='registration.html'?q.get('program'):null)||null}
 function buildNav(){
   const nav=$('.nav-list'); if(!nav)return;
   const page=location.pathname.split('/').pop(), pid=programContext();
   if(pid){
-    nav.innerHTML=`<div class="nav-caption">Tarjeta seleccionada</div>${navLink('overview','Resumen',`/app/card-detail.html?id=${pid}`,page==='card-detail.html')}${navLink('customers','Clientes',`/app/customers.html?program=${pid}`,page==='customers.html')}${navLink('scan','Escanear',`/app/scan.html?program=${pid}`,page==='scan.html')}${navLink('staff','Empleados',`/app/staff.html?program=${pid}`,page==='staff.html')}${navLink('bell','Notificaciones',`/app/notifications.html?program=${pid}`,page==='notifications.html')}${navLink('activity','Actividad',`/app/history.html?program=${pid}`,page==='history.html')}${navLink('edit','Personalizar tarjeta',`/app/program.html?id=${pid}`,page==='program.html')}<div class="nav-divider"></div>${navLink('back','Mis tarjetas','/app/dashboard.html',false)}`;
+    nav.innerHTML=`<div class="nav-caption">Tarjeta seleccionada</div>${navLink('overview','Resumen',`/app/card-detail.html?id=${pid}`,page==='card-detail.html')}${navLink('customers','Clientes',`/app/customers.html?program=${pid}`,page==='customers.html')}${navLink('scan','Escanear',`/app/scan.html?program=${pid}`,page==='scan.html')}${navLink('staff','Empleados',`/app/staff.html?program=${pid}`,page==='staff.html')}${navLink('bell','Notificaciones',`/app/notifications.html?program=${pid}`,page==='notifications.html')}${navLink('activity','Actividad',`/app/history.html?program=${pid}`,page==='history.html')}${navLink('settings','Personalizar registro',`/app/registration.html?program=${pid}`,page==='registration.html')}${navLink('edit','Personalizar tarjeta',`/app/program.html?id=${pid}`,page==='program.html')}<div class="nav-divider"></div>${navLink('back','Mis tarjetas','/app/dashboard.html',false)}`;
   }else{
     nav.innerHTML=`${navLink('cards','Mis tarjetas','/app/dashboard.html',page==='dashboard.html')}${navLink('scan','Escanear','/app/scan.html',page==='scan.html')}${navLink('history','Historial','/app/history.html',page==='history.html')}<div class="nav-divider"></div>${navLink('billing','Plan y facturación','/app/billing.html',page==='billing.html')}${navLink('settings','Ajustes de cuenta','/app/settings.html',page==='settings.html')}`;
   }
@@ -121,57 +121,24 @@ async function getBusiness(){
   ensureConfigured();
   const u=await currentUser();
   if(!u)return null;
-
-  const metadataBusinessName=String(u.user_metadata?.business_name||'').trim();
   let {data,error}=await sb.from('rewards_businesses').select('*').eq('owner_id',u.id).maybeSingle();
   if(error)throw error;
-
-  if(data){
-    // Si el trigger alcanzó a crear el registro como "Mi negocio" antes de recibir
-    // el metadata del registro, reconciliamos el nombre en cuanto el usuario inicia sesión.
-    const currentName=String(data.business_name||'').trim();
-    const isDefaultName=!currentName||currentName.toLowerCase()==='mi negocio';
-    if(metadataBusinessName&&isDefaultName&&currentName!==metadataBusinessName){
-      const synced=await sb.from('rewards_businesses')
-        .update({business_name:metadataBusinessName})
-        .eq('id',data.id)
-        .eq('owner_id',u.id)
-        .select('*')
-        .maybeSingle();
-      if(synced.error)throw synced.error;
-      if(synced.data)data=synced.data;
-    }
-    return data;
-  }
+  if(data)return data;
 
   // Algunas cuentas nacieron originalmente como empleados invitados. Si todavía
   // no tienen un negocio propio, se crea su espacio personal de Enla Cards para
   // que puedan crear borradores, contratar un plan y publicar sus propias tarjetas.
-  const fallbackName=metadataBusinessName||'Mi negocio';
+  const fallbackName=String(u.user_metadata?.business_name||u.user_metadata?.full_name||'Mi negocio').trim()||'Mi negocio';
   const created=await sb.from('rewards_businesses')
     .insert({owner_id:u.id,business_name:fallbackName})
     .select('*')
     .maybeSingle();
   if(!created.error&&created.data)return created.data;
 
-  // Si el trigger de alta lo creó al mismo tiempo, recuperamos el registro existente
-  // y volvemos a reconciliar el nombre por si quedó con el valor genérico.
+  // Si el trigger de alta lo creó al mismo tiempo, recuperamos el registro existente.
   const retry=await sb.from('rewards_businesses').select('*').eq('owner_id',u.id).maybeSingle();
   if(retry.error)throw retry.error;
-  if(retry.data){
-    const retryName=String(retry.data.business_name||'').trim();
-    if(metadataBusinessName&&(!retryName||retryName.toLowerCase()==='mi negocio')){
-      const synced=await sb.from('rewards_businesses')
-        .update({business_name:metadataBusinessName})
-        .eq('id',retry.data.id)
-        .eq('owner_id',u.id)
-        .select('*')
-        .maybeSingle();
-      if(synced.error)throw synced.error;
-      if(synced.data)return synced.data;
-    }
-    return retry.data;
-  }
+  if(retry.data)return retry.data;
   throw created.error||new Error('No se pudo preparar tu espacio de Enla Cards.');
 }
 async function getOwnedPrograms(){
@@ -433,4 +400,4 @@ async function smartPublish(programId){
 
 function navActive(){buildNav()}
 
-window.ENLA={version:'20260928-business-name',sb,configured,configError,publicSiteUrl,publicJoinUrl,ensureConfigured,currentUser,requireAuth,getBusiness,getOwnedPrograms,getStaffPrograms,getPrograms,getProgram,getAccessProfile,saveProgram,uploadLogo,uploadProgramMedia,loyaltyMeta,bindShell,navActive,msg,initials,syncWallet,addStamp,useVisit,renewVisits,deactivateVisitCard,redeemReward,spendCashback,addCashbackAmount,setCashbackBalance,markAccess,renewAccess,setAccessExpiry,setAccessStatus,staffScanAction,isProgramStaff,sendWalletNotification,syncProgramWallets,programContext,getBilling,getAnnualPromoStatus,startCheckout,openBillingPortal,getPublicationOverview,publishProgram,unpublishProgram,smartPublish};
+window.ENLA={version:'20260927-card-summary',sb,configured,configError,publicSiteUrl,publicJoinUrl,ensureConfigured,currentUser,requireAuth,getBusiness,getOwnedPrograms,getStaffPrograms,getPrograms,getProgram,getAccessProfile,saveProgram,uploadLogo,uploadProgramMedia,loyaltyMeta,bindShell,navActive,msg,initials,syncWallet,addStamp,useVisit,renewVisits,deactivateVisitCard,redeemReward,spendCashback,addCashbackAmount,setCashbackBalance,markAccess,renewAccess,setAccessExpiry,setAccessStatus,staffScanAction,isProgramStaff,sendWalletNotification,syncProgramWallets,programContext,getBilling,getAnnualPromoStatus,startCheckout,openBillingPortal,getPublicationOverview,publishProgram,unpublishProgram,smartPublish};

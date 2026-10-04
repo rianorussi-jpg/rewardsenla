@@ -773,7 +773,7 @@
                   <div><b>${escapeHtml(c.name)}</b><div class="muted tiny">${escapeHtml(c.public_code || '')}</div></div>
                 </div>
               </td>
-              <td>${escapeHtml(c.email || c.phone || '—')}</td>
+              <td><div class="customer-contact">${c.email?`<div>${escapeHtml(c.email)}</div>`:'<div>—</div>'}${c.phone?`<div class="muted tiny">${escapeHtml(c.phone)}</div>`:''}</div></td>
               <td><b>${escapeHtml(progress)}</b></td>
               <td><span class="badge ${inactive ? 'red' : ready ? 'blue' : 'green'}">${escapeHtml(state)}</span></td>
               <td><div class="row-actions">${actions}</div></td>

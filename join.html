@@ -63,7 +63,7 @@
     const promoImage =
       p.program_type !== 'stamps' &&
       p.central_image_url &&
-      p.card_style === 'promo'
+      p.card_style === 'promo' && p.registration_promo_image_enabled !== false
         ? `<img class="customer-promo-image join-promo-image" src="${p.central_image_url}" alt="Promoción">`
         : '';
 
@@ -113,6 +113,13 @@
           <input id="email" type="email" autocomplete="email" placeholder="tu@correo.com" required>
         </div>
 
+        ${p.registration_phone_enabled ? `
+        <div class="field">
+          <label for="phone">Número de teléfono</label>
+          <input id="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="442 123 4567" required>
+        </div>` : ''}
+
+        ${(p.registration_birth_date_enabled || p.birthday_enabled) ? `
         <div class="field">
           <label>Fecha de nacimiento</label>
           <div class="birthday-fields">
@@ -136,8 +143,9 @@
             El negocio podrá usarla para felicitarte en tu cumpleaños si tiene activadas esas notificaciones.
           </small>
         </div>
+` : ''}
 
-        <div id="otpPanel" class="otp-panel hidden">
+       <div id="otpPanel" class="otp-panel hidden">
           <div class="otp-icon">✉️</div>
           <div>
             <b>Confirma que este correo es tuyo</b>
@@ -262,9 +270,13 @@
     }
 
     function buildBirthDate() {
-      const day = Number(document.querySelector('#birthDay').value);
-      const month = Number(document.querySelector('#birthMonth').value);
-      const year = Number(document.querySelector('#birthYear').value);
+      const dayEl = document.querySelector('#birthDay');
+      const monthEl = document.querySelector('#birthMonth');
+      const yearEl = document.querySelector('#birthYear');
+      if (!dayEl || !monthEl || !yearEl) return null;
+      const day = Number(dayEl.value);
+      const month = Number(monthEl.value);
+      const year = Number(yearEl.value);
 
       if (!day || !month || !year) throw new Error('Completa tu fecha de nacimiento.');
       if (year < 1900 || year > currentYear) throw new Error('Escribe un año válido.');
@@ -302,12 +314,19 @@
         throw new Error('Primero sube tu foto.');
       }
 
+      const phoneInput = document.querySelector('#phone');
+      const phone = phoneInput ? phoneInput.value.trim() : null;
+      if (phoneInput && phone.length < 7) {
+        phoneInput.focus();
+        throw new Error('Primero escribe un número de teléfono válido.');
+      }
       const birthDate = buildBirthDate();
 
       return {
         p_program_slug: programSlug,
         p_name: name,
         p_email: email,
+        p_phone: phone || null,
         p_photo_url: null,
         p_birth_date: birthDate
       };
