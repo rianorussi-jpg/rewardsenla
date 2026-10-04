@@ -47,42 +47,86 @@ Deno.serve(async (req) => {
 
     if (!['basic', 'pro', 'business'].includes(plan)) throw new Error('Plan inválido.');
 
-    const monthlyPrices: Record<string, string | undefined> = {
+    // Los Price IDs mensuales actuales ($149 / $249 / $499) se conservan
+    // como precios promocionales para los primeros 50 negocios.
+    const promoMonthlyPrices: Record<string, string | undefined> = {
       basic: Deno.env.get('STRIPE_PRICE_BASIC'),
       pro: Deno.env.get('STRIPE_PRICE_PRO'),
       business: Deno.env.get('STRIPE_PRICE_BUSINESS')
     };
+
+    // Nuevos precios regulares después de agotar los primeros 50 lugares.
+    const regularMonthlyPrices: Record<string, string | undefined> = {
+      basic: Deno.env.get('STRIPE_PRICE_BASIC_REGULAR'),
+      pro: Deno.env.get('STRIPE_PRICE_PRO_REGULAR'),
+      business: Deno.env.get('STRIPE_PRICE_BUSINESS_REGULAR')
+    };
+
     const annualPrices: Record<string, string | undefined> = {
       basic: Deno.env.get('STRIPE_PRICE_BASIC_ANNUAL_PROMO'),
       pro: Deno.env.get('STRIPE_PRICE_PRO_ANNUAL_PROMO'),
       business: Deno.env.get('STRIPE_PRICE_BUSINESS_ANNUAL_PROMO')
     };
-    const priceId = annualPromo ? annualPrices[plan] : monthlyPrices[plan];
-    if (!priceId) {
-      throw new Error(annualPromo
-        ? 'Falta configurar el Price ID anual promocional de Stripe para este plan.'
-        : 'Falta configurar el Price ID mensual de Stripe para este plan.');
-    }
 
     stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY')!);
 
-    if (annualPromo) {
+    // Si ya existe una suscripción, consultamos Stripe y no el estado guardado
+    // en Supabase, para evitar duplicados cuando la BD esté desfasada.
+    let currentSubscription: any = null;
+    if (business.stripe_subscription_id) {
+      try {
+        currentSubscription = await stripe.subscriptions.retrieve(business.stripe_subscription_id);
+      } catch (_) {
+        currentSubscription = null;
+      }
+    }
+
+    const promoPriceIds = new Set(
+      [...Object.values(promoMonthlyPrices), ...Object.values(annualPrices)].filter(Boolean) as string[]
+    );
+    const currentPriceId = currentSubscription?.items?.data?.[0]?.price?.id || null;
+    const grandfatheredPromo = Boolean(currentPriceId && promoPriceIds.has(String(currentPriceId)));
+
+    // Compartimos el mismo cupo de 50 de la promoción anual existente.
+    // Si se agotó, mensual continúa con precio regular; anual deja de estar disponible.
+    let openingPromo = grandfatheredPromo;
+    let promoState: string | null = grandfatheredPromo ? 'grandfathered' : null;
+
+    if (!openingPromo) {
       const { data: reservationRows, error: reservationError } = await admin.rpc(
         'rewards_admin_reserve_annual_promo',
         { p_business_id: business.id }
       );
       if (reservationError) throw reservationError;
+
       const reservation = Array.isArray(reservationRows) ? reservationRows[0] : reservationRows;
-      if (!reservation?.ok) {
-        throw new Error('La promoción anual de apertura ya alcanzó los 50 negocios. Puedes contratar el plan mensual.');
+      if (reservation?.ok) {
+        openingPromo = true;
+        promoState = String(reservation.state || 'reserved');
+        if (promoState === 'reserved') reservedBusinessId = business.id;
+      } else if (annualPromo) {
+        throw new Error('La promoción anual de apertura ya alcanzó los 50 negocios. Puedes contratar un plan mensual.');
       }
-      reservedBusinessId = business.id;
     }
 
-    // Si ya existe una suscripción activa, actualizamos ESA suscripción para evitar duplicados.
-    if (business.stripe_subscription_id && ['active', 'trialing'].includes(business.subscription_status || '')) {
-      const subscription: any = await stripe.subscriptions.retrieve(business.stripe_subscription_id);
-      const item = subscription.items?.data?.[0];
+    const priceId = annualPromo
+      ? annualPrices[plan]
+      : openingPromo
+      ? promoMonthlyPrices[plan]
+      : regularMonthlyPrices[plan];
+
+    if (!priceId) {
+      throw new Error(
+        annualPromo
+          ? 'Falta configurar el Price ID anual promocional de Stripe para este plan.'
+          : openingPromo
+          ? 'Falta configurar el Price ID mensual promocional de Stripe para este plan.'
+          : 'Falta configurar el Price ID mensual regular de Stripe para este plan.'
+      );
+    }
+
+    if (currentSubscription && ['active', 'trialing'].includes(currentSubscription.status)) {
+      const item = currentSubscription.items?.data?.[0];
       if (!item) throw new Error('No se encontró el precio actual de la suscripción.');
 
       const currentPlan = String(business.rewards_plan || 'trial');
@@ -97,29 +141,35 @@ Deno.serve(async (req) => {
       if ((rank[plan] || 0) < (rank[currentPlan] || 0)) {
         throw new Error('Selecciona tu plan actual o uno superior.');
       }
-      if (plan === currentPlan && billingInterval === currentInterval) {
+      if (plan === currentPlan && billingInterval === currentInterval && String(item.price?.id || '') === priceId) {
         throw new Error('Ese ya es tu plan y periodo de facturación actual.');
       }
 
-      await stripe.subscriptions.update(subscription.id, {
+      const updatedSubscription: any = await stripe.subscriptions.update(currentSubscription.id, {
         items: [{ id: item.id, price: priceId }],
         proration_behavior: 'always_invoice',
         metadata: {
-          ...(subscription.metadata || {}),
+          ...(currentSubscription.metadata || {}),
           business_id: business.id,
           plan,
           billing_interval: billingInterval,
-          annual_promo: annualPromo ? 'true' : 'false'
+          opening_promo: openingPromo ? 'true' : 'false',
+          opening_promo_claimable: openingPromo && promoState !== 'grandfathered' ? 'true' : 'false',
+          annual_promo: annualPromo && openingPromo ? 'true' : 'false'
         }
       });
 
       const { error: updateError } = await admin
         .from('rewards_businesses')
-        .update({ rewards_plan: plan, billing_interval: billingInterval })
+        .update({
+          rewards_plan: plan,
+          billing_interval: billingInterval,
+          subscription_status: updatedSubscription.status
+        })
         .eq('id', business.id);
       if (updateError) throw updateError;
 
-      if (annualPromo) {
+      if (openingPromo && promoState === 'reserved') {
         const { error: claimError } = await admin.rpc('rewards_admin_claim_annual_promo', {
           p_business_id: business.id,
           p_session_id: null
@@ -128,7 +178,10 @@ Deno.serve(async (req) => {
       }
 
       reservedBusinessId = null;
-      return Response.json({ updated: true, plan, billingInterval }, { headers: cors });
+      return Response.json(
+        { updated: true, plan, billingInterval, openingPromo },
+        { headers: cors }
+      );
     }
 
     let customer = business.stripe_customer_id;
@@ -158,27 +211,31 @@ Deno.serve(async (req) => {
       line_items: [{ price: priceId, quantity: 1 }],
       success_url: `${site}/app/billing.html?success=1${publishQuery}${intervalQuery}`,
       cancel_url: `${site}/app/billing.html?canceled=1${publishQuery}${intervalQuery}`,
-      ...(annualPromo ? { expires_at: Math.floor(Date.now() / 1000) + 31 * 60 } : {}),
+      ...(openingPromo ? { expires_at: Math.floor(Date.now() / 1000) + 31 * 60 } : {}),
       ...(annualPromo ? {} : { allow_promotion_codes: true }),
       subscription_data: {
         metadata: {
           business_id: business.id,
           plan,
           billing_interval: billingInterval,
-          annual_promo: annualPromo ? 'true' : 'false'
+          opening_promo: openingPromo ? 'true' : 'false',
+          opening_promo_claimable: openingPromo && promoState !== 'grandfathered' ? 'true' : 'false',
+          annual_promo: annualPromo && openingPromo ? 'true' : 'false'
         }
       },
       metadata: {
         business_id: business.id,
         plan,
         billing_interval: billingInterval,
-        annual_promo: annualPromo ? 'true' : 'false'
+        opening_promo: openingPromo ? 'true' : 'false',
+        opening_promo_claimable: openingPromo && promoState !== 'grandfathered' ? 'true' : 'false',
+        annual_promo: annualPromo && openingPromo ? 'true' : 'false'
       }
     });
 
     createdSessionId = session.id;
 
-    if (annualPromo) {
+    if (openingPromo && promoState === 'reserved') {
       const { error: attachError } = await admin.rpc('rewards_admin_attach_annual_promo_session', {
         p_business_id: business.id,
         p_session_id: session.id
@@ -190,7 +247,10 @@ Deno.serve(async (req) => {
     }
 
     reservedBusinessId = null;
-    return Response.json({ url: session.url }, { headers: cors });
+    return Response.json(
+      { url: session.url, openingPromo },
+      { headers: cors }
+    );
   } catch (e) {
     if (admin && reservedBusinessId) {
       try {

@@ -45,17 +45,17 @@
 
         <div class="billing-cycle-wrap">
           <div class="billing-cycle" role="group" aria-label="Periodo de facturación">
-            <button class="cycle-btn active" id="monthlyBtn" type="button">Mensual</button>
+            <button class="cycle-btn active" id="monthlyBtn" type="button">Mensual <span class="cycle-promo">Primeros 50</span></button>
             <button class="cycle-btn" id="annualBtn" type="button">Anual <span class="cycle-promo">Promoción de apertura</span></button>
           </div>
-          <div class="annual-promo-banner" id="annualPromoBanner">Promoción hasta agotar existencias · disponible para los primeros 50 negocios que contraten anual.</div>
+          <div class="annual-promo-banner" id="annualPromoBanner">Promoción de apertura · los primeros 50 negocios conservan los precios mensuales actuales. Después aplican $299, $499 y $799 al mes.</div>
         </div>
 
         <div class="pricing-grid" id="pricing">
           <article class="price-card" data-card-plan="basic">
             <span class="badge">Básico</span>
             <div class="price-main"><strong class="plan-price">$149</strong><small class="plan-period">MXN/mes</small></div>
-            <div class="price-saving monthly">Cobro mensual</div>
+            <div class="price-saving monthly">Promoción primeros 50 · precio regular $299</div>
             <span class="annual-highlight hidden">Precio especial de apertura</span>
             <p>Para comenzar a operar.</p>
             <ul>
@@ -72,7 +72,7 @@
           <article class="price-card featured" data-card-plan="pro">
             <span class="badge blue">Más popular · Pro</span>
             <div class="price-main"><strong class="plan-price">$249</strong><small class="plan-period">MXN/mes</small></div>
-            <div class="price-saving monthly">Cobro mensual</div>
+            <div class="price-saving monthly">Promoción primeros 50 · precio regular $499</div>
             <span class="annual-highlight hidden">6 meses gratis · 50% menos</span>
             <p>Para negocios en crecimiento.</p>
             <ul>
@@ -91,7 +91,7 @@
           <article class="price-card" data-card-plan="business">
             <span class="badge">Negocio</span>
             <div class="price-main"><strong class="plan-price">$499</strong><small class="plan-period">MXN/mes</small></div>
-            <div class="price-saving monthly">Cobro mensual</div>
+            <div class="price-saving monthly">Promoción primeros 50 · precio regular $799</div>
             <span class="annual-highlight hidden">6 meses gratis · 50% menos</span>
             <p>Para mayor volumen.</p>
             <ul>
@@ -137,11 +137,22 @@
       const currentInterval=ownedBusiness?.billing_interval==='annual'?'annual':'monthly';
       let selectedInterval=params.get('billing')==='annual'?'annual':(currentInterval==='annual'?'annual':'monthly');
 
-      const priceData={
-        basic:{monthly:{price:'$149',period:'MXN/mes',saving:'Cobro mensual'},annual:{price:'$999',period:'MXN/año',saving:'Ahorras $789 al año · equivale a $83.25/mes'}},
-        pro:{monthly:{price:'$249',period:'MXN/mes',saving:'Cobro mensual'},annual:{price:'$1,494',period:'MXN/año',saving:'Ahorras $1,494 al año · 6 meses gratis'}},
-        business:{monthly:{price:'$499',period:'MXN/mes',saving:'Cobro mensual'},annual:{price:'$2,994',period:'MXN/año',saving:'Ahorras $2,994 al año · 6 meses gratis'}}
+      const promoMonthly={
+        basic:{price:'$149',period:'MXN/mes',saving:'Promoción primeros 50 · precio regular $299'},
+        pro:{price:'$249',period:'MXN/mes',saving:'Promoción primeros 50 · precio regular $499'},
+        business:{price:'$499',period:'MXN/mes',saving:'Promoción primeros 50 · precio regular $799'}
       };
+      const regularMonthly={
+        basic:{price:'$299',period:'MXN/mes',saving:'Precio regular'},
+        pro:{price:'$499',period:'MXN/mes',saving:'Precio regular'},
+        business:{price:'$799',period:'MXN/mes',saving:'Precio regular'}
+      };
+      const annualPrices={
+        basic:{price:'$999',period:'MXN/año',saving:'Ahorras $789 al año · equivale a $83.25/mes'},
+        pro:{price:'$1,494',period:'MXN/año',saving:'Ahorras $1,494 al año · 6 meses gratis'},
+        business:{price:'$2,994',period:'MXN/año',saving:'Ahorras $2,994 al año · 6 meses gratis'}
+      };
+      const monthlyPromoEligible=!promo||promo.has_claim||promo.promo_open;
 
       document.querySelector('#currentBadge').textContent=names[billing.plan]||billing.plan;
       document.querySelector('#currentTitle').textContent=billing.plan==='trial'
@@ -172,29 +183,40 @@
 
       const promoBanner=document.querySelector('#annualPromoBanner');
       if(promo?.has_claim){
-        promoBanner.textContent='Tu negocio ya forma parte de los primeros 50. Tu acceso al precio anual promocional está asegurado.';
+        promoBanner.textContent='Tu negocio forma parte de los primeros 50. Conservas los precios de apertura: Básico $149, Pro $249 y Negocio $499 al mes, además del precio anual promocional.';
       }else if(promo && !promo.promo_open){
-        promoBanner.textContent='Promoción anual agotada · los 50 lugares ya fueron tomados.';
+        promoBanner.textContent='Promoción de apertura agotada · ahora aplican los precios mensuales regulares de $299, $499 y $799. La promoción anual también terminó.';
         promoBanner.classList.add('sold-out');
       }else if(promo){
-        promoBanner.textContent=`Promoción hasta agotar existencias · primeros 50 negocios · ${promo.available_count} lugar${Number(promo.available_count)===1?'':'es'} disponible${Number(promo.available_count)===1?'':'s'}.`;
+        promoBanner.textContent=`Promoción de apertura · primeros 50 negocios · ${promo.available_count} lugar${Number(promo.available_count)===1?'':'es'} disponible${Number(promo.available_count)===1?'':'s'} · mensual desde $149. Después: $299, $499 y $799.`;
       }
 
       function renderPricing(){
         document.querySelector('#monthlyBtn').classList.toggle('active',selectedInterval==='monthly');
         document.querySelector('#annualBtn').classList.toggle('active',selectedInterval==='annual');
-        promoBanner.style.display=selectedInterval==='annual'?'block':'none';
+        promoBanner.style.display='block';
 
         document.querySelectorAll('[data-card-plan]').forEach(card=>{
           const plan=card.dataset.cardPlan;
-          const data=priceData[plan][selectedInterval];
+          const data=selectedInterval==='annual'
+            ? annualPrices[plan]
+            : (monthlyPromoEligible?promoMonthly[plan]:regularMonthly[plan]);
           card.querySelector('.plan-price').textContent=data.price;
           card.querySelector('.plan-period').textContent=data.period;
           const saving=card.querySelector('.price-saving');
           saving.textContent=data.saving;
           saving.classList.toggle('monthly',selectedInterval==='monthly');
           card.classList.toggle('promo-annual',selectedInterval==='annual');
-          card.querySelector('.annual-highlight').classList.toggle('hidden',selectedInterval!=='annual');
+          const highlight=card.querySelector('.annual-highlight');
+          if(selectedInterval==='annual'){
+            highlight.textContent=plan==='basic'?'Precio especial de apertura':'6 meses gratis · 50% menos';
+            highlight.classList.remove('hidden');
+          }else if(monthlyPromoEligible){
+            highlight.textContent='Primeros 50 · precio de apertura';
+            highlight.classList.remove('hidden');
+          }else{
+            highlight.classList.add('hidden');
+          }
 
           card.classList.toggle('current-plan',plan===billing.plan);
           if(plan===billing.plan&&!card.querySelector('.current-plan-ribbon'))card.insertAdjacentHTML('afterbegin','<span class="current-plan-ribbon">PLAN ACTUAL</span>');
