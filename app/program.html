@@ -2,13 +2,54 @@
 
 <html lang="es"><head><meta charset="utf-8"/><link rel="icon" type="image/png" href="/assets/favicon.png"><link rel="apple-touch-icon" href="/assets/favicon.png"><meta content="width=device-width,initial-scale=1" name="viewport"/><title>Tarjeta — enla.cards</title><script>
 if(new URLSearchParams(location.search).has('id')) document.documentElement.classList.add('program-editing');
-</script><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/><link href="/app/assets/app.css?v=20260927-wizard-step-fix2" rel="stylesheet"/></head><body class="rewards-wizard-v2 rewards-wizard-enla"><div class="app-shell"><aside class="sidebar"><a class="side-brand" href="/">enla.<span>cards</span></a><nav class="nav-list">
+</script><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/><link href="/app/assets/app.css?v=20260927-wizard-step-fix2" rel="stylesheet"/>
+<style id="enlaFirstCardTourStyles">
+.enla-tour-spotlight{
+  position:fixed;z-index:10000;pointer-events:none;border:3px solid #4499F7;border-radius:18px;
+  box-shadow:0 0 0 9999px rgba(18,52,85,.54),0 18px 55px rgba(18,52,85,.24);
+  transition:left .22s ease,top .22s ease,width .22s ease,height .22s ease,opacity .18s ease;opacity:0
+}
+.enla-tour-spotlight.show{opacity:1}
+.enla-tour-tooltip{
+  position:fixed;z-index:10002;width:min(370px,calc(100vw - 24px));background:#fff;color:#123455;
+  border:1px solid rgba(68,153,247,.24);border-radius:20px;padding:18px 18px 15px;
+  box-shadow:0 24px 70px rgba(18,52,85,.28);font-family:Inter,system-ui,-apple-system,sans-serif
+}
+.enla-tour-tooltip[hidden]{display:none!important}
+.enla-tour-kicker{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
+.enla-tour-kicker span{font-size:11px;letter-spacing:.08em;font-weight:900;color:#287fdc;background:#edf7ff;padding:6px 9px;border-radius:999px}
+.enla-tour-skip{border:0;background:transparent;color:#60758b;font:inherit;font-size:12px;font-weight:800;cursor:pointer;padding:5px}
+.enla-tour-tooltip h3{margin:0 0 7px;font-size:18px;line-height:1.2;color:#123455}
+.enla-tour-tooltip p{margin:0;color:#53687c;font-size:13px;line-height:1.55}
+.enla-tour-tooltip strong{color:#123455}
+.enla-tour-actions{display:flex;justify-content:flex-end;gap:9px;margin-top:14px}
+.enla-tour-next{border:0;border-radius:12px;background:linear-gradient(135deg,#4499F7,#22BE99);color:#fff;
+  font:inherit;font-size:13px;font-weight:900;padding:10px 14px;cursor:pointer;box-shadow:0 9px 22px rgba(68,153,247,.22)}
+.enla-tour-hint{display:flex;align-items:center;gap:8px;margin-top:12px;padding:9px 10px;border-radius:12px;background:#f5f9fd;color:#456178;font-size:12px;font-weight:700}
+.enla-tour-hint b{color:#287fdc}
+.enla-tour-arrow{position:absolute;width:0;height:0;border-left:10px solid transparent;border-right:10px solid transparent}
+.enla-tour-tooltip[data-side="below"] .enla-tour-arrow{top:-10px;border-bottom:10px solid #fff}
+.enla-tour-tooltip[data-side="above"] .enla-tour-arrow{bottom:-10px;border-top:10px solid #fff}
+.enla-tour-tooltip[data-side="floating"] .enla-tour-arrow{display:none}
+.enla-tour-pulse{animation:enlaTourPulse 1.25s ease-in-out infinite}
+@keyframes enlaTourPulse{0%,100%{filter:brightness(1)}50%{filter:brightness(1.08)}}
+@media (max-width:700px){
+  .enla-tour-tooltip{padding:16px 15px 14px;border-radius:18px}
+  .enla-tour-tooltip h3{font-size:17px}
+  .enla-tour-tooltip p{font-size:12.5px}
+}
+@media (prefers-reduced-motion:reduce){
+  .enla-tour-spotlight{transition:none}
+  .enla-tour-pulse{animation:none}
+}
+</style>
+</head><body class="rewards-wizard-v2 rewards-wizard-enla"><div class="app-shell"><aside class="sidebar"><a class="side-brand" href="/">enla.<span>cards</span></a><nav class="nav-list">
 <a class="nav-item" href="/app/dashboard.html">▦ Mis tarjetas</a>
 <a class="nav-item" href="/app/customers.html">♙ Clientes</a>
 <a class="nav-item" href="/app/scan.html">⌗ Escanear</a>
 <a class="nav-item" href="/app/history.html">◴ Historial</a>
 <a class="nav-item" href="/app/settings.html">⚙ Ajustes</a></nav><div class="side-bottom"><button class="btn btn-secondary" id="signOut" style="width:100%">Cerrar sesión</button></div></aside><div class="overlay"></div><main class="main"><header class="topbar"><div style="display:flex;align-items:center;gap:10px"><button class="btn btn-secondary mobile-menu" id="mobileMenu">☰</button><h1 id="pageTitle">Crear tarjeta</h1></div><a class="btn btn-secondary btn-sm" href="/app/dashboard.html">← Mis tarjetas</a></header><div class="content">
-<div class="wizard-frame"><aside class="wizard-rail"><a aria-label="Ir a Mis tarjetas" class="wizard-rail-brand" href="/app/dashboard.html"><b>enla</b><span>rewards</span></a><div class="wizard-rail-caption">TU NUEVA TARJETA</div><div aria-label="Pasos del generador" class="wizard-rail-steps"><div class="wizard-rail-step" data-nav-step="1"><span class="wizard-rail-index">1</span><span>Tipo de tarjeta</span></div><div class="wizard-rail-step" data-nav-step="2"><span class="wizard-rail-index">2</span><span>Diseño e identidad</span></div><div class="wizard-rail-step" data-nav-step="3"><span class="wizard-rail-index">3</span><span>Configuración</span></div><div class="wizard-rail-step" data-nav-step="4"><span class="wizard-rail-index">4</span><span>Revisa y guarda</span></div><div class="wizard-rail-step" data-nav-step="5"><span class="wizard-rail-index">5</span><span>Publicar</span></div></div><div class="wizard-rail-foot">Diseña, prueba y publica a tu ritmo.</div></aside><div class="wizard-workspace"><div class="wizard-progress wizard-progress-v2"><span class="wizard-step"></span><span class="wizard-step"></span><span class="wizard-step"></span><span class="wizard-step"></span><span class="wizard-step"></span></div><div class="wizard-mobile-progress"><span id="wizardMobileStep">PASO 1 DE 5</span><span id="wizardMobileName">Tipo de tarjeta</span></div><div class="wizard-stage"><section class="step-panel" data-step="1"><div class="card type-question"><span class="badge">PASO 1 DE 5</span><h2>Elige el tipo de tarjeta</h2><p class="muted">Selecciona el programa que mejor se adapte a tu negocio. Podrás personalizarlo en los siguientes pasos.</p><div class="loyalty-type-grid"><button class="loyalty-type" data-type="stamps" type="button"><span class="type-icon"><svg aria-hidden="true" fill="none" height="29" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewbox="0 0 24 24" width="29"><circle cx="8" cy="8" r="2.25"></circle><circle cx="16" cy="8" r="2.25"></circle><circle cx="8" cy="16" r="2.25"></circle><circle cx="16" cy="16" r="2.25"></circle></svg></span><b>Tarjeta de sellos</b><small>El cliente completa sellos hasta desbloquear una recompensa.</small></button><button class="loyalty-type" data-type="visits" type="button"><span class="type-icon"><svg aria-hidden="true" fill="none" height="29" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewbox="0 0 24 24" width="29"><rect height="16" rx="2" width="18" x="3" y="5"></rect><path d="M7 3v4M17 3v4M3 10h18"></path><path d="M8 14h2v2H8zM14 14h2v2h-2z"></path></svg></span><b>Tarjeta de visitas</b><small>Funciona como un paquete o membresía: el cliente tiene un número de visitas disponibles que se van descontando.</small></button><button class="loyalty-type" data-type="access" type="button"><span class="type-icon"><svg aria-hidden="true" fill="none" height="29" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewbox="0 0 24 24" width="29"><rect height="14" rx="2" width="18" x="3" y="5"></rect><circle cx="9" cy="11" r="2"></circle><path d="M5.8 16c.5-1.7 1.6-2.5 3.2-2.5s2.7.8 3.2 2.5M15 10h4M15 13h4M15 16h3"></path></svg></span><b>Identificación / Acceso</b><small>Credencial para empleados, membresías y accesos ilimitados con vigencia.</small></button><button class="loyalty-type" data-type="cashback" type="button"><span class="type-icon"><svg aria-hidden="true" fill="none" height="29" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewbox="0 0 24 24" width="29"><circle cx="12" cy="12" r="9"></circle><path d="M15.5 8.8c-.8-.8-1.7-1.2-3.4-1.2-2 0-3.2.9-3.2 2.4s1.4 2.1 3.2 2.4 3.2.9 3.2 2.5-1.3 2.6-3.4 2.6c-1.6 0-2.7-.5-3.6-1.3M12 5.7v12.6"></path></svg></span><b>Cashback</b><small>Agrega saldo en pesos que el cliente puede gastar en el negocio.</small></button></div><div class="wizard-actions"><span></span><button class="btn btn-primary" disabled="" id="to2">Siguiente →</button></div></div></section><section class="step-panel hidden" data-step="2"><div class="card"><div class="wizard-head"><div><span class="badge">PASO 2 DE 5</span><h2>Diseño e identidad</h2></div><p class="muted wizard-lead">Agrega la identidad visual de tu negocio. Puedes ajustar o reemplazar las imágenes después.</p></div><p class="wizard-eyebrow">PERSONALIZA TU TARJETA</p><div class="type-lock" id="typeLock"></div><div class="grid grid-2"><div class="field"><label>Nombre de la tarjeta <span class="required-dot">*</span></label><input id="program_name" placeholder="Ej. Bonelissa Rewards" required=""/></div><div class="field"><label>Nombre visible del negocio <span class="required-dot">*</span></label><input id="display_name" placeholder="Ej. La Bonelissa" required=""/></div></div><div class="grid grid-2" style="margin-top:15px"><div class="field wizard-media-field"><label>Logo <span class="optional-label">Opcional</span></label><div class="dropzone"><input accept="image/png,image/jpeg,image/webp" id="logo" type="file"/><div class="small muted">PNG, JPG o WebP. Si no agregas logo, mostraremos el nombre de tu negocio en la tarjeta.</div><div class="logo-ready hidden" id="logoReady"><img alt="Logo seleccionado" id="logoReadyThumb"/><div><b>Logo listo</b><small>Puedes quitarlo y usar el nombre del negocio.</small></div><button class="btn btn-secondary btn-sm" id="removeLogo" type="button">Quitar</button></div></div></div><div class="field wizard-media-field" id="promoImageField"><label>Imagen promocional <span class="required-dot">*</span></label><div class="dropzone"><input accept="image/png,image/jpeg,image/webp" id="central_image" type="file"/><div class="small muted">Obligatoria para este tipo de tarjeta. Al elegirla podrás moverla y hacer zoom para definir exactamente la franja que se verá en Wallet.</div><div class="upload-size-note"><b>Medida recomendada:</b> 1500 × 492 px <span>· proporción 375:123</span></div><div class="crop-ready hidden" id="centralCropReady"><img alt="Recorte" id="centralCropThumb"/><div><b>Recorte listo</b><small>Proporción optimizada para Apple Wallet.</small></div><button class="btn btn-secondary btn-sm" id="adjustCrop" type="button">Ajustar</button></div></div></div></div><div class="field wizard-media-field" style="margin-top:16px"><label>Logo cuadrado <span class="optional-label">Opcional</span></label><div class="dropzone"><input accept="image/png,image/jpeg,image/webp" id="square_logo" type="file"/><div class="small muted">Ícono para identificar esta tarjeta en notificaciones de Wallet (proximidad y mensajes personalizados). Recomendamos una imagen cuadrada de 512 × 512 px. Puedes recortarla al subirla. No modifica tu logo horizontal ni el diseño de la tarjeta en Apple Wallet.</div><div class="logo-ready hidden" id="squareLogoReady"><img alt="Logo cuadrado seleccionado" class="square-logo-thumb" id="squareLogoReadyThumb"/><div><b>Logo cuadrado listo</b><small>Puedes reemplazarlo o quitarlo. Si no agregas uno, se conserva el icono predeterminado de Apple Wallet.</small></div><button class="btn btn-secondary btn-sm" id="removeSquareLogo" type="button">Quitar</button></div></div></div><div class="wizard-actions"><button class="btn btn-secondary back">← Atrás</button><button class="btn btn-primary next">Continuar →</button></div></div></section><section class="step-panel hidden" data-step="3"><div class="card"><span class="badge">PASO 3 DE 5</span><h2>Configura y personaliza</h2><p class="muted wizard-lead">Define tus colores y el funcionamiento del programa. Mira los cambios al instante en la vista previa.</p><div class="wizard-color-panel"><div class="wizard-color-heading"><div aria-hidden="true" class="wizard-color-icon">◐</div><div><h3>Colores de tu tarjeta</h3><p>Combina el fondo y el texto. Comprueba el contraste al instante en la vista previa.</p></div></div><div class="wizard-color-pair"><div class="wizard-color-control"><label for="primary_color">Color de fondo</label><div class="wizard-color-input"><input aria-label="Seleccionar color de fondo" id="primary_color" type="color" value="#4b63f3"/><span class="wizard-hex" data-hex-for="primary_color">#4B63F3</span></div></div><div class="wizard-color-control"><label for="text_color">Color de letra</label><div class="wizard-color-input"><input aria-label="Seleccionar color de letra" id="text_color" type="color" value="#ffffff"/><span class="wizard-hex" data-hex-for="text_color">#FFFFFF</span></div></div></div><div class="wizard-color-tip">Consejo: usa texto oscuro en fondos claros y texto claro en fondos oscuros. Apple Wallet respetará tu elección; Google Wallet ajusta el contraste automáticamente.</div><input id="card_style" type="hidden" value="classic"/></div><div class="wizard-rule-block"><div class="wizard-inline-heading"><span class="wizard-eyebrow">Configuración</span><h3>¿Cómo funciona tu tarjeta?</h3></div><div id="rules"></div></div><div class="field" id="promoBgField" style="margin-top:15px"><label>Color de la franja promocional</label><input id="promo_bg_color" type="color" value="#ffffff"/><div class="small muted" style="margin-top:6px">Si tu imagen tiene transparencia o dejas espacio al alejar el zoom, este color se verá detrás del producto en la franja promocional.</div></div></div><div class="card wizard-extras-card"><div class="wizard-section-heading"><span class="wizard-eyebrow">CONTENIDO Y ESCANEO</span><h2>Contenido de tu tarjeta</h2><p class="muted">El mensaje promocional aparecerá centrado encima de los sellos en tu Apple Wallet, y podrás elegir el tipo de código.</p></div><div id="wizardContentFields"><div class="field" style="margin-top:15px"><label>Texto promocional</label><textarea id="promo_text" placeholder="Ej. Cada compra te acerca a tu recompensa"></textarea><div class="small muted" style="margin-top:6px">Se mostrará centrado sobre los sellos en Apple Wallet y como información promocional durante el registro, en la tarjeta del cliente y en Google Wallet.</div></div><div class="field" style="margin-top:18px"><label>Código de la tarjeta</label><p class="muted small" style="margin:4px 0 10px">Elige cómo se identificará al cliente al escanear su tarjeta. Puedes cambiarlo después.</p><div class="barcode-choice" id="barcodeChoice"><button class="barcode-option selected" data-value="qr" type="button"><span class="barcode-choice-icon">▦</span><span><b>Código QR</b><small>Más fácil de escanear con cualquier celular.</small></span></button><button class="barcode-option" data-value="code128" type="button"><span class="barcode-choice-icon">▥</span><span><b>Código de barras</b><small>Formato Code 128, ideal para lectores de caja.</small></span></button></div></div></div></div><div class="card" id="stampCard"><h2>Personaliza tus sellos</h2><p class="muted small">Elige un icono o sube dos imágenes personalizadas. El sello completado se muestra a color y el pendiente se muestra sin color.</p><div aria-hidden="true" class="stamp-state-guide"><div><span class="stamp-state-demo">⭐</span><b>Marcado</b><small>Icono a color · sello completado</small></div><div><span class="stamp-state-demo unfilled">⭐</span><b>Sin marcar</b><small>Icono sin color · sello pendiente</small></div></div><div class="icon-picker" id="icons"></div><div class="grid grid-2 stamp-upload-grid" style="margin-top:16px"><div class="field"><label>Sello marcado · a color (opcional)</label><div class="dropzone"><input accept="image/png,image/jpeg,image/webp" id="stamp_filled_image" type="file"/><div class="small muted">Imagen cuadrada recomendada.</div><img alt="Sello marcado" class="stamp-upload-preview hidden" id="stampFilledPreview"/><button class="btn btn-secondary btn-sm stamp-adjust hidden" id="adjustStampFilled" type="button">Ajustar recorte</button></div></div><div class="field"><label>Sello sin marcar · sin color (opcional)</label><div class="dropzone"><input accept="image/png,image/jpeg,image/webp" id="stamp_empty_image" type="file"/><div class="small muted">Imagen cuadrada recomendada.</div><img alt="Sello sin marcar" class="stamp-upload-preview hidden" id="stampEmptyPreview"/><button class="btn btn-secondary btn-sm stamp-adjust hidden" id="adjustStampEmpty" type="button">Ajustar recorte</button></div></div></div></div><div class="wizard-actions"><button class="btn btn-secondary back">← Atrás</button><button class="btn btn-primary next">Continuar →</button></div></section><section class="step-panel hidden" data-step="4"><div class="card wizard-main-card wizard-save-card"><span class="badge">PASO 4 DE 5</span><h2>Revisa y guarda tu tarjeta</h2><p class="muted wizard-lead">Tu diseño ya está listo. Confirma los datos y guarda para obtener tu enlace de registro y código QR de prueba.</p><div class="wizard-review-summary"><div><span>Tipo de tarjeta</span><strong id="reviewType">—</strong></div><div><span>Nombre de la tarjeta</span><strong id="reviewName">—</strong></div><div><span>Nombre visible del negocio</span><strong id="reviewBusiness">—</strong></div><div><span>Código para escanear</span><strong id="reviewBarcode">—</strong></div><div id="reviewStampRow"><span>Cantidad de sellos</span><strong id="reviewStamps">—</strong></div></div><div class="wallet-default-note">Al guardar se creará tu tarjeta como borrador. En el siguiente paso podrás registrar un cliente de prueba y añadir su pase a Wallet. Para hacerla pública, necesitarás un plan compatible.</div><div class="wizard-actions"><button class="btn btn-secondary back" type="button">← Anterior</button><button class="btn btn-primary" id="save" type="button">Guardar y continuar →</button></div><div aria-live="polite" class="hidden" id="notice" role="alert" style="margin-top:12px"></div></div></section><section class="step-panel hidden" data-step="5"><div class="card wizard-main-card wizard-publish-card"><span class="badge">PASO 5 DE 5</span><div aria-hidden="true" class="wizard-finish-mark">✓</div><h2>¡Tu tarjeta ya está guardada!</h2><p class="muted wizard-lead">Ya puedes probar cómo se registra un cliente y cómo se ve su pase en Apple o Google Wallet. Compártela con tus clientes cuando esté publicada.</p><div class="wizard-final-link"><div class="wizard-final-link-intro"><span aria-hidden="true" class="wizard-final-link-icon">↗</span><div><b>Enlace para unirse a tu tarjeta</b><small>Abre el enlace, registra un cliente de prueba y añade su pase a Wallet.</small></div></div><div class="wizard-join-url"><a href="#" id="joinLink" rel="noopener" target="_blank">Preparando enlace...</a><button class="btn btn-secondary btn-sm" id="copyJoinLink" type="button">Copiar</button></div><div class="wizard-final-qr-wrap"><div aria-label="Código QR para unirse a tu tarjeta" class="wizard-final-qr" id="finalJoinQR"></div><p class="muted small">Escanea este QR con tu celular para probar el registro.</p></div></div><div class="wizard-final-note"><b>Prueba antes de publicar</b><span>Tu tarjeta se guardó como borrador. El enlace sirve para registrar clientes de prueba (sujeto a los límites de tu plan). Publicarla permite utilizarla con tus clientes.</span></div><div class="wizard-actions wizard-final-actions"><a class="btn btn-secondary" href="/app/dashboard.html">Ir a mis tarjetas</a><a class="btn btn-primary" href="/app/billing.html" id="publishSaved">Publicar tarjeta →</a></div><p aria-live="polite" class="muted small" id="copyJoinStatus"></p></div></section><div class="preview-stick wizard-shared-preview"><div class="wallet-preview wallet-preview-real"><div class="wallet-preview-head"><div><b>Vista previa en Apple Wallet</b><span>Simulación en tiempo real · iPhone</span></div><span class="wallet-preview-badge">APPLE WALLET</span></div><div class="pass-card apple-pass-preview" id="preview"><div class="pass-top apple-pass-top"><div class="preview-brand"><img class="logo-preview hidden" id="logoPreview"/><div class="wallet-logo-text" id="displayPreview">MI NEGOCIO</div></div><div class="wallet-header-field" id="headerPreview"><small>SELLOS</small><strong>2 / 6</strong></div></div><div class="preview-media apple-strip hidden" id="centralWrap"><img id="centralPreview"/></div><div aria-label="Texto promocional" class="wallet-promo-preview hidden" id="walletPromoPreview"></div><div class="wallet-primary-content" id="progressPreview"></div><div class="wallet-field-row" id="walletFieldsPreview"></div><div class="reward-line wallet-reward" id="rewardPreview"></div><div class="wallet-code-area" id="walletCodePreview"><div aria-hidden="true" class="wallet-qr-demo"></div><small>ESCANEA PARA IDENTIFICARTE</small></div></div></div></div></div></div></div></div></main></div><div aria-hidden="true" class="crop-modal hidden" id="cropModal"><div class="crop-dialog"><div class="crop-head"><div><b id="cropTitle">Ajusta la imagen</b><p id="cropHelp">Arrastra para moverla y usa el zoom.</p></div><button aria-label="Cerrar" class="crop-close" id="cropCancel" type="button">×</button></div><div class="crop-stage"><div class="crop-viewport" id="cropViewport"><img alt="Imagen a recortar" draggable="false" id="cropImage"/><div class="crop-guides"></div></div></div><div class="crop-controls"><label>Zoom · alejar / acercar <input id="cropZoom" max="3" min="1" step="0.01" type="range" value="1"/></label><div class="crop-actions"><button class="btn btn-secondary" id="cropCancel2" type="button">Cancelar</button><button class="btn btn-primary" id="cropApply" type="button">Usar este recorte</button></div></div><div class="crop-wallet-note" id="cropNote"><b>Apple Wallet:</b> la franja respetará este recorte.</div></div></div><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="/app/assets/config.js?v=20260926-enlacards1"></script><script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script><script src="/app/assets/app.js?v=20260926-enlacards1"></script><script>
+<div class="wizard-frame"><aside class="wizard-rail"><a aria-label="Ir a Mis tarjetas" class="wizard-rail-brand" href="/app/dashboard.html"><b>enla</b><span>rewards</span></a><div class="wizard-rail-caption">TU NUEVA TARJETA</div><div aria-label="Pasos del generador" class="wizard-rail-steps"><div class="wizard-rail-step" data-nav-step="1"><span class="wizard-rail-index">1</span><span>Tipo de tarjeta</span></div><div class="wizard-rail-step" data-nav-step="2"><span class="wizard-rail-index">2</span><span>Diseño e identidad</span></div><div class="wizard-rail-step" data-nav-step="3"><span class="wizard-rail-index">3</span><span>Configuración</span></div><div class="wizard-rail-step" data-nav-step="4"><span class="wizard-rail-index">4</span><span>Revisa y guarda</span></div><div class="wizard-rail-step" data-nav-step="5"><span class="wizard-rail-index">5</span><span>Publicar</span></div></div><div class="wizard-rail-foot">Diseña, prueba y publica a tu ritmo.</div></aside><div class="wizard-workspace"><div class="wizard-progress wizard-progress-v2"><span class="wizard-step"></span><span class="wizard-step"></span><span class="wizard-step"></span><span class="wizard-step"></span><span class="wizard-step"></span></div><div class="wizard-mobile-progress"><span id="wizardMobileStep">PASO 1 DE 5</span><span id="wizardMobileName">Tipo de tarjeta</span></div><div class="wizard-stage"><section class="step-panel" data-step="1"><div class="card type-question"><span class="badge">PASO 1 DE 5</span><h2>Elige el tipo de tarjeta</h2><p class="muted">Selecciona el programa que mejor se adapte a tu negocio. Podrás personalizarlo en los siguientes pasos.</p><div class="loyalty-type-grid"><button class="loyalty-type" data-type="stamps" type="button"><span class="type-icon"><svg aria-hidden="true" fill="none" height="29" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewbox="0 0 24 24" width="29"><circle cx="8" cy="8" r="2.25"></circle><circle cx="16" cy="8" r="2.25"></circle><circle cx="8" cy="16" r="2.25"></circle><circle cx="16" cy="16" r="2.25"></circle></svg></span><b>Tarjeta de sellos</b><small>El cliente completa sellos hasta desbloquear una recompensa.</small></button><button class="loyalty-type" data-type="visits" type="button"><span class="type-icon"><svg aria-hidden="true" fill="none" height="29" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewbox="0 0 24 24" width="29"><rect height="16" rx="2" width="18" x="3" y="5"></rect><path d="M7 3v4M17 3v4M3 10h18"></path><path d="M8 14h2v2H8zM14 14h2v2h-2z"></path></svg></span><b>Tarjeta de visitas</b><small>Funciona como un paquete o membresía: el cliente tiene un número de visitas disponibles que se van descontando.</small></button><button class="loyalty-type" data-type="access" type="button"><span class="type-icon"><svg aria-hidden="true" fill="none" height="29" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewbox="0 0 24 24" width="29"><rect height="14" rx="2" width="18" x="3" y="5"></rect><circle cx="9" cy="11" r="2"></circle><path d="M5.8 16c.5-1.7 1.6-2.5 3.2-2.5s2.7.8 3.2 2.5M15 10h4M15 13h4M15 16h3"></path></svg></span><b>Identificación / Acceso</b><small>Credencial para empleados, membresías y accesos ilimitados con vigencia.</small></button><button class="loyalty-type" data-type="cashback" type="button"><span class="type-icon"><svg aria-hidden="true" fill="none" height="29" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewbox="0 0 24 24" width="29"><circle cx="12" cy="12" r="9"></circle><path d="M15.5 8.8c-.8-.8-1.7-1.2-3.4-1.2-2 0-3.2.9-3.2 2.4s1.4 2.1 3.2 2.4 3.2.9 3.2 2.5-1.3 2.6-3.4 2.6c-1.6 0-2.7-.5-3.6-1.3M12 5.7v12.6"></path></svg></span><b>Cashback</b><small>Agrega saldo en pesos que el cliente puede gastar en el negocio.</small></button></div><div class="wizard-actions"><span></span><button class="btn btn-primary" disabled="" id="to2">Siguiente →</button></div></div></section><section class="step-panel hidden" data-step="2"><div class="card"><div class="wizard-head"><div><span class="badge">PASO 2 DE 5</span><h2>Diseño e identidad</h2></div><p class="muted wizard-lead">Agrega la identidad visual de tu negocio. Puedes ajustar o reemplazar las imágenes después.</p></div><p class="wizard-eyebrow">PERSONALIZA TU TARJETA</p><div class="type-lock" id="typeLock"></div><div class="grid grid-2"><div class="field"><label>Nombre de la tarjeta <span class="required-dot">*</span></label><input id="program_name" placeholder="Ej. Bonelissa Rewards" required=""/></div><div class="field"><label>Nombre visible del negocio <span class="required-dot">*</span></label><input id="display_name" placeholder="Ej. La Bonelissa" required=""/></div></div><div class="grid grid-2" style="margin-top:15px"><div class="field wizard-media-field"><label>Logo <span class="optional-label">Opcional</span></label><div class="small muted" style="margin:6px 0 8px"><b>Recomendaciones:</b> estilo rectangular · preferiblemente fondo transparente.</div><div class="dropzone"><input accept="image/png,image/jpeg,image/webp" id="logo" type="file"/><div class="small muted">PNG, JPG o WebP. Si no agregas logo, mostraremos el nombre de tu negocio en la tarjeta.</div><div class="logo-ready hidden" id="logoReady"><img alt="Logo seleccionado" id="logoReadyThumb"/><div><b>Logo listo</b><small>Puedes quitarlo y usar el nombre del negocio.</small></div><button class="btn btn-secondary btn-sm" id="removeLogo" type="button">Quitar</button></div></div></div><div class="field wizard-media-field" id="promoImageField"><label>Imagen promocional <span class="required-dot">*</span></label><div class="dropzone"><input accept="image/png,image/jpeg,image/webp" id="central_image" type="file"/><div class="small muted">Obligatoria para este tipo de tarjeta. Al elegirla podrás moverla y hacer zoom para definir exactamente la franja que se verá en Wallet.</div><div class="upload-size-note"><b>Medida recomendada:</b> 1500 × 492 px <span>· proporción 375:123</span></div><div class="crop-ready hidden" id="centralCropReady"><img alt="Recorte" id="centralCropThumb"/><div><b>Recorte listo</b><small>Proporción optimizada para Apple Wallet.</small></div><button class="btn btn-secondary btn-sm" id="adjustCrop" type="button">Ajustar</button></div></div></div></div><div class="field wizard-media-field" style="margin-top:16px"><label>Logo cuadrado <span class="optional-label">Opcional</span></label><div class="dropzone"><input accept="image/png,image/jpeg,image/webp" id="square_logo" type="file"/><div class="small muted">Ícono para identificar esta tarjeta en notificaciones de Wallet (proximidad y mensajes personalizados). Recomendamos una imagen cuadrada de 512 × 512 px. Puedes recortarla al subirla. No modifica tu logo horizontal ni el diseño de la tarjeta en Apple Wallet.</div><div class="logo-ready hidden" id="squareLogoReady"><img alt="Logo cuadrado seleccionado" class="square-logo-thumb" id="squareLogoReadyThumb"/><div><b>Logo cuadrado listo</b><small>Puedes reemplazarlo o quitarlo. Si no agregas uno, se conserva el icono predeterminado de Apple Wallet.</small></div><button class="btn btn-secondary btn-sm" id="removeSquareLogo" type="button">Quitar</button></div></div></div><div class="wizard-actions"><button class="btn btn-secondary back">← Atrás</button><button class="btn btn-primary next">Continuar →</button></div></div></section><section class="step-panel hidden" data-step="3"><div class="card"><span class="badge">PASO 3 DE 5</span><h2>Configura y personaliza</h2><p class="muted wizard-lead">Define tus colores y el funcionamiento del programa. Mira los cambios al instante en la vista previa.</p><div class="wizard-color-panel"><div class="wizard-color-heading"><div aria-hidden="true" class="wizard-color-icon">◐</div><div><h3>Colores de tu tarjeta</h3><p>Combina el fondo y el texto. Comprueba el contraste al instante en la vista previa.</p></div></div><div class="wizard-color-pair"><div class="wizard-color-control"><label for="primary_color">Color de fondo</label><div class="wizard-color-input"><input aria-label="Seleccionar color de fondo" id="primary_color" type="color" value="#4b63f3"/><span class="wizard-hex" data-hex-for="primary_color">#4B63F3</span></div></div><div class="wizard-color-control"><label for="text_color">Color de letra</label><div class="wizard-color-input"><input aria-label="Seleccionar color de letra" id="text_color" type="color" value="#ffffff"/><span class="wizard-hex" data-hex-for="text_color">#FFFFFF</span></div></div></div><div class="wizard-color-tip">Consejo: usa texto oscuro en fondos claros y texto claro en fondos oscuros. Apple Wallet respetará tu elección; Google Wallet ajusta el contraste automáticamente.</div><input id="card_style" type="hidden" value="classic"/></div><div class="wizard-rule-block"><div class="wizard-inline-heading"><span class="wizard-eyebrow">Configuración</span><h3>¿Cómo funciona tu tarjeta?</h3></div><div id="rules"></div></div><div class="field" id="promoBgField" style="margin-top:15px"><label>Color de la franja promocional</label><input id="promo_bg_color" type="color" value="#ffffff"/><div class="small muted" style="margin-top:6px">Si tu imagen tiene transparencia o dejas espacio al alejar el zoom, este color se verá detrás del producto en la franja promocional.</div></div></div><div class="card wizard-extras-card"><div class="wizard-section-heading"><span class="wizard-eyebrow">CONTENIDO Y ESCANEO</span><h2>Contenido de tu tarjeta</h2><p class="muted">El mensaje promocional aparecerá centrado encima de los sellos en tu Apple Wallet, y podrás elegir el tipo de código.</p></div><div id="wizardContentFields"><div class="field" style="margin-top:15px"><label>Texto promocional</label><textarea id="promo_text" placeholder="Ej. Cada compra te acerca a tu recompensa"></textarea><div class="small muted" style="margin-top:6px">Se mostrará centrado sobre los sellos en Apple Wallet y como información promocional durante el registro, en la tarjeta del cliente y en Google Wallet.</div></div><div class="field" style="margin-top:18px"><label>Código de la tarjeta</label><p class="muted small" style="margin:4px 0 10px">Elige cómo se identificará al cliente al escanear su tarjeta. Puedes cambiarlo después.</p><div class="barcode-choice" id="barcodeChoice"><button class="barcode-option selected" data-value="qr" type="button"><span class="barcode-choice-icon">▦</span><span><b>Código QR</b><small>Más fácil de escanear con cualquier celular.</small></span></button><button class="barcode-option" data-value="code128" type="button"><span class="barcode-choice-icon">▥</span><span><b>Código de barras</b><small>Formato Code 128, ideal para lectores de caja.</small></span></button></div></div></div></div><div class="card" id="stampCard"><h2>Personaliza tus sellos</h2><p class="muted small">Elige un icono o sube dos imágenes personalizadas. El sello completado se muestra a color y el pendiente se muestra sin color.</p><div aria-hidden="true" class="stamp-state-guide"><div><span class="stamp-state-demo">⭐</span><b>Marcado</b><small>Icono a color · sello completado</small></div><div><span class="stamp-state-demo unfilled">⭐</span><b>Sin marcar</b><small>Icono sin color · sello pendiente</small></div></div><div class="icon-picker" id="icons"></div><div class="grid grid-2 stamp-upload-grid" style="margin-top:16px"><div class="field"><label>Sello marcado · a color (opcional)</label><div class="dropzone"><input accept="image/png,image/jpeg,image/webp" id="stamp_filled_image" type="file"/><div class="small muted">Imagen cuadrada recomendada.</div><img alt="Sello marcado" class="stamp-upload-preview hidden" id="stampFilledPreview"/><button class="btn btn-secondary btn-sm stamp-adjust hidden" id="adjustStampFilled" type="button">Ajustar recorte</button></div></div><div class="field"><label>Sello sin marcar · sin color (opcional)</label><div class="dropzone"><input accept="image/png,image/jpeg,image/webp" id="stamp_empty_image" type="file"/><div class="small muted">Imagen cuadrada recomendada.</div><img alt="Sello sin marcar" class="stamp-upload-preview hidden" id="stampEmptyPreview"/><button class="btn btn-secondary btn-sm stamp-adjust hidden" id="adjustStampEmpty" type="button">Ajustar recorte</button></div></div></div></div><div class="wizard-actions"><button class="btn btn-secondary back">← Atrás</button><button class="btn btn-primary next">Continuar →</button></div></section><section class="step-panel hidden" data-step="4"><div class="card wizard-main-card wizard-save-card"><span class="badge">PASO 4 DE 5</span><h2>Revisa y guarda tu tarjeta</h2><p class="muted wizard-lead">Tu diseño ya está listo. Confirma los datos y guarda para obtener tu enlace de registro y código QR de prueba.</p><div class="wizard-review-summary"><div><span>Tipo de tarjeta</span><strong id="reviewType">—</strong></div><div><span>Nombre de la tarjeta</span><strong id="reviewName">—</strong></div><div><span>Nombre visible del negocio</span><strong id="reviewBusiness">—</strong></div><div><span>Código para escanear</span><strong id="reviewBarcode">—</strong></div><div id="reviewStampRow"><span>Cantidad de sellos</span><strong id="reviewStamps">—</strong></div></div><div class="wallet-default-note">Al guardar se creará tu tarjeta como borrador. En el siguiente paso podrás registrar un cliente de prueba y añadir su pase a Wallet. Para hacerla pública, necesitarás un plan compatible.</div><div class="wizard-actions"><button class="btn btn-secondary back" type="button">← Anterior</button><button class="btn btn-primary" id="save" type="button">Guardar y continuar →</button></div><div aria-live="polite" class="hidden" id="notice" role="alert" style="margin-top:12px"></div></div></section><section class="step-panel hidden" data-step="5"><div class="card wizard-main-card wizard-publish-card"><span class="badge">PASO 5 DE 5</span><div aria-hidden="true" class="wizard-finish-mark">✓</div><h2>¡Tu tarjeta ya está guardada!</h2><p class="muted wizard-lead">Ya puedes probar cómo se registra un cliente y cómo se ve su pase en Apple o Google Wallet. Compártela con tus clientes cuando esté publicada.</p><div class="wizard-final-link"><div class="wizard-final-link-intro"><span aria-hidden="true" class="wizard-final-link-icon">↗</span><div><b>Enlace para unirse a tu tarjeta</b><small>Abre el enlace, registra un cliente de prueba y añade su pase a Wallet.</small></div></div><div class="wizard-join-url"><a href="#" id="joinLink" rel="noopener" target="_blank">Preparando enlace...</a><button class="btn btn-secondary btn-sm" id="copyJoinLink" type="button">Copiar</button></div><div class="wizard-final-qr-wrap"><div aria-label="Código QR para unirse a tu tarjeta" class="wizard-final-qr" id="finalJoinQR"></div><p class="muted small">Escanea este QR con tu celular para probar el registro.</p></div></div><div class="wizard-final-note"><b>Prueba antes de publicar</b><span>Tu tarjeta se guardó como borrador. El enlace sirve para registrar clientes de prueba (sujeto a los límites de tu plan). Publicarla permite utilizarla con tus clientes.</span></div><div class="wizard-actions wizard-final-actions"><a class="btn btn-secondary" href="/app/dashboard.html">Ir a mis tarjetas</a><a class="btn btn-primary" href="/app/billing.html" id="publishSaved">Publicar tarjeta →</a></div><p aria-live="polite" class="muted small" id="copyJoinStatus"></p></div></section><div class="preview-stick wizard-shared-preview"><div class="wallet-preview wallet-preview-real"><div class="wallet-preview-head"><div><b>Vista previa en Apple Wallet</b><span>Simulación en tiempo real · iPhone</span></div><span class="wallet-preview-badge">APPLE WALLET</span></div><div class="pass-card apple-pass-preview" id="preview"><div class="pass-top apple-pass-top"><div class="preview-brand"><img class="logo-preview hidden" id="logoPreview"/><div class="wallet-logo-text" id="displayPreview">MI NEGOCIO</div></div><div class="wallet-header-field" id="headerPreview"><small>SELLOS</small><strong>2 / 6</strong></div></div><div class="preview-media apple-strip hidden" id="centralWrap"><img id="centralPreview"/></div><div aria-label="Texto promocional" class="wallet-promo-preview hidden" id="walletPromoPreview"></div><div class="wallet-primary-content" id="progressPreview"></div><div class="wallet-field-row" id="walletFieldsPreview"></div><div class="reward-line wallet-reward" id="rewardPreview"></div><div class="wallet-code-area" id="walletCodePreview"><div aria-hidden="true" class="wallet-qr-demo"></div><small>ESCANEA PARA IDENTIFICARTE</small></div></div></div></div></div></div></div></div></main></div><div aria-hidden="true" class="crop-modal hidden" id="cropModal"><div class="crop-dialog"><div class="crop-head"><div><b id="cropTitle">Ajusta la imagen</b><p id="cropHelp">Arrastra para moverla y usa el zoom.</p></div><button aria-label="Cerrar" class="crop-close" id="cropCancel" type="button">×</button></div><div class="crop-stage"><div class="crop-viewport" id="cropViewport"><img alt="Imagen a recortar" draggable="false" id="cropImage"/><div class="crop-guides"></div></div></div><div class="crop-controls"><label>Zoom · alejar / acercar <input id="cropZoom" max="3" min="1" step="0.01" type="range" value="1"/></label><div class="crop-actions"><button class="btn btn-secondary" id="cropCancel2" type="button">Cancelar</button><button class="btn btn-primary" id="cropApply" type="button">Usar este recorte</button></div></div><div class="crop-wallet-note" id="cropNote"><b>Apple Wallet:</b> la franja respetará este recorte.</div></div></div><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="/app/assets/config.js?v=20260926-enlacards1"></script><script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script><script src="/app/assets/app.js?v=20260926-enlacards1"></script><script>
 ENLA.bindShell();ENLA.navActive();(async()=>{await ENLA.requireAuth();const qs=new URLSearchParams(location.search),programId=qs.get('id');let existing=programId?await ENLA.getProgram(programId):null;let savedProgram=null;let step=existing?2:1,type=existing?.program_type||'',selected=existing?.stamp_icon||'⭐',logoUrl=existing?.logo_url||'',squareLogoUrl=existing?.square_logo_url||'',squareLogoFile=null,centralUrl=existing?.central_image_url||'',centralSourceUrl=existing?.central_image_url||'',promoCropState=null,stampFilledUrl=existing?.stamp_filled_image_url||'',stampEmptyUrl=existing?.stamp_empty_image_url||'',stampFilledFile=null,stampEmptyFile=null,centralFile=null,cropObjectUrl=null,cropScale=1,cropX=0,cropY=0,cropBaseScale=1,cropDrag=null,cropTarget='promo',cropOutputW=1500,cropOutputH=492,barcodeFormat=existing?.barcode_format||'qr';const q=s=>document.querySelector(s),all=s=>[...document.querySelectorAll(s)];const icons=['⭐','☕','🍕','🍔','🍣','🍩','🧁','💇','💅','🐾','💪','❤️','🎁','✨','🌮','🥤','🛍️','🌸','🌵','🔥','💎','🥐','🍦','🎟️'];icons.forEach(x=>{const b=document.createElement('button');b.type='button';b.className='icon-choice';b.textContent=x;b.onclick=()=>{selected=x;markIcon();render();};q('#icons').appendChild(b);});function typeName(t){return t==='cashback'?'Cashback':t==='visits'?'Visitas':t==='access'?'Identificación / Acceso':'Sellos'}function markIcon(){all('.icon-choice').forEach(x=>x.classList.toggle('selected',x.textContent===selected));all('.stamp-state-demo').forEach(x=>x.textContent=selected)}function showStep(n){if(n===5&&!savedProgram)return;step=n;if(n===4)renderReview();document.body.dataset.wizardStep=String(n);document.querySelectorAll(".wizard-rail-step").forEach(x=>{const i=Number(x.dataset.navStep);x.classList.toggle("active",i===n);x.classList.toggle("done",i<n)});const names=["Tipo de tarjeta","Diseño e identidad","Configuración","Revisa y guarda","Publicar"];q("#wizardMobileStep").textContent=`PASO ${n} DE 5`;q("#wizardMobileName").textContent=names[n-1];all('.step-panel').forEach(x=>x.classList.toggle('hidden',Number(x.dataset.step)!==n));all('.wizard-step').forEach((x,i)=>{x.classList.toggle('active',i+1===n);x.classList.toggle('done',i+1<n);});scrollTo({top:0,behavior:'smooth'});}function chooseType(t){if(existing)return;type=t;all('.loyalty-type').forEach(b=>b.classList.toggle('selected',b.dataset.type===t));q('#to2').disabled=false;renderRules();render();}all('.loyalty-type').forEach(b=>b.onclick=()=>chooseType(b.dataset.type));all('.barcode-option').forEach(b=>b.onclick=()=>{barcodeFormat=b.dataset.value||'qr';all('.barcode-option').forEach(x=>x.classList.toggle('selected',x===b));render();});q('#to2').onclick=()=>showStep(2);function validateIdentity(){const pn=q('#program_name'),dn=q('#display_name'),promo=q('#central_image');const missing=[];[pn,dn,promo].forEach(el=>el&&el.classList.remove('input-error'));if(!pn.value.trim()){pn.classList.add('input-error');missing.push(pn)}if(!dn.value.trim()){dn.classList.add('input-error');missing.push(dn)}if(type!=='stamps'&&!centralUrl){promo.classList.add('input-error');missing.push(promo)}if(missing.length){missing[0].focus();if(!pn.value.trim()||!dn.value.trim())alert('Escribe el nombre de la tarjeta y el nombre del negocio para continuar.');else alert('Agrega y ajusta la imagen promocional para continuar.');return false}return true}all('.next').forEach(b=>b.onclick=()=>{if(step===2&&!validateIdentity())return;showStep(step+1)});all('.back').forEach(b=>b.onclick=()=>showStep(Math.max(existing?2:1,step-1)));function renderReview(){q('#reviewType').textContent=typeName(type);q('#reviewName').textContent=q('#program_name').value.trim()||'—';q('#reviewBusiness').textContent=q('#display_name').value.trim()||'—';q('#reviewBarcode').textContent=barcodeFormat==='qr'?'Código QR':'Código de barras';q('#reviewStampRow').classList.toggle('hidden',type!=='stamps');q('#reviewStamps').textContent=String(q('#goal_count')?.value||'—');}function updateColorHex(){all('[data-hex-for]').forEach(x=>{const input=q('#'+x.dataset.hexFor);if(input)x.textContent=input.value.toUpperCase()});}
 function renderRules(){q('#rules').innerHTML=type==='cashback'?`<div class="grid grid-2"><div class="field"><label>Cashback por registro</label><div class="money-input"><span>$</span><input id="increment_value" type="number" min="0.01" step="0.01" value="${existing?.increment_value||10}"></div></div><div class="success">El saldo se acumula en pesos y el negocio puede descontarlo total o parcialmente.</div></div>`:type==='visits'?`<div class="grid grid-2"><div class="field"><label>Visitas incluidas</label><input id="goal_count" type="number" min="1" max="1000" value="${existing?.goal_count||8}"></div><div class="success"><b>Paquete de visitas.</b><br>El cliente empieza con todas sus visitas disponibles y cada uso descuenta 1. Cuando llegue a 0 podrás renovarlo o desactivar su tarjeta.</div></div>`:type==='access'?`<div class="grid grid-2"><div class="field"><label>Nombre del servicio</label><input id="service_name" value="${existing?.service_name||existing?.program_name||''}" placeholder="Ej. Membresía mensual / Credencial empleado"></div><div class="field"><label>Vigencia inicial</label><div class="input-suffix"><input id="validity_days" type="number" min="1" max="3650" value="${existing?.validity_days||30}"><span>días</span></div></div></div><div class="field" style="margin-top:16px"><label>¿Para quién es esta identificación?</label><select id="access_purpose"><option value="customers" ${existing?.access_purpose!=='employees'?'selected':''}>Para clientes — membresía / acceso ilimitado</option><option value="employees" ${existing?.access_purpose==='employees'?'selected':''}>Para empleados — checar entrada y salida</option></select><div class="small muted" style="margin-top:7px">Esto define automáticamente cómo se registra el acceso.</div></div>`:`<div class="grid grid-2"><div class="field"><label>Sellos necesarios</label><input id="goal_count" type="number" min="2" max="10" value="${Math.min(10,Math.max(2,Number(existing?.goal_count)||6))}"></div><div class="field"><label>Recompensa</label><input id="reward_text" value="${existing?.reward_text||''}" placeholder="Ej. Una orden gratis"></div></div>`;}
 function render(){const c=q('#primary_color').value,t=q('#text_color').value||'#ffffff',style=q('#card_style').value,promoBg=q('#promo_bg_color')?.value||'#ffffff';const pr=q('#preview');pr.style.background=c;pr.style.color=t;q('#displayPreview').textContent=(q('#display_name').value||'MI NEGOCIO').toUpperCase();q('#stampCard').classList.toggle('hidden',type!=='stamps');q('#promoImageField').classList.toggle('hidden',type==='stamps');q('#promoBgField')?.classList.toggle('hidden',type==='stamps');const header=q('#headerPreview'),fields=q('#walletFieldsPreview'),reward=q('#rewardPreview');const goal=type==='stamps'?Math.min(10,Math.max(2,Number(q('#goal_count')?.value||existing?.goal_count||6))):Number(q('#goal_count')?.value||existing?.goal_count||6);pr.classList.remove('stamps-single-row');const promoPreview=q('#walletPromoPreview');const promoText=q('#promo_text').value.trim();promoPreview.textContent=promoText;promoPreview.classList.toggle('hidden',!promoText);if(type==='stamps'){header.innerHTML=`<small>SELLOS</small><strong>2 / ${goal}</strong>`;const filled=stampFilledUrl?`<img src="${stampFilledUrl}" alt="">`:selected,empty=stampEmptyUrl?`<img src="${stampEmptyUrl}" alt="">`:selected;const count=Math.min(Math.max(goal,2),10),singleRow=count<=5;pr.classList.toggle('stamps-single-row',singleRow);q('#progressPreview').innerHTML=`<div class="wallet-field-label">TUS SELLOS</div><div class="stamps wallet-stamps ${singleRow?'single-row':'two-rows'}">${Array.from({length:count},(_,i)=>`<span class="stamp ${i<2?'on':'off'} ${i>=2&&stampEmptyUrl?'custom-empty':''}">${i<2?filled:empty}</span>`).join('')}</div>`;fields.innerHTML=`<div><small>RECOMPENSA</small><b>${q('#reward_text')?.value||existing?.reward_text||'Tu recompensa'}</b></div>`;reward.textContent='';}else if(type==='visits'){header.innerHTML='<small>VISITAS RESTANTES</small><strong>6</strong>';q('#progressPreview').innerHTML='';fields.innerHTML=`<div><small>PAQUETE</small><b>${existing?.goal_count||8} visitas incluidas</b></div><div><small>CLIENTE</small><b>Cliente de ejemplo</b></div>`;reward.textContent='';}else if(type==='access'){header.innerHTML='<small>VENCIMIENTO</small><strong>06 OCT 2026</strong>';q('#progressPreview').innerHTML='';fields.innerHTML=`<div><small>SERVICIO</small><b>${existing?.service_name||q('#program_name').value||'Membresía'}</b></div><div><small>CLIENTE</small><b>Cliente de ejemplo</b></div>`;reward.textContent='';}else{header.innerHTML='<small>SALDO</small><strong>$40.00</strong>';q('#progressPreview').innerHTML='';fields.innerHTML='';reward.textContent='';}if(logoUrl){q('#logoPreview').src=logoUrl;q('#logoPreview').classList.remove('hidden');q('#displayPreview').classList.add('hidden')}else{q('#logoPreview').classList.add('hidden');q('#displayPreview').classList.remove('hidden')}const media=type!=='stamps'&&centralUrl;const centralWrap=q('#centralWrap');centralWrap.style.background=promoBg;centralWrap.classList.toggle('hidden',!media);if(media)q('#centralPreview').src=centralUrl;const code=q('#walletCodePreview');code.innerHTML=barcodeFormat==='code128'?'<div class="wallet-barcode-demo" aria-hidden="true"></div><small>CÓDIGO DE CLIENTE</small>':'<div class="wallet-qr-demo" aria-hidden="true"></div><small>ESCANEA PARA IDENTIFICARTE</small>';pr.classList.toggle('preview-minimal',style==='minimal');}
@@ -31,4 +72,353 @@ q('#cropViewport').addEventListener('pointerup',()=>cropDrag=null);q('#cropViewp
 q('#cropApply').onclick=()=>{const vp=q('#cropViewport'),img=q('#cropImage');const canvas=document.createElement('canvas');canvas.width=cropOutputW;canvas.height=cropOutputH;const ctx=canvas.getContext('2d');if(cropTarget==='promo'){promoCropState={x:cropX,y:cropY,scale:cropScale,vw:vp.clientWidth,vh:vp.clientHeight,src:img.src};const promoCanvas=drawPromoCrop(img,promoCropState);promoCanvas.toBlob(blob=>{if(!blob){alert('No se pudo generar el recorte.');return}centralFile=new File([blob],`promo-wallet-${Date.now()}.jpg`,{type:'image/jpeg'});if(centralUrl&&centralUrl.startsWith('blob:'))URL.revokeObjectURL(centralUrl);centralUrl=URL.createObjectURL(blob);q('#card_style').value='promo';setCropReady();render();closeCrop();},'image/jpeg',0.92);return}else{const sx=Math.max(0,-cropX/cropScale),sy=Math.max(0,-cropY/cropScale),sw=Math.min(img.naturalWidth-sx,vp.clientWidth/cropScale),sh=Math.min(img.naturalHeight-sy,vp.clientHeight/cropScale);ctx.drawImage(img,sx,sy,sw,sh,0,0,canvas.width,canvas.height)};const isStamp=cropTarget.startsWith('stamp'),isSquareLogo=cropTarget==='square-logo',mime=(isStamp||isSquareLogo)?'image/png':'image/jpeg',quality=(isStamp||isSquareLogo)?undefined:0.92;canvas.toBlob(blob=>{if(!blob){alert('No se pudo generar el recorte.');return}if(cropTarget==='square-logo'){squareLogoFile=new File([blob],`square-logo-${Date.now()}.png`,{type:mime});if(squareLogoUrl&&squareLogoUrl.startsWith('blob:'))URL.revokeObjectURL(squareLogoUrl);squareLogoUrl=URL.createObjectURL(blob);setSquareLogoReady();}else if(cropTarget==='stamp-filled'){stampFilledFile=new File([blob],`stamp-filled-${Date.now()}.png`,{type:mime});if(stampFilledUrl&&stampFilledUrl.startsWith('blob:'))URL.revokeObjectURL(stampFilledUrl);stampFilledUrl=URL.createObjectURL(blob);showStampPreview('filled',stampFilledUrl);}else{stampEmptyFile=new File([blob],`stamp-empty-${Date.now()}.png`,{type:mime});if(stampEmptyUrl&&stampEmptyUrl.startsWith('blob:'))URL.revokeObjectURL(stampEmptyUrl);stampEmptyUrl=URL.createObjectURL(blob);showStampPreview('empty',stampEmptyUrl);}render();closeCrop();},mime,quality);};
 setLogoReady();setSquareLogoReady();setCropReady();showStep(step);document.documentElement.classList.add('program-ready');
 q('#save').onclick=async()=>{const n=q('#notice'),button=q('#save');if(button.disabled)return;button.disabled=true;button.textContent='Guardando tarjeta…';try{if(!type)throw new Error('Selecciona un tipo de tarjeta.');if(!validateIdentity())throw new Error('Completa los datos obligatorios de identidad.');if(type!=='stamps'&&!centralUrl)throw new Error('La imagen promocional es obligatoria para esta tarjeta.');if(type!=='stamps'&&promoCropState&&centralSourceUrl)await regeneratePromoCrop();const lf=q('#logo').files[0];if(lf)logoUrl=await ENLA.uploadProgramMedia(lf,'logo');if(squareLogoFile)squareLogoUrl=await ENLA.uploadProgramMedia(squareLogoFile,'square-logo');if(type!=='stamps'&&centralFile)centralUrl=await ENLA.uploadProgramMedia(centralFile,'promo-crop');if(stampFilledFile)stampFilledUrl=await ENLA.uploadProgramMedia(stampFilledFile,'stamp-filled');if(stampEmptyFile)stampEmptyUrl=await ENLA.uploadProgramMedia(stampEmptyFile,'stamp-empty');if(type==='stamps'){centralUrl='';if(Boolean(stampFilledUrl)!==Boolean(stampEmptyUrl))throw new Error('Para usar sellos personalizados, sube las dos imágenes: marcado y sin marcar.');}const payload={program_name:q('#program_name').value.trim(),display_name:q('#display_name').value.trim(),program_type:type,promo_text:q('#promo_text').value||'',primary_color:q('#primary_color').value,text_color:q('#text_color').value||'#ffffff',promo_bg_color:q('#promo_bg_color')?.value||'#ffffff',secondary_color:q('#primary_color').value,card_style:q('#card_style').value,stamp_icon:selected,stamp_filled_image_url:stampFilledUrl||null,stamp_empty_image_url:stampEmptyUrl||null,logo_url:logoUrl,square_logo_url:squareLogoUrl||null,central_image_url:type==='stamps'?null:centralUrl,barcode_format:barcodeFormat,apple_enabled:true,google_enabled:true,status:'active'};if(type==='access'){const days=q('#validity_days'),service=q('#service_name'),purpose=q('#access_purpose');if(!days||!service||!purpose)throw new Error('No se cargó la configuración de acceso.');payload.validity_days=Math.max(1,Number(days.value||30));payload.service_name=service.value||payload.program_name;payload.access_purpose=purpose.value||'customers';payload.access_mode=payload.access_purpose==='employees'?'entry_exit':'unlimited';payload.goal_count=0;payload.increment_value=1;payload.reward_text='';}else if(type==='cashback'){const inc=q('#increment_value');if(!inc)throw new Error('No se cargó la configuración de Cashback. Regresa al paso anterior y vuelve a seleccionar Cashback.');payload.increment_value=Math.max(.01,Number(inc.value||1));payload.goal_count=0;payload.reward_text='';}else if(type==='visits'){const goal=q('#goal_count');if(!goal)throw new Error('No se cargó la configuración de visitas.');payload.goal_count=Math.max(1,Number(goal.value||8));payload.increment_value=1;payload.reward_text='';}else{const goal=q('#goal_count'),reward=q('#reward_text');if(!goal||!reward)throw new Error('No se cargó la configuración de la tarjeta. Regresa al paso anterior y vuelve a seleccionar el tipo.');payload.goal_count=Math.min(10,Math.max(2,Number(goal.value||6)));payload.increment_value=1;payload.reward_text=reward.value||'Recompensa especial';}const saved=await ENLA.saveProgram(payload,programId);savedProgram=saved;existing=saved;const joinUrl=ENLA.publicJoinUrl(saved);const join=q('#joinLink');join.href=joinUrl;join.textContent=joinUrl;q('#publishSaved').href='/app/billing.html?publish='+encodeURIComponent(saved.id);const qr=q('#finalJoinQR');qr.replaceChildren();if(typeof QRCode==='function'){new QRCode(qr,{text:joinUrl,width:188,height:188,colorDark:'#182033',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M});}else{qr.textContent='Abre o copia el enlace para probar la tarjeta.';}showStep(5);}catch(e){ENLA.msg(n,e.message)}finally{button.disabled=false;button.textContent='Guardar y continuar →'}};q('#copyJoinLink').onclick=async()=>{if(!savedProgram)return;const url=q('#joinLink').href;try{await navigator.clipboard.writeText(url);q('#copyJoinStatus').textContent='Enlace copiado.';}catch(e){q('#copyJoinStatus').textContent='Selecciona y copia el enlace de arriba.';}};})();
-</script></body></html>
+</script>
+<script id="enlaFirstCardTour">
+(() => {
+  const TOUR_VERSION = 'v1';
+  const qs = new URLSearchParams(location.search);
+  if (qs.get('id')) return;
+
+  const $ = (s, root=document) => root.querySelector(s);
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+  let enabled = false;
+  let storageKey = '';
+  let stage = '';
+  let currentTarget = null;
+  let tooltip = null;
+  let spotlight = null;
+  let nextButton = null;
+  let titleEl = null;
+  let bodyEl = null;
+  let hintEl = null;
+  let resizeTimer = null;
+
+  const copy = {
+    type: {
+      target: '.loyalty-type-grid',
+      title: 'Elige qué tipo de tarjeta quieres',
+      body: 'Aquí decides cómo funcionará tu tarjeta. Puedes crear una tarjeta de <strong>sellos</strong>, <strong>visitas</strong>, <strong>acceso</strong> o <strong>cashback</strong>. Toca la opción que mejor represente lo que quieres ofrecer.',
+      hint: 'El tipo se bloqueará al guardar la tarjeta.',
+      action: null
+    },
+    typeNext: {
+      target: '#to2',
+      title: 'Perfecto. Continúa al diseño',
+      body: 'Ya elegiste el tipo de tarjeta. Ahora haz clic en <strong>Siguiente →</strong> para darle nombre y agregar la identidad de tu negocio.',
+      hint: 'La flecha señala el botón que debes tocar.',
+      action: null,
+      pulse: true
+    },
+    programName: {
+      target: '#program_name',
+      title: 'Ponle nombre a tu tarjeta',
+      body: 'Este será el <strong>nombre de tu programa o tarjeta</strong> y puede mostrarse como referencia para el cliente. Usa algo fácil de reconocer, por ejemplo “Bonelissa Rewards”.',
+      hint: 'Escribe el nombre y después pasa al siguiente campo.',
+      action: null
+    },
+    businessName: {
+      target: '#display_name',
+      title: 'Ahora escribe el nombre visible del negocio',
+      body: 'Aquí va el nombre que quieres que el cliente vea como tu negocio, por ejemplo <strong>“La Bonelissa”</strong>. Procura usar el nombre comercial con el que ya te conocen.',
+      hint: 'Cuando termines, te explicamos los logos.',
+      action: null
+    },
+    mainLogo: {
+      target: () => $('#logo')?.closest('.wizard-media-field'),
+      title: 'Logo principal',
+      body: 'Este es el logo que identifica visualmente tu tarjeta. Funciona mejor en <strong>formato rectangular</strong> y, de preferencia, con <strong>fondo transparente</strong>. Si no subes uno, Enla Cards mostrará el nombre de tu negocio.',
+      hint: 'Este logo es opcional.',
+      action: {label:'Ver logo cuadrado →', next:'squareLogo'}
+    },
+    squareLogo: {
+      target: () => $('#square_logo')?.closest('.wizard-media-field'),
+      title: 'Logo cuadrado para Wallet',
+      body: 'Este segundo logo se usa como <strong>icono de identificación en notificaciones de Wallet</strong>, por ejemplo mensajes o avisos de proximidad. No reemplaza al logo principal de la tarjeta.',
+      hint: 'Recomendado: imagen cuadrada de 512 × 512 px.',
+      action: {label:'Entendido →', next:'step2Next'}
+    },
+    step2Next: {
+      target: '.step-panel[data-step="2"] .wizard-actions .next',
+      title: 'Continúa cuando tu identidad esté lista',
+      body: 'Cuando hayas completado los campos obligatorios y, si aplica, la imagen promocional, pulsa <strong>Continuar →</strong>.',
+      hint: 'Puedes regresar después y cambiar imágenes o datos.',
+      action: null,
+      pulse: true
+    },
+    colors: {
+      target: '.wizard-color-panel',
+      title: 'Elige los colores de tu tarjeta',
+      body: 'Aquí defines el <strong>fondo y el color del texto</strong>. La vista previa de Apple Wallet se actualiza mientras haces cambios para que puedas comprobar el contraste.',
+      hint: 'Busca que el texto siempre se lea con claridad.',
+      action: {label:'Siguiente consejo →', next:'rules'}
+    },
+    rules: {
+      target: '.wizard-rule-block',
+      title: 'Configura cómo funcionará',
+      body: 'Esta sección cambia según el tipo de tarjeta que elegiste. Aquí defines las reglas principales: por ejemplo <strong>sellos y recompensa, visitas disponibles, acceso o cashback</strong>.',
+      hint: 'Estas son las reglas que usarás al escanear a tus clientes.',
+      action: {label:'Siguiente consejo →', next:'content'}
+    },
+    content: {
+      target: '.wizard-extras-card',
+      title: 'Contenido y forma de escaneo',
+      body: 'Puedes agregar un <strong>mensaje promocional</strong> y elegir si tus clientes se identificarán con <strong>QR</strong> o <strong>código de barras</strong>. El QR suele ser la opción más fácil para celulares.',
+      hint: 'La vista previa te ayuda a revisar cómo se verá.',
+      action: {label:'Siguiente consejo →', next:'maybeStamps'}
+    },
+    stamps: {
+      target: '#stampCard',
+      title: 'Personaliza tus sellos',
+      body: 'En una tarjeta de sellos puedes usar un icono rápido o subir tus propias imágenes para el estado <strong>marcado</strong> y <strong>sin marcar</strong>.',
+      hint: 'Es opcional: puedes quedarte con uno de los iconos incluidos.',
+      action: {label:'Listo →', next:'step3Next'}
+    },
+    step3Next: {
+      target: '.step-panel[data-step="3"] .wizard-actions .next',
+      title: 'Revisa la vista previa y continúa',
+      body: 'Cuando la tarjeta se vea y funcione como quieres, pulsa <strong>Continuar →</strong> para revisar todo antes de guardarla.',
+      hint: 'Todavía no la estarás publicando.',
+      action: null,
+      pulse: true
+    },
+    review: {
+      target: '.wizard-review-summary',
+      title: 'Comprueba los datos antes de guardar',
+      body: 'Aquí tienes un resumen del <strong>tipo, nombre, negocio y código de escaneo</strong>. Revísalo rápidamente antes de crear el borrador.',
+      hint: 'Si algo no está bien, usa “Anterior” para corregirlo.',
+      action: {label:'Todo claro →', next:'save'}
+    },
+    save: {
+      target: '#save',
+      title: 'Guárdala como borrador',
+      body: 'Al hacer clic en <strong>Guardar y continuar</strong>, Enla Cards creará tu tarjeta como borrador y te llevará a una prueba real de registro.',
+      hint: 'Guardar no significa publicarla todavía.',
+      action: null,
+      pulse: true
+    },
+    joinLink: {
+      target: '.wizard-final-link',
+      title: 'Prueba tu tarjeta como si fueras un cliente',
+      body: 'Si estás usando el celular, puedes tocar el <strong>enlace de registro</strong> para registrarte como cliente del negocio y después guardar la tarjeta en Wallet.',
+      hint: 'Es una forma rápida de comprobar toda la experiencia del cliente.',
+      action: {label:'¿Y si estoy en computadora? →', next:'qr'}
+    },
+    qr: {
+      target: '#finalJoinQR',
+      title: 'En computadora, usa tu celular',
+      body: 'Si estás creando la tarjeta desde una computadora, abre la cámara de tu celular y <strong>escanea este QR</strong>. Te llevará al mismo registro para que puedas probar y guardar la tarjeta.',
+      hint: 'El enlace y el QR llevan al mismo registro.',
+      action: {label:'Último paso →', next:'publish'}
+    },
+    publish: {
+      target: '.wizard-final-actions',
+      title: 'Tu primera tarjeta está lista',
+      body: 'Puedes volver a <strong>Mis tarjetas</strong> o elegir <strong>Publicar tarjeta</strong> cuando quieras usarla con clientes reales y tu plan lo permita.',
+      hint: 'El tutorial termina aquí. Ya conoces todo el flujo principal.',
+      action: {label:'Terminar tutorial ✓', finish:true}
+    }
+  };
+
+  function wizardStep(){
+    return Number(document.body.dataset.wizardStep || $('.step-panel:not(.hidden)')?.dataset.step || 1);
+  }
+
+  function selectedType(){
+    return $('.loyalty-type.selected')?.dataset.type || '';
+  }
+
+  function createTourUi(){
+    spotlight = document.createElement('div');
+    spotlight.className = 'enla-tour-spotlight';
+    spotlight.setAttribute('aria-hidden','true');
+
+    tooltip = document.createElement('div');
+    tooltip.className = 'enla-tour-tooltip';
+    tooltip.hidden = true;
+    tooltip.setAttribute('role','dialog');
+    tooltip.setAttribute('aria-live','polite');
+    tooltip.innerHTML = `
+      <div class="enla-tour-arrow" aria-hidden="true"></div>
+      <div class="enla-tour-kicker">
+        <span>GUÍA DE TU PRIMERA TARJETA</span>
+        <button class="enla-tour-skip" type="button">Omitir tutorial</button>
+      </div>
+      <h3></h3>
+      <p class="enla-tour-body"></p>
+      <div class="enla-tour-hint"></div>
+      <div class="enla-tour-actions"><button class="enla-tour-next" type="button"></button></div>
+    `;
+    document.body.append(spotlight, tooltip);
+
+    titleEl = $('h3', tooltip);
+    bodyEl = $('.enla-tour-body', tooltip);
+    hintEl = $('.enla-tour-hint', tooltip);
+    nextButton = $('.enla-tour-next', tooltip);
+
+    $('.enla-tour-skip', tooltip).addEventListener('click', () => endTour('skipped'));
+    nextButton.addEventListener('click', () => {
+      const d = copy[stage];
+      if (!d?.action) return;
+      if (d.action.finish) return endTour('completed');
+      if (d.action.next === 'maybeStamps') {
+        const stampCard = $('#stampCard');
+        const visible = selectedType() === 'stamps' && stampCard && !stampCard.classList.contains('hidden') && getComputedStyle(stampCard).display !== 'none';
+        return go(visible ? 'stamps' : 'step3Next');
+      }
+      go(d.action.next);
+    });
+
+    window.addEventListener('resize', schedulePosition, {passive:true});
+    window.addEventListener('scroll', schedulePosition, {passive:true});
+  }
+
+  function resolveTarget(value){
+    return typeof value === 'function' ? value() : $(value);
+  }
+
+  function schedulePosition(){
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(positionTour, 20);
+  }
+
+  function positionTour(){
+    if (!enabled || !currentTarget || !tooltip || tooltip.hidden) return;
+    const rect = currentTarget.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+
+    const pad = 7;
+    spotlight.style.left = Math.max(5, rect.left - pad) + 'px';
+    spotlight.style.top = Math.max(5, rect.top - pad) + 'px';
+    spotlight.style.width = Math.max(20, Math.min(innerWidth - 10, rect.width + pad * 2)) + 'px';
+    spotlight.style.height = Math.max(20, rect.height + pad * 2) + 'px';
+    spotlight.classList.add('show');
+
+    tooltip.style.left = '12px';
+    tooltip.style.top = '12px';
+    const tw = tooltip.offsetWidth;
+    const th = tooltip.offsetHeight;
+    let side = 'below';
+    let top = rect.bottom + 18;
+
+    if (top + th > innerHeight - 12 && rect.top - th - 18 >= 12) {
+      side = 'above';
+      top = rect.top - th - 18;
+    } else if (top + th > innerHeight - 12) {
+      side = 'floating';
+      top = Math.max(12, innerHeight - th - 14);
+    }
+
+    let left = rect.left + rect.width / 2 - tw / 2;
+    left = Math.max(12, Math.min(innerWidth - tw - 12, left));
+    tooltip.dataset.side = side;
+    tooltip.style.left = left + 'px';
+    tooltip.style.top = Math.max(12, top) + 'px';
+
+    const arrow = $('.enla-tour-arrow', tooltip);
+    if (side !== 'floating') {
+      const targetCenter = rect.left + rect.width / 2;
+      arrow.style.left = Math.max(18, Math.min(tw - 38, targetCenter - left - 10)) + 'px';
+    }
+  }
+
+  async function go(nextStage){
+    if (!enabled || !copy[nextStage]) return;
+    stage = nextStage;
+    const d = copy[nextStage];
+    let target = resolveTarget(d.target);
+
+    for (let i=0; !target && i<20; i++) {
+      await wait(80);
+      target = resolveTarget(d.target);
+    }
+    if (!target) return;
+
+    currentTarget?.classList.remove('enla-tour-pulse');
+    currentTarget = target;
+    if (d.pulse) currentTarget.classList.add('enla-tour-pulse');
+
+    titleEl.textContent = d.title;
+    bodyEl.innerHTML = d.body;
+    hintEl.innerHTML = d.hint ? `<b>Tip:</b> ${d.hint}` : '';
+    hintEl.style.display = d.hint ? 'flex' : 'none';
+
+    if (d.action) {
+      nextButton.hidden = false;
+      nextButton.textContent = d.action.label;
+    } else {
+      nextButton.hidden = true;
+    }
+
+    tooltip.hidden = false;
+    currentTarget.scrollIntoView({behavior:'smooth', block:'center', inline:'nearest'});
+    await wait(330);
+    positionTour();
+  }
+
+  function endTour(result){
+    if (!enabled) return;
+    enabled = false;
+    if (storageKey) localStorage.setItem(storageKey, result);
+    currentTarget?.classList.remove('enla-tour-pulse');
+    spotlight?.remove();
+    tooltip?.remove();
+  }
+
+  function onWizardStepChange(step){
+    if (!enabled) return;
+    if (step === 1 && !['type','typeNext'].includes(stage)) go('type');
+    if (step === 2 && !['programName','businessName','mainLogo','squareLogo','step2Next'].includes(stage)) go('programName');
+    if (step === 3 && !['colors','rules','content','stamps','step3Next'].includes(stage)) go('colors');
+    if (step === 4 && !['review','save'].includes(stage)) go('review');
+    if (step === 5 && !['joinLink','qr','publish'].includes(stage)) go('joinLink');
+  }
+
+  function bindGuideEvents(){
+    $('.loyalty-type-grid')?.addEventListener('click', e => {
+      if (!enabled || wizardStep() !== 1) return;
+      if (e.target.closest('.loyalty-type')) setTimeout(() => go('typeNext'), 80);
+    });
+
+    $('#program_name')?.addEventListener('focusout', e => {
+      if (enabled && stage === 'programName' && e.currentTarget.value.trim()) go('businessName');
+    });
+    $('#display_name')?.addEventListener('focus', () => {
+      if (enabled && stage === 'programName' && $('#program_name')?.value.trim()) go('businessName');
+    });
+    $('#display_name')?.addEventListener('focusout', e => {
+      if (enabled && stage === 'businessName' && e.currentTarget.value.trim()) go('mainLogo');
+    });
+    $('#logo')?.addEventListener('focus', () => {
+      if (enabled && stage === 'businessName' && $('#display_name')?.value.trim()) go('mainLogo');
+    });
+
+    const observer = new MutationObserver(() => onWizardStepChange(wizardStep()));
+    observer.observe(document.body, {attributes:true, attributeFilter:['data-wizard-step']});
+  }
+
+  async function init(){
+    for (let i=0; i<60 && !document.documentElement.classList.contains('program-ready'); i++) await wait(100);
+    if (!document.documentElement.classList.contains('program-ready')) return;
+
+    const user = await ENLA.currentUser().catch(() => null);
+    if (!user) return;
+    const profile = await ENLA.getAccessProfile().catch(() => null);
+    if (!profile || (profile.owned?.length || 0) > 0) return;
+
+    storageKey = `enlacards:first-card-tour:${user.id}:${TOUR_VERSION}`;
+    if (localStorage.getItem(storageKey)) return;
+
+    enabled = true;
+    createTourUi();
+    bindGuideEvents();
+    go('type');
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init, {once:true});
+  } else {
+    init();
+  }
+})();
+</script>
+</body></html>
