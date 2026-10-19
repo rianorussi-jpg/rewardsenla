@@ -37,6 +37,16 @@ if(new URLSearchParams(location.search).has('id')) document.documentElement.clas
   .enla-tour-tooltip{padding:16px 15px 14px;border-radius:18px}
   .enla-tour-tooltip h3{font-size:17px}
   .enla-tour-tooltip p{font-size:12.5px}
+  .rewards-wizard-v2 input:not([type="color"]):not([type="file"]),
+  .rewards-wizard-v2 textarea,
+  .rewards-wizard-v2 select{font-size:16px!important}
+}
+.enla-tour-field-focus{
+  position:relative!important;
+  z-index:10003!important;
+  outline:3px solid #4499F7!important;
+  outline-offset:3px!important;
+  box-shadow:0 0 0 7px rgba(68,153,247,.16),0 14px 34px rgba(18,52,85,.18)!important;
 }
 @media (prefers-reduced-motion:reduce){
   .enla-tour-spotlight{transition:none}
@@ -92,6 +102,8 @@ q('#save').onclick=async()=>{const n=q('#notice'),button=q('#save');if(button.di
   let bodyEl = null;
   let hintEl = null;
   let resizeTimer = null;
+  let suspendedForTyping = false;
+  let focusedField = null;
 
   const copy = {
     type: {
@@ -282,7 +294,7 @@ q('#save').onclick=async()=>{const n=q('#notice'),button=q('#save');if(button.di
   }
 
   function positionTour(){
-    if (!enabled || !currentTarget || !tooltip || tooltip.hidden) return;
+    if (!enabled || suspendedForTyping || !currentTarget || !tooltip || tooltip.hidden) return;
     const rect = currentTarget.getBoundingClientRect();
     if (!rect.width || !rect.height) return;
 
@@ -319,6 +331,53 @@ q('#save').onclick=async()=>{const n=q('#notice'),button=q('#save');if(button.di
       const targetCenter = rect.left + rect.width / 2;
       arrow.style.left = Math.max(18, Math.min(tw - 38, targetCenter - left - 10)) + 'px';
     }
+  }
+
+  function mobileTypingMode(){
+    return window.matchMedia('(max-width:700px)').matches;
+  }
+
+  function suspendForTyping(field){
+    if (!enabled || !field || !mobileTypingMode()) return;
+    suspendedForTyping = true;
+    focusedField?.classList.remove('enla-tour-field-focus');
+    focusedField = field;
+    field.classList.add('enla-tour-field-focus');
+    currentTarget?.classList.remove('enla-tour-pulse');
+    spotlight?.classList.remove('show');
+    if (tooltip) tooltip.hidden = true;
+
+    // Esperamos a que el teclado de iOS termine de aparecer y centramos el campo
+    // dentro del espacio visible, sin mover el tutorial encima de lo que se escribe.
+    setTimeout(() => {
+      if (document.activeElement === field) {
+        field.scrollIntoView({behavior:'smooth', block:'center', inline:'nearest'});
+      }
+    }, 180);
+  }
+
+  async function resumeAfterTyping(nextStage){
+    if (!enabled) return;
+    focusedField?.classList.remove('enla-tour-field-focus');
+    focusedField = null;
+    suspendedForTyping = false;
+
+    // iOS tarda unos milisegundos en devolver el viewport después de cerrar teclado.
+    await wait(320);
+    if (!enabled) return;
+    go(nextStage || stage);
+  }
+
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', () => {
+      if (!suspendedForTyping || !focusedField) return;
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        if (document.activeElement === focusedField) {
+          focusedField.scrollIntoView({behavior:'smooth', block:'center', inline:'nearest'});
+        }
+      }, 120);
+    }, {passive:true});
   }
 
   async function go(nextStage){
@@ -360,6 +419,9 @@ q('#save').onclick=async()=>{const n=q('#notice'),button=q('#save');if(button.di
     enabled = false;
     if (storageKey) localStorage.setItem(storageKey, result);
     currentTarget?.classList.remove('enla-tour-pulse');
+    focusedField?.classList.remove('enla-tour-field-focus');
+    focusedField = null;
+    suspendedForTyping = false;
     spotlight?.remove();
     tooltip?.remove();
   }
@@ -379,15 +441,24 @@ q('#save').onclick=async()=>{const n=q('#notice'),button=q('#save');if(button.di
       if (e.target.closest('.loyalty-type')) setTimeout(() => go('typeNext'), 80);
     });
 
-    $('#program_name')?.addEventListener('focusout', e => {
-      if (enabled && stage === 'programName' && e.currentTarget.value.trim()) go('businessName');
+    $('#program_name')?.addEventListener('focus', e => {
+      if (enabled && stage === 'programName') suspendForTyping(e.currentTarget);
     });
-    $('#display_name')?.addEventListener('focus', () => {
-      if (enabled && stage === 'programName' && $('#program_name')?.value.trim()) go('businessName');
+    $('#program_name')?.addEventListener('focusout', e => {
+      if (!enabled || stage !== 'programName') return;
+      resumeAfterTyping(e.currentTarget.value.trim() ? 'businessName' : 'programName');
+    });
+
+    $('#display_name')?.addEventListener('focus', e => {
+      if (!enabled) return;
+      if (stage === 'programName' && $('#program_name')?.value.trim()) stage = 'businessName';
+      if (stage === 'businessName') suspendForTyping(e.currentTarget);
     });
     $('#display_name')?.addEventListener('focusout', e => {
-      if (enabled && stage === 'businessName' && e.currentTarget.value.trim()) go('mainLogo');
+      if (!enabled || stage !== 'businessName') return;
+      resumeAfterTyping(e.currentTarget.value.trim() ? 'mainLogo' : 'businessName');
     });
+
     $('#logo')?.addEventListener('focus', () => {
       if (enabled && stage === 'businessName' && $('#display_name')?.value.trim()) go('mainLogo');
     });
