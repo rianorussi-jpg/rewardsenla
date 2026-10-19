@@ -42,11 +42,8 @@ if(new URLSearchParams(location.search).has('id')) document.documentElement.clas
   .rewards-wizard-v2 select{font-size:16px!important}
 }
 .enla-tour-field-focus{
-  position:relative!important;
-  z-index:10003!important;
-  outline:3px solid #4499F7!important;
-  outline-offset:3px!important;
-  box-shadow:0 0 0 7px rgba(68,153,247,.16),0 14px 34px rgba(18,52,85,.18)!important;
+  outline:2px solid rgba(68,153,247,.38)!important;
+  outline-offset:2px!important;
 }
 @media (prefers-reduced-motion:reduce){
   .enla-tour-spotlight{transition:none}
@@ -289,6 +286,7 @@ q('#save').onclick=async()=>{const n=q('#notice'),button=q('#save');if(button.di
   }
 
   function schedulePosition(){
+    if (suspendedForTyping) return;
     clearTimeout(resizeTimer);
     resizeTimer = setTimeout(positionTour, 20);
   }
@@ -344,41 +342,29 @@ q('#save').onclick=async()=>{const n=q('#notice'),button=q('#save');if(button.di
     focusedField = field;
     field.classList.add('enla-tour-field-focus');
     currentTarget?.classList.remove('enla-tour-pulse');
+
+    // Mientras el teclado está abierto no intentamos mover, centrar ni recalcular
+    // el tutorial. iOS modifica el viewport al mostrar el teclado y cualquier
+    // scroll/reposition en ese momento puede desalinear el campo.
     spotlight?.classList.remove('show');
     if (tooltip) tooltip.hidden = true;
-
-    // Esperamos a que el teclado de iOS termine de aparecer y centramos el campo
-    // dentro del espacio visible, sin mover el tutorial encima de lo que se escribe.
-    setTimeout(() => {
-      if (document.activeElement === field) {
-        field.scrollIntoView({behavior:'smooth', block:'center', inline:'nearest'});
-      }
-    }, 180);
   }
 
   async function resumeAfterTyping(nextStage){
     if (!enabled) return;
     focusedField?.classList.remove('enla-tour-field-focus');
     focusedField = null;
-    suspendedForTyping = false;
 
-    // iOS tarda unos milisegundos en devolver el viewport después de cerrar teclado.
-    await wait(320);
+    // Espera a que el teclado termine de cerrarse y el viewport vuelva a su tamaño
+    // estable antes de volver a mostrar el tutorial.
+    await wait(520);
+    suspendedForTyping = false;
     if (!enabled) return;
     go(nextStage || stage);
   }
 
-  if (window.visualViewport) {
-    window.visualViewport.addEventListener('resize', () => {
-      if (!suspendedForTyping || !focusedField) return;
-      clearTimeout(resizeTimer);
-      resizeTimer = setTimeout(() => {
-        if (document.activeElement === focusedField) {
-          focusedField.scrollIntoView({behavior:'smooth', block:'center', inline:'nearest'});
-        }
-      }, 120);
-    }, {passive:true});
-  }
+  // En móvil no reposicionamos nada mientras el teclado está abierto.
+  // Solo esperamos a que termine la escritura y retomamos el tutorial al salir del campo.
 
   async function go(nextStage){
     if (!enabled || !copy[nextStage]) return;
