@@ -11,7 +11,22 @@
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/app/assets/app.css?v=20260927-walletjoin1">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@29.5.3/dist/css/intlTelInput.min.css">
-  <style>.join-form .iti{width:100%}.join-form .iti input{width:100%;padding-left:92px!important}.join-form .iti__country-container{border-radius:13px 0 0 13px}.join-phone-help{display:block;margin-top:6px;color:#7b8d9f;font-size:11px;line-height:1.4}</style>
+  <style>
+.join-form .iti{width:100%}
+.join-form .iti input{width:100%;padding-left:92px!important}
+.join-form .iti__country-container{border-radius:13px 0 0 13px}
+.join-phone-help{display:block;margin-top:6px;color:#7b8d9f;font-size:11px;line-height:1.4}
+.join-security-check{margin:18px 0 2px;padding:15px;border:1px solid rgba(68,153,247,.18);border-radius:16px;background:linear-gradient(135deg,rgba(68,153,247,.06),rgba(34,190,153,.045))}
+.join-security-copy{margin-bottom:11px;text-align:center}
+.join-security-copy b{display:block;color:#123455;font-size:13px}
+.join-security-copy span{display:block;margin-top:3px;color:#6f8395;font-size:11px;line-height:1.45}
+.join-turnstile{display:flex;justify-content:center;min-height:65px}
+.join-turnstile>div{width:100%;max-width:100%}
+.join-security-status{margin:7px 0 0;text-align:center;color:#6f8395;font-size:11px;line-height:1.4}
+.join-security-status.is-ok{color:#168768;font-weight:700}
+.wallet-action:disabled{opacity:.48;cursor:not-allowed;filter:saturate(.65)}
+@media(max-width:480px){.join-turnstile{overflow:hidden}}
+</style>
 </head>
 <body>
 <main class="public-shell join-public-shell">
@@ -166,6 +181,15 @@
         <div id="notice" class="hidden"></div>
       </form>
 
+      <div id="joinSecurityCheck" class="join-security-check">
+        <div class="join-security-copy">
+          <b>Verificación de seguridad</b>
+          <span>Antes de guardar tu tarjeta, confirma que eres una persona.</span>
+        </div>
+        <div id="joinTurnstile" class="join-turnstile"></div>
+        <p id="joinSecurityStatus" class="join-security-status">Verificando...</p>
+      </div>
+
       <div class="wallet-join-zone">
         <div class="wallet-join-label">Guárdala en tu celular</div>
         <div id="walletButtons" class="wallet-join-buttons"></div>
@@ -181,6 +205,9 @@
     const resendOtpBtn = document.querySelector('#resendOtpBtn');
     const walletButtons = document.querySelector('#walletButtons');
     const walletHint = document.querySelector('#walletHint');
+    const securityCheck = document.querySelector('#joinSecurityCheck');
+    const securityStatus = document.querySelector('#joinSecurityStatus');
+    const turnstileContainer = document.querySelector('#joinTurnstile');
     const phoneInput = document.querySelector('#phone');
     const phonePicker = phoneInput && window.intlTelInput
       ? window.intlTelInput(phoneInput,{initialCountry:'mx',separateDialCode:true,nationalMode:true,autoPlaceholder:'aggressive'})
@@ -191,6 +218,9 @@
     let pendingPayload = null;
     let otpEmail = null;
     let otpSending = false;
+    let joinCaptchaToken = '';
+    let turnstileWidgetId = null;
+    let turnstileLoadPromise = null;
 
     // Cliente de autenticación temporal: verificar un correo no modifica la sesión
     // que el dueño del negocio pueda tener abierta en este mismo navegador.
@@ -223,6 +253,96 @@
 
     function hideNotice() {
       notice.classList.add('hidden');
+    }
+
+    function loadTurnstile() {
+      if (window.turnstile) return Promise.resolve(window.turnstile);
+      if (turnstileLoadPromise) return turnstileLoadPromise;
+
+      turnstileLoadPromise = new Promise((resolve, reject) => {
+        const existing = document.querySelector('script[data-enla-turnstile]');
+        if (existing) {
+          existing.addEventListener('load', () => resolve(window.turnstile), { once: true });
+          existing.addEventListener('error', () => reject(new Error('No se pudo cargar la verificación de seguridad.')), { once: true });
+          return;
+        }
+
+        const script = document.createElement('script');
+        script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+        script.async = true;
+        script.defer = true;
+        script.dataset.enlaTurnstile = '1';
+        script.onload = () => resolve(window.turnstile);
+        script.onerror = () => reject(new Error('No se pudo cargar la verificación de seguridad.'));
+        document.head.appendChild(script);
+      });
+
+      return turnstileLoadPromise;
+    }
+
+    function syncWalletSecurityState() {
+      const verified = Boolean(joinCaptchaToken);
+      walletButtons.querySelectorAll('[data-wallet]').forEach((button) => {
+        button.disabled = !verified;
+      });
+
+      if (securityStatus) {
+        securityStatus.textContent = verified
+          ? 'Verificación completada. Ya puedes guardar tu tarjeta.'
+          : 'Completa la verificación para habilitar Wallet.';
+        securityStatus.classList.toggle('is-ok', verified);
+      }
+    }
+
+    function requireJoinCaptcha() {
+      if (joinCaptchaToken) return joinCaptchaToken;
+      securityCheck?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      throw new Error('Completa la verificación de seguridad antes de guardar tu tarjeta.');
+    }
+
+    function resetJoinTurnstile() {
+      joinCaptchaToken = '';
+      try {
+        if (window.turnstile && turnstileWidgetId !== null) {
+          window.turnstile.reset(turnstileWidgetId);
+        }
+      } catch (_e) {}
+      syncWalletSecurityState();
+    }
+
+    async function renderJoinTurnstile() {
+      if (!visibleWallets.length) {
+        securityCheck?.classList.add('hidden');
+        return;
+      }
+
+      try {
+        const turnstile = await loadTurnstile();
+        if (!turnstile || !turnstileContainer) throw new Error('No se pudo iniciar la verificación de seguridad.');
+
+        turnstileWidgetId = turnstile.render(turnstileContainer, {
+          sitekey: '0x4AAAAAAFcNEb7pP6lN3sxm',
+          theme: 'light',
+          size: 'flexible',
+          action: 'customer_join',
+          callback: (token) => {
+            joinCaptchaToken = String(token || '').trim();
+            syncWalletSecurityState();
+          },
+          'expired-callback': () => {
+            joinCaptchaToken = '';
+            syncWalletSecurityState();
+          },
+          'error-callback': () => {
+            joinCaptchaToken = '';
+            if (securityStatus) securityStatus.textContent = 'No pudimos completar la verificación. Inténtalo nuevamente.';
+            syncWalletSecurityState();
+          }
+        });
+      } catch (err) {
+        if (securityStatus) securityStatus.textContent = err.message || String(err);
+        syncWalletSecurityState();
+      }
     }
 
     function getDevice() {
@@ -276,6 +396,9 @@
             ? 'Detectamos un dispositivo Android.'
             : 'Elige dónde quieres guardar tu tarjeta.';
     }
+
+    syncWalletSecurityState();
+    renderJoinTurnstile();
 
     function buildBirthDate() {
       const dayEl = document.querySelector('#birthDay');
@@ -378,14 +501,18 @@
         .getPublicUrl(path).data.publicUrl;
     }
 
-    async function sendVerificationCode(email) {
+    async function sendVerificationCode(email, captchaToken = null) {
       if (otpSending) return;
       otpSending = true;
 
       try {
+        const token = captchaToken || requireJoinCaptcha();
         const { error } = await verificationClient.auth.signInWithOtp({
           email,
-          options: { shouldCreateUser: true }
+          options: {
+            shouldCreateUser: true,
+            captchaToken: token
+          }
         });
         if (error) throw error;
 
@@ -398,11 +525,36 @@
         showNotice('Revisa tu correo e ingresa el código de confirmación.', 'success');
       } finally {
         otpSending = false;
+        resetJoinTurnstile();
       }
     }
 
     function isConfirmEmailError(error) {
       return String(error?.message || error || '').includes('CONFIRM_EMAIL');
+    }
+
+    async function prepareCustomerWithTurnstile(payload, captchaToken) {
+      const response = await fetch(
+        `${window.ENLA_CONFIG.SUPABASE_URL}/functions/v1/rewards-join-turnstile`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            apikey: window.ENLA_CONFIG.SUPABASE_ANON_KEY,
+            Authorization: `Bearer ${window.ENLA_CONFIG.SUPABASE_ANON_KEY}`
+          },
+          body: JSON.stringify({
+            captcha_token: captchaToken,
+            payload
+          })
+        }
+      );
+
+      const json = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(json.error || 'No se pudo validar el registro.');
+      }
+      return json;
     }
 
     async function createOrRecoverCustomer(client, payload) {
@@ -461,8 +613,30 @@
           button.innerHTML = `<span class="wallet-loader"></span><span><small>Preparando</small><strong>Tu tarjeta...</strong></span>`;
         }
 
-        const client = authenticatedClient || ENLA.sb;
-        const publicCode = await createOrRecoverCustomer(client, payload);
+        let publicCode = null;
+
+        if (authenticatedClient) {
+          // Ya confirmó su correo con OTP; esa verificación vino protegida por Turnstile.
+          publicCode = await createOrRecoverCustomer(authenticatedClient, payload);
+        } else {
+          const captchaToken = requireJoinCaptcha();
+          const result = await prepareCustomerWithTurnstile(payload, captchaToken);
+
+          if (result?.needs_email_confirmation) {
+            if (result?.captcha_consumed) {
+              resetJoinTurnstile();
+              showNotice('Completa nuevamente la verificación de seguridad para enviar el código a tu correo.');
+              return;
+            }
+
+            await sendVerificationCode(payload.p_email, captchaToken);
+            return;
+          }
+
+          publicCode = result?.public_code || null;
+          if (!publicCode) throw new Error('No se pudo preparar tu tarjeta.');
+          resetJoinTurnstile();
+        }
 
         otpPanel.classList.add('hidden');
         pendingPayload = null;
@@ -471,20 +645,18 @@
         await openWallet(type, publicCode);
       } catch (err) {
         if (isConfirmEmailError(err) && pendingPayload?.p_email) {
-          if (!otpPanel.classList.contains('hidden') && otpEmail === pendingPayload.p_email) {
-            showNotice('Ingresa el código que enviamos a tu correo para continuar.');
-          } else {
-            await sendVerificationCode(pendingPayload.p_email);
-          }
+          // Fallback por si el registro cambió entre la validación y el guardado.
+          resetJoinTurnstile();
+          showNotice('Completa nuevamente la verificación de seguridad para confirmar tu correo.');
         } else {
           showNotice(err.message || String(err));
         }
       } finally {
         if (button && original) {
-          button.disabled = false;
           button.classList.remove('is-loading');
           button.innerHTML = original;
         }
+        syncWalletSecurityState();
       }
     }
 
@@ -577,6 +749,7 @@
         await sendVerificationCode(otpEmail);
       } catch (err) {
         showNotice(err.message || String(err));
+        securityCheck?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       } finally {
         resendOtpBtn.disabled = false;
         resendOtpBtn.textContent = original;
