@@ -5,13 +5,13 @@ if(new URLSearchParams(location.search).has('id')) document.documentElement.clas
 </script><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/><link href="/app/assets/app.css?v=20260927-wizard-step-fix2" rel="stylesheet"/>
 <style id="enlaFirstCardTourStyles">
 .enla-tour-spotlight{
-  position:fixed;z-index:10000;pointer-events:none;border:3px solid #4499F7;border-radius:18px;
+  position:absolute;z-index:10000;pointer-events:none;border:3px solid #4499F7;border-radius:18px;
   box-shadow:0 0 0 9999px rgba(18,52,85,.54),0 18px 55px rgba(18,52,85,.24);
   transition:left .22s ease,top .22s ease,width .22s ease,height .22s ease,opacity .18s ease;opacity:0
 }
 .enla-tour-spotlight.show{opacity:1}
 .enla-tour-tooltip{
-  position:fixed;z-index:10002;width:min(370px,calc(100vw - 24px));background:#fff;color:#123455;
+  position:absolute;z-index:10002;width:min(370px,calc(100vw - 24px));background:#fff;color:#123455;
   border:1px solid rgba(68,153,247,.24);border-radius:20px;padding:18px 18px 15px;
   box-shadow:0 24px 70px rgba(18,52,85,.28);font-family:Inter,system-ui,-apple-system,sans-serif
 }
@@ -41,10 +41,7 @@ if(new URLSearchParams(location.search).has('id')) document.documentElement.clas
   .rewards-wizard-v2 textarea,
   .rewards-wizard-v2 select{font-size:16px!important}
 }
-.enla-tour-field-focus{
-  outline:2px solid rgba(68,153,247,.38)!important;
-  outline-offset:2px!important;
-}
+.enla-tour-field-focus{}
 @media (prefers-reduced-motion:reduce){
   .enla-tour-spotlight{transition:none}
   .enla-tour-pulse{animation:none}
@@ -101,6 +98,8 @@ q('#save').onclick=async()=>{const n=q('#notice'),button=q('#save');if(button.di
   let resizeTimer = null;
   let suspendedForTyping = false;
   let focusedField = null;
+  let preKeyboardScrollX = 0;
+  let preKeyboardScrollY = 0;
 
   const copy = {
     type: {
@@ -296,38 +295,49 @@ q('#save').onclick=async()=>{const n=q('#notice'),button=q('#save');if(button.di
     const rect = currentTarget.getBoundingClientRect();
     if (!rect.width || !rect.height) return;
 
+    const scrollX = window.scrollX || window.pageXOffset || 0;
+    const scrollY = window.scrollY || window.pageYOffset || 0;
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+
     const pad = 7;
-    spotlight.style.left = Math.max(5, rect.left - pad) + 'px';
-    spotlight.style.top = Math.max(5, rect.top - pad) + 'px';
-    spotlight.style.width = Math.max(20, Math.min(innerWidth - 10, rect.width + pad * 2)) + 'px';
+    spotlight.style.left = Math.max(5, rect.left + scrollX - pad) + 'px';
+    spotlight.style.top = Math.max(5, rect.top + scrollY - pad) + 'px';
+    spotlight.style.width = Math.max(20, Math.min(viewportWidth - 10, rect.width + pad * 2)) + 'px';
     spotlight.style.height = Math.max(20, rect.height + pad * 2) + 'px';
+    spotlight.style.display = '';
     spotlight.classList.add('show');
 
-    tooltip.style.left = '12px';
-    tooltip.style.top = '12px';
+    // Calculamos el tooltip dentro del viewport visible, pero lo colocamos
+    // con coordenadas del documento para que viaje junto al campo al hacer scroll.
+    tooltip.style.display = '';
+    tooltip.style.left = (scrollX + 12) + 'px';
+    tooltip.style.top = (scrollY + 12) + 'px';
+
     const tw = tooltip.offsetWidth;
     const th = tooltip.offsetHeight;
     let side = 'below';
-    let top = rect.bottom + 18;
+    let topInViewport = rect.bottom + 18;
 
-    if (top + th > innerHeight - 12 && rect.top - th - 18 >= 12) {
+    if (topInViewport + th > viewportHeight - 12 && rect.top - th - 18 >= 12) {
       side = 'above';
-      top = rect.top - th - 18;
-    } else if (top + th > innerHeight - 12) {
+      topInViewport = rect.top - th - 18;
+    } else if (topInViewport + th > viewportHeight - 12) {
       side = 'floating';
-      top = Math.max(12, innerHeight - th - 14);
+      topInViewport = Math.max(12, viewportHeight - th - 14);
     }
 
-    let left = rect.left + rect.width / 2 - tw / 2;
-    left = Math.max(12, Math.min(innerWidth - tw - 12, left));
+    let leftInViewport = rect.left + rect.width / 2 - tw / 2;
+    leftInViewport = Math.max(12, Math.min(viewportWidth - tw - 12, leftInViewport));
+
     tooltip.dataset.side = side;
-    tooltip.style.left = left + 'px';
-    tooltip.style.top = Math.max(12, top) + 'px';
+    tooltip.style.left = (scrollX + leftInViewport) + 'px';
+    tooltip.style.top = (scrollY + Math.max(12, topInViewport)) + 'px';
 
     const arrow = $('.enla-tour-arrow', tooltip);
     if (side !== 'floating') {
       const targetCenter = rect.left + rect.width / 2;
-      arrow.style.left = Math.max(18, Math.min(tw - 38, targetCenter - left - 10)) + 'px';
+      arrow.style.left = Math.max(18, Math.min(tw - 38, targetCenter - leftInViewport - 10)) + 'px';
     }
   }
 
@@ -337,36 +347,71 @@ q('#save').onclick=async()=>{const n=q('#notice'),button=q('#save');if(button.di
 
   function suspendForTyping(field){
     if (!enabled || !field || !mobileTypingMode()) return;
+    if (suspendedForTyping && focusedField === field) return;
+
     suspendedForTyping = true;
-    focusedField?.classList.remove('enla-tour-field-focus');
     focusedField = field;
-    field.classList.add('enla-tour-field-focus');
+    preKeyboardScrollX = window.scrollX || window.pageXOffset || 0;
+    preKeyboardScrollY = window.scrollY || window.pageYOffset || 0;
+
     currentTarget?.classList.remove('enla-tour-pulse');
 
-    // Mientras el teclado está abierto no intentamos mover, centrar ni recalcular
-    // el tutorial. iOS modifica el viewport al mostrar el teclado y cualquier
-    // scroll/reposition en ese momento puede desalinear el campo.
-    spotlight?.classList.remove('show');
-    if (tooltip) tooltip.hidden = true;
+    // Importante: ocultamos físicamente la guía ANTES de que iOS mueva el viewport.
+    // No dejamos spotlight, tooltip ni borde del tutorial durante la escritura.
+    if (spotlight) {
+      spotlight.classList.remove('show');
+      spotlight.style.display = 'none';
+    }
+    if (tooltip) {
+      tooltip.hidden = true;
+      tooltip.style.display = 'none';
+    }
+  }
+
+  async function waitForKeyboardToSettle(){
+    const vv = window.visualViewport;
+    if (!vv) {
+      await wait(650);
+      return;
+    }
+
+    let lastHeight = vv.height;
+    let stable = 0;
+    const started = Date.now();
+
+    while (Date.now() - started < 1400) {
+      await wait(90);
+      const h = vv.height;
+      if (Math.abs(h - lastHeight) < 2) stable += 1;
+      else stable = 0;
+      lastHeight = h;
+
+      const keyboardMostlyClosed = h >= window.innerHeight * 0.82;
+      if (keyboardMostlyClosed && stable >= 2) break;
+    }
   }
 
   async function resumeAfterTyping(nextStage){
     if (!enabled) return;
-    focusedField?.classList.remove('enla-tour-field-focus');
-    focusedField = null;
 
-    // Espera a que el teclado termine de cerrarse y el viewport vuelva a su tamaño
-    // estable antes de volver a mostrar el tutorial.
-    await wait(520);
+    focusedField = null;
+    await waitForKeyboardToSettle();
+
+    // Safari suele dejar la página desplazada después de cerrar el teclado.
+    // La regresamos exactamente a donde estaba antes de tocar el input.
+    window.scrollTo({left:preKeyboardScrollX, top:preKeyboardScrollY, behavior:'auto'});
+    await new Promise(requestAnimationFrame);
+    await new Promise(requestAnimationFrame);
+
     suspendedForTyping = false;
     if (!enabled) return;
-    go(nextStage || stage);
+    go(nextStage || stage, {instant:true});
   }
 
   // En móvil no reposicionamos nada mientras el teclado está abierto.
   // Solo esperamos a que termine la escritura y retomamos el tutorial al salir del campo.
 
-  async function go(nextStage){
+  async function go(nextStage, options = {}){
     if (!enabled || !copy[nextStage]) return;
     stage = nextStage;
     const d = copy[nextStage];
@@ -395,9 +440,20 @@ q('#save').onclick=async()=>{const n=q('#notice'),button=q('#save');if(button.di
     }
 
     tooltip.hidden = false;
-    currentTarget.scrollIntoView({behavior:'smooth', block:'center', inline:'nearest'});
-    await wait(330);
-    positionTour();
+    tooltip.style.display = '';
+    if (spotlight) spotlight.style.display = '';
+
+    const instant = options.instant || mobileTypingMode();
+    currentTarget.scrollIntoView({behavior: instant ? 'auto' : 'smooth', block:'center', inline:'nearest'});
+
+    if (instant) {
+      await new Promise(requestAnimationFrame);
+      await new Promise(requestAnimationFrame);
+      positionTour();
+    } else {
+      await wait(330);
+      positionTour();
+    }
   }
 
   function endTour(result){
@@ -422,6 +478,17 @@ q('#save').onclick=async()=>{const n=q('#notice'),button=q('#save');if(button.di
   }
 
   function bindGuideEvents(){
+    // pointerdown sucede antes del focus y antes de que iOS abra el teclado.
+    // Esto evita que la guía se quede dibujada en la posición anterior mientras la página sube.
+    document.addEventListener('pointerdown', e => {
+      if (!enabled || !mobileTypingMode()) return;
+      const field = e.target.closest('.rewards-wizard-v2 input:not([type="file"]):not([type="color"]), .rewards-wizard-v2 textarea');
+      if (!field) return;
+      if (field.id === 'program_name' || field.id === 'display_name') {
+        suspendForTyping(field);
+      }
+    }, true);
+
     $('.loyalty-type-grid')?.addEventListener('click', e => {
       if (!enabled || wizardStep() !== 1) return;
       if (e.target.closest('.loyalty-type')) setTimeout(() => go('typeNext'), 80);
