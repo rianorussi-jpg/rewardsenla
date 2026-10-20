@@ -16,16 +16,28 @@
 .join-form .iti input{width:100%;padding-left:92px!important}
 .join-form .iti__country-container{border-radius:13px 0 0 13px}
 .join-phone-help{display:block;margin-top:6px;color:#7b8d9f;font-size:11px;line-height:1.4}
-.join-security-check{margin:18px 0 2px;padding:15px;border:1px solid rgba(68,153,247,.18);border-radius:16px;background:linear-gradient(135deg,rgba(68,153,247,.06),rgba(34,190,153,.045))}
-.join-security-copy{margin-bottom:11px;text-align:center}
-.join-security-copy b{display:block;color:#123455;font-size:13px}
-.join-security-copy span{display:block;margin-top:3px;color:#6f8395;font-size:11px;line-height:1.45}
-.join-turnstile{display:flex;justify-content:center;min-height:65px}
+.join-turnstile-overlay{
+  position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;
+  padding:20px;background:rgba(18,52,85,0);opacity:0;pointer-events:none;
+  transition:opacity .18s ease,background .18s ease
+}
+.join-turnstile-overlay.is-active{
+  opacity:1;pointer-events:auto;background:rgba(18,52,85,.28);backdrop-filter:blur(3px)
+}
+.join-turnstile-card{
+  width:min(360px,calc(100vw - 28px));padding:16px;background:#fff;border-radius:20px;
+  border:1px solid rgba(68,153,247,.18);box-shadow:0 24px 70px rgba(18,52,85,.28);
+  transform:translateY(8px) scale(.985);transition:transform .18s ease
+}
+.join-turnstile-overlay.is-active .join-turnstile-card{transform:translateY(0) scale(1)}
+.join-turnstile-title{margin:0 0 10px;text-align:center;color:#123455;font-size:13px;font-weight:800}
+.join-turnstile{display:flex;justify-content:center;width:100%;min-height:65px}
 .join-turnstile>div{width:100%;max-width:100%}
-.join-security-status{margin:7px 0 0;text-align:center;color:#6f8395;font-size:11px;line-height:1.4}
-.join-security-status.is-ok{color:#168768;font-weight:700}
-.wallet-action:disabled{opacity:.48;cursor:not-allowed;filter:saturate(.65)}
-@media(max-width:480px){.join-turnstile{overflow:hidden}}
+.wallet-action:disabled{opacity:.62;cursor:wait}
+@media(max-width:480px){
+  .join-turnstile-card{padding:14px}
+  .join-turnstile{overflow:hidden}
+}
 </style>
 </head>
 <body>
@@ -181,19 +193,17 @@
         <div id="notice" class="hidden"></div>
       </form>
 
-      <div id="joinSecurityCheck" class="join-security-check">
-        <div class="join-security-copy">
-          <b>Verificación de seguridad</b>
-          <span>Antes de guardar tu tarjeta, confirma que eres una persona.</span>
-        </div>
-        <div id="joinTurnstile" class="join-turnstile"></div>
-        <p id="joinSecurityStatus" class="join-security-status">Verificando...</p>
-      </div>
-
       <div class="wallet-join-zone">
         <div class="wallet-join-label">Guárdala en tu celular</div>
         <div id="walletButtons" class="wallet-join-buttons"></div>
         <p id="walletHint" class="wallet-hint"></p>
+      </div>
+
+      <div id="joinTurnstileOverlay" class="join-turnstile-overlay" aria-hidden="true">
+        <div class="join-turnstile-card" role="dialog" aria-modal="true" aria-label="Verificación de seguridad">
+          <div class="join-turnstile-title">Verificación de seguridad</div>
+          <div id="joinTurnstile" class="join-turnstile"></div>
+        </div>
       </div>
     `;
 
@@ -205,8 +215,7 @@
     const resendOtpBtn = document.querySelector('#resendOtpBtn');
     const walletButtons = document.querySelector('#walletButtons');
     const walletHint = document.querySelector('#walletHint');
-    const securityCheck = document.querySelector('#joinSecurityCheck');
-    const securityStatus = document.querySelector('#joinSecurityStatus');
+    const turnstileOverlay = document.querySelector('#joinTurnstileOverlay');
     const turnstileContainer = document.querySelector('#joinTurnstile');
     const phoneInput = document.querySelector('#phone');
     const phonePicker = phoneInput && window.intlTelInput
@@ -221,6 +230,10 @@
     let joinCaptchaToken = '';
     let turnstileWidgetId = null;
     let turnstileLoadPromise = null;
+    let turnstileReadyPromise = null;
+    let captchaRequestPromise = null;
+    let captchaResolve = null;
+    let captchaReject = null;
 
     // Cliente de autenticación temporal: verificar un correo no modifica la sesión
     // que el dueño del negocio pueda tener abierta en este mismo navegador.
@@ -280,69 +293,114 @@
       return turnstileLoadPromise;
     }
 
-    function syncWalletSecurityState() {
-      const verified = Boolean(joinCaptchaToken);
-      walletButtons.querySelectorAll('[data-wallet]').forEach((button) => {
-        button.disabled = !verified;
-      });
-
-      if (securityStatus) {
-        securityStatus.textContent = verified
-          ? 'Verificación completada. Ya puedes guardar tu tarjeta.'
-          : 'Completa la verificación para habilitar Wallet.';
-        securityStatus.classList.toggle('is-ok', verified);
-      }
+    function showTurnstileInteraction() {
+      if (!turnstileOverlay) return;
+      turnstileOverlay.classList.add('is-active');
+      turnstileOverlay.setAttribute('aria-hidden', 'false');
     }
 
-    function requireJoinCaptcha() {
-      if (joinCaptchaToken) return joinCaptchaToken;
-      securityCheck?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      throw new Error('Completa la verificación de seguridad antes de guardar tu tarjeta.');
+    function hideTurnstileInteraction() {
+      if (!turnstileOverlay) return;
+      turnstileOverlay.classList.remove('is-active');
+      turnstileOverlay.setAttribute('aria-hidden', 'true');
+    }
+
+    function clearCaptchaRequest(error = null) {
+      if (error && captchaReject) captchaReject(error);
+      captchaRequestPromise = null;
+      captchaResolve = null;
+      captchaReject = null;
     }
 
     function resetJoinTurnstile() {
       joinCaptchaToken = '';
+      hideTurnstileInteraction();
       try {
         if (window.turnstile && turnstileWidgetId !== null) {
           window.turnstile.reset(turnstileWidgetId);
         }
       } catch (_e) {}
-      syncWalletSecurityState();
+      clearCaptchaRequest();
     }
 
     async function renderJoinTurnstile() {
-      if (!visibleWallets.length) {
-        securityCheck?.classList.add('hidden');
-        return;
+      if (!visibleWallets.length) return null;
+      if (turnstileWidgetId !== null) return turnstileWidgetId;
+
+      const turnstile = await loadTurnstile();
+      if (!turnstile || !turnstileContainer) {
+        throw new Error('No se pudo iniciar la verificación de seguridad.');
       }
+
+      turnstileWidgetId = turnstile.render(turnstileContainer, {
+        sitekey: '0x4AAAAAAFcNEb7pP6lN3sxm',
+        theme: 'light',
+        language: 'es',
+        size: 'flexible',
+        appearance: 'interaction-only',
+        execution: 'execute',
+        action: 'customer_join',
+        retry: 'auto',
+        'refresh-expired': 'auto',
+        'before-interactive-callback': () => {
+          showTurnstileInteraction();
+        },
+        'after-interactive-callback': () => {
+          hideTurnstileInteraction();
+        },
+        callback: (token) => {
+          joinCaptchaToken = String(token || '').trim();
+          hideTurnstileInteraction();
+
+          if (joinCaptchaToken && captchaResolve) {
+            captchaResolve(joinCaptchaToken);
+            clearCaptchaRequest();
+          }
+        },
+        'expired-callback': () => {
+          joinCaptchaToken = '';
+        },
+        'timeout-callback': () => {
+          joinCaptchaToken = '';
+          hideTurnstileInteraction();
+          clearCaptchaRequest(new Error('La verificación de seguridad tardó demasiado. Inténtalo nuevamente.'));
+        },
+        'error-callback': () => {
+          joinCaptchaToken = '';
+          hideTurnstileInteraction();
+          clearCaptchaRequest(new Error('No pudimos completar la verificación de seguridad. Inténtalo nuevamente.'));
+        }
+      });
+
+      return turnstileWidgetId;
+    }
+
+    async function getJoinCaptchaToken() {
+      if (joinCaptchaToken) return joinCaptchaToken;
+
+      if (!turnstileReadyPromise) {
+        turnstileReadyPromise = renderJoinTurnstile();
+      }
+      await turnstileReadyPromise;
+
+      if (joinCaptchaToken) return joinCaptchaToken;
+      if (captchaRequestPromise) return captchaRequestPromise;
+
+      captchaRequestPromise = new Promise((resolve, reject) => {
+        captchaResolve = resolve;
+        captchaReject = reject;
+      });
 
       try {
-        const turnstile = await loadTurnstile();
-        if (!turnstile || !turnstileContainer) throw new Error('No se pudo iniciar la verificación de seguridad.');
-
-        turnstileWidgetId = turnstile.render(turnstileContainer, {
-          sitekey: '0x4AAAAAAFcNEb7pP6lN3sxm',
-          theme: 'light',
-          size: 'flexible',
-          action: 'customer_join',
-          callback: (token) => {
-            joinCaptchaToken = String(token || '').trim();
-            syncWalletSecurityState();
-          },
-          'expired-callback': () => {
-            joinCaptchaToken = '';
-            syncWalletSecurityState();
-          },
-          'error-callback': () => {
-            joinCaptchaToken = '';
-            if (securityStatus) securityStatus.textContent = 'No pudimos completar la verificación. Inténtalo nuevamente.';
-            syncWalletSecurityState();
-          }
-        });
+        window.turnstile.execute(turnstileWidgetId);
       } catch (err) {
-        if (securityStatus) securityStatus.textContent = err.message || String(err);
-        syncWalletSecurityState();
+        clearCaptchaRequest(
+          new Error(err?.message || 'No se pudo iniciar la verificación de seguridad.')
+        );
+        throw err;
       }
+
+      return captchaRequestPromise;
     }
 
     function getDevice() {
@@ -397,8 +455,11 @@
             : 'Elige dónde quieres guardar tu tarjeta.';
     }
 
-    syncWalletSecurityState();
-    renderJoinTurnstile();
+    turnstileReadyPromise = renderJoinTurnstile().catch((err) => {
+      console.error('Turnstile:', err);
+      turnstileReadyPromise = null;
+      return null;
+    });
 
     function buildBirthDate() {
       const dayEl = document.querySelector('#birthDay');
@@ -506,7 +567,7 @@
       otpSending = true;
 
       try {
-        const token = captchaToken || requireJoinCaptcha();
+        const token = captchaToken || await getJoinCaptchaToken();
         const { error } = await verificationClient.auth.signInWithOtp({
           email,
           options: {
@@ -619,13 +680,16 @@
           // Ya confirmó su correo con OTP; esa verificación vino protegida por Turnstile.
           publicCode = await createOrRecoverCustomer(authenticatedClient, payload);
         } else {
-          const captchaToken = requireJoinCaptcha();
+          const captchaToken = await getJoinCaptchaToken();
           const result = await prepareCustomerWithTurnstile(payload, captchaToken);
 
           if (result?.needs_email_confirmation) {
             if (result?.captcha_consumed) {
+              // El primer token ya se consumió en el servidor. Generamos otro
+              // automáticamente para que el usuario no tenga que repetir pasos.
               resetJoinTurnstile();
-              showNotice('Completa nuevamente la verificación de seguridad para enviar el código a tu correo.');
+              const otpCaptchaToken = await getJoinCaptchaToken();
+              await sendVerificationCode(payload.p_email, otpCaptchaToken);
               return;
             }
 
@@ -647,7 +711,7 @@
         if (isConfirmEmailError(err) && pendingPayload?.p_email) {
           // Fallback por si el registro cambió entre la validación y el guardado.
           resetJoinTurnstile();
-          showNotice('Completa nuevamente la verificación de seguridad para confirmar tu correo.');
+          showNotice('Vuelve a tocar Wallet para continuar con la confirmación de tu correo.');
         } else {
           showNotice(err.message || String(err));
         }
@@ -655,8 +719,8 @@
         if (button && original) {
           button.classList.remove('is-loading');
           button.innerHTML = original;
+          button.disabled = false;
         }
-        syncWalletSecurityState();
       }
     }
 
@@ -749,7 +813,6 @@
         await sendVerificationCode(otpEmail);
       } catch (err) {
         showNotice(err.message || String(err));
-        securityCheck?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       } finally {
         resendOtpBtn.disabled = false;
         resendOtpBtn.textContent = original;
