@@ -328,7 +328,7 @@
         const redirect = location.origin + location.pathname + location.search;
         const {error} = await sb.auth.signInWithOtp({
           email,
-          options: {shouldCreateUser:true,emailRedirectTo:redirect,captchaToken}
+          options: {shouldCreateUser:false,emailRedirectTo:redirect,captchaToken}
         });
         if (error) throw error;
         renderOtp(email);
@@ -401,7 +401,7 @@
       try{
         const captchaToken=await getTurnstileToken();
         const redirect=location.origin+location.pathname+location.search;
-        const {error}=await sb.auth.signInWithOtp({email,options:{shouldCreateUser:true,emailRedirectTo:redirect,captchaToken}});
+        const {error}=await sb.auth.signInWithOtp({email,options:{shouldCreateUser:false,emailRedirectTo:redirect,captchaToken}});
         if(error)throw error;
         showInline('#otpNotice','Te enviamos un código nuevo.','success');
       }catch(err){
