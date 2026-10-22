@@ -246,3 +246,24 @@ button{cursor:pointer}
 .pending-card-brand span{display:block;color:var(--muted);font-size:9px;margin-top:3px}
 .pending-card .btn{white-space:nowrap;font-size:10px;padding:10px 12px}
 @media(max-width:700px){.pending-grid{grid-template-columns:1fr}.pending-card{align-items:flex-start;flex-direction:column}.pending-card .btn{width:100%}}
+
+/* Enla Cards Scan · Turnstile para Supabase Auth */
+.scan-turnstile-overlay{
+  position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;
+  padding:20px;background:rgba(18,52,85,0);opacity:0;pointer-events:none;
+  transition:opacity .18s ease,background .18s ease
+}
+.scan-turnstile-overlay.is-active{
+  opacity:1;pointer-events:auto;background:rgba(18,52,85,.28);backdrop-filter:blur(3px)
+}
+.scan-turnstile-card{
+  width:min(360px,calc(100vw - 28px));padding:16px;background:#fff;border-radius:20px;
+  border:1px solid rgba(68,153,247,.18);box-shadow:0 24px 70px rgba(18,52,85,.28);
+  transform:translateY(8px) scale(.985);transition:transform .18s ease
+}
+.scan-turnstile-overlay.is-active .scan-turnstile-card{transform:translateY(0) scale(1)}
+.scan-turnstile-title{margin:0 0 10px;text-align:center;color:#123455;font-size:13px;font-weight:800}
+.scan-turnstile{display:flex;justify-content:center;width:100%;min-height:65px}
+.scan-turnstile>div{width:100%;max-width:100%}
+@media(max-width:480px){.scan-turnstile-card{padding:14px}.scan-turnstile{overflow:hidden}}
+

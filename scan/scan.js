@@ -25,6 +25,160 @@
   let activeCustomer = null;
   let searchTimer = null;
 
+  // Cloudflare Turnstile para Supabase Auth (web Scan).
+  // Supabase valida el token usando el Secret configurado en Authentication.
+  const TURNSTILE_SITE_KEY = '0x4AAAAAAFcNEb7pP6lN3sxm';
+  let turnstileScriptPromise = null;
+  let turnstileWidgetId = null;
+  let turnstileRequestPromise = null;
+  let turnstileResolve = null;
+  let turnstileReject = null;
+
+  function ensureTurnstileHost() {
+    let overlay = document.querySelector('#scanTurnstileOverlay');
+    if (overlay) return overlay;
+
+    overlay = document.createElement('div');
+    overlay.id = 'scanTurnstileOverlay';
+    overlay.className = 'scan-turnstile-overlay';
+    overlay.setAttribute('aria-hidden', 'true');
+    overlay.innerHTML = `
+      <div class="scan-turnstile-card" role="dialog" aria-modal="true" aria-label="Verificación de seguridad">
+        <div class="scan-turnstile-title">Verificación de seguridad</div>
+        <div id="scanTurnstile" class="scan-turnstile"></div>
+      </div>`;
+    document.body.appendChild(overlay);
+    return overlay;
+  }
+
+  function showTurnstileInteraction() {
+    const overlay = ensureTurnstileHost();
+    overlay.classList.add('is-active');
+    overlay.setAttribute('aria-hidden', 'false');
+  }
+
+  function hideTurnstileInteraction() {
+    const overlay = document.querySelector('#scanTurnstileOverlay');
+    if (!overlay) return;
+    overlay.classList.remove('is-active');
+    overlay.setAttribute('aria-hidden', 'true');
+  }
+
+  function loadTurnstile() {
+    if (window.turnstile) return Promise.resolve(window.turnstile);
+    if (turnstileScriptPromise) return turnstileScriptPromise;
+
+    turnstileScriptPromise = new Promise((resolve, reject) => {
+      const existing = document.querySelector('script[data-enla-turnstile]');
+      if (existing) {
+        const waitForApi = () => {
+          if (window.turnstile) return resolve(window.turnstile);
+          setTimeout(waitForApi, 50);
+        };
+        waitForApi();
+        return;
+      }
+
+      const script = document.createElement('script');
+      script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+      script.async = true;
+      script.defer = true;
+      script.dataset.enlaTurnstile = '1';
+      script.onload = () => window.turnstile
+        ? resolve(window.turnstile)
+        : reject(new Error('No se pudo iniciar la verificación de seguridad.'));
+      script.onerror = () => reject(new Error('No se pudo cargar la verificación de seguridad. Revisa tu conexión e inténtalo de nuevo.'));
+      document.head.appendChild(script);
+    });
+
+    return turnstileScriptPromise;
+  }
+
+  function clearTurnstileRequest(error = null) {
+    const resolve = turnstileResolve;
+    const reject = turnstileReject;
+    turnstileRequestPromise = null;
+    turnstileResolve = null;
+    turnstileReject = null;
+    if (error && reject) reject(error);
+    return resolve;
+  }
+
+  async function prepareTurnstile() {
+    if (turnstileWidgetId !== null) return turnstileWidgetId;
+
+    ensureTurnstileHost();
+    const turnstile = await loadTurnstile();
+    const container = document.querySelector('#scanTurnstile');
+    if (!container) throw new Error('No se pudo preparar la verificación de seguridad.');
+
+    turnstileWidgetId = turnstile.render(container, {
+      sitekey: TURNSTILE_SITE_KEY,
+      theme: 'light',
+      language: 'es',
+      size: 'flexible',
+      appearance: 'interaction-only',
+      execution: 'execute',
+      action: 'scan_login',
+      retry: 'auto',
+      'refresh-expired': 'auto',
+      'before-interactive-callback': () => showTurnstileInteraction(),
+      'after-interactive-callback': () => hideTurnstileInteraction(),
+      callback: token => {
+        hideTurnstileInteraction();
+        const resolve = clearTurnstileRequest();
+        if (resolve) resolve(String(token || '').trim());
+      },
+      'expired-callback': () => {
+        hideTurnstileInteraction();
+      },
+      'timeout-callback': () => {
+        hideTurnstileInteraction();
+        clearTurnstileRequest(new Error('La verificación de seguridad tardó demasiado. Inténtalo nuevamente.'));
+      },
+      'unsupported-callback': () => {
+        hideTurnstileInteraction();
+        clearTurnstileRequest(new Error('Este navegador no es compatible con la verificación de seguridad.'));
+      },
+      'error-callback': () => {
+        hideTurnstileInteraction();
+        clearTurnstileRequest(new Error('No pudimos completar la verificación de seguridad. Inténtalo nuevamente.'));
+        return true;
+      }
+    });
+
+    return turnstileWidgetId;
+  }
+
+  async function getTurnstileToken() {
+    await prepareTurnstile();
+    if (turnstileRequestPromise) return turnstileRequestPromise;
+
+    turnstileRequestPromise = new Promise((resolve, reject) => {
+      turnstileResolve = resolve;
+      turnstileReject = reject;
+    });
+
+    try {
+      window.turnstile.execute(turnstileWidgetId);
+    } catch (err) {
+      clearTurnstileRequest(new Error('No se pudo iniciar la verificación de seguridad.'));
+      throw err;
+    }
+
+    return turnstileRequestPromise;
+  }
+
+  function resetTurnstile() {
+    hideTurnstileInteraction();
+    clearTurnstileRequest();
+    try {
+      if (window.turnstile && turnstileWidgetId !== null) {
+        window.turnstile.reset(turnstileWidgetId);
+      }
+    } catch (_) {}
+  }
+
   const esc = (v='') => String(v).replace(/[&<>"']/g, c => ({
     '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
   }[c]));
@@ -170,16 +324,19 @@
       const btn = document.querySelector('#loginBtn');
       btn.disabled = true; btn.textContent = 'Enviando código...';
       try {
+        const captchaToken = await getTurnstileToken();
         const redirect = location.origin + location.pathname + location.search;
         const {error} = await sb.auth.signInWithOtp({
           email,
-          options: {shouldCreateUser:true,emailRedirectTo:redirect}
+          options: {shouldCreateUser:true,emailRedirectTo:redirect,captchaToken}
         });
         if (error) throw error;
         renderOtp(email);
       } catch (err) {
         showInline('#loginNotice', err.message || String(err));
         btn.disabled = false; btn.textContent = 'Enviar código';
+      } finally {
+        resetTurnstile();
       }
     };
   }
@@ -242,13 +399,15 @@
       const b=document.querySelector('#resendOtp');
       b.disabled=true;b.textContent='Enviando...';
       try{
+        const captchaToken=await getTurnstileToken();
         const redirect=location.origin+location.pathname+location.search;
-        const {error}=await sb.auth.signInWithOtp({email,options:{shouldCreateUser:true,emailRedirectTo:redirect}});
+        const {error}=await sb.auth.signInWithOtp({email,options:{shouldCreateUser:true,emailRedirectTo:redirect,captchaToken}});
         if(error)throw error;
         showInline('#otpNotice','Te enviamos un código nuevo.','success');
       }catch(err){
         showInline('#otpNotice',err.message||String(err));
       }finally{
+        resetTurnstile();
         b.disabled=false;b.textContent='Reenviar código';
       }
     };
@@ -737,6 +896,7 @@
 
     if (!session) {
       renderLogin();
+      prepareTurnstile().catch(err => console.warn('Turnstile:', err));
       return;
     }
     await loadPrograms();
@@ -744,7 +904,10 @@
 
   sb.auth.onAuthStateChange((event, newSession) => {
     session = newSession;
-    if (event === 'SIGNED_OUT') renderLogin();
+    if (event === 'SIGNED_OUT') {
+      renderLogin();
+      prepareTurnstile().catch(err => console.warn('Turnstile:', err));
+    }
   });
 
   boot();
