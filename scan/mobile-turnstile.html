@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="referrer" content="no-referrer">
+  <title>Enla Cards · Verificación</title>
+  <style>
+    html,body{margin:0;min-height:100%;background:transparent;font-family:system-ui,-apple-system,sans-serif}
+    body{display:grid;place-items:center}
+    #turnstile{width:100%;min-height:65px;display:flex;justify-content:center;align-items:center}
+  </style>
+  <script>
+    const PARENT_MESSAGE = 'enlacards-scan';
+    const CHILD_MESSAGE = 'enlacards-turnstile';
+    let widgetId = null;
+    let currentRequestId = '';
+
+    function send(type, extra = {}) {
+      window.parent.postMessage({ source: CHILD_MESSAGE, type, ...extra }, '*');
+    }
+
+    function fail(message) {
+      send('error', { requestId: currentRequestId, message });
+    }
+
+    window.onTurnstileLoad = function () {
+      try {
+        widgetId = turnstile.render('#turnstile', {
+          sitekey: '0x4AAAAAAFcNEb7pP6lN3sxm',
+          theme: 'light',
+          language: 'es',
+          size: 'flexible',
+          appearance: 'interaction-only',
+          execution: 'execute',
+          action: 'scan_mobile_otp',
+          retry: 'auto',
+          'refresh-expired': 'auto',
+          'before-interactive-callback': () => send('interaction-start', { requestId: currentRequestId }),
+          'after-interactive-callback': () => send('interaction-end', { requestId: currentRequestId }),
+          callback: token => {
+            send('interaction-end', { requestId: currentRequestId });
+            send('token', {
+              requestId: currentRequestId,
+              token: String(token || '').trim()
+            });
+          },
+          'expired-callback': () => {
+            send('interaction-end', { requestId: currentRequestId });
+            fail('La verificación de seguridad venció. Inténtalo nuevamente.');
+          },
+          'timeout-callback': () => {
+            send('interaction-end', { requestId: currentRequestId });
+            fail('La verificación de seguridad tardó demasiado. Inténtalo nuevamente.');
+          },
+          'unsupported-callback': () => {
+            send('interaction-end', { requestId: currentRequestId });
+            fail('Este dispositivo no es compatible con la verificación de seguridad.');
+          },
+          'error-callback': () => {
+            send('interaction-end', { requestId: currentRequestId });
+            fail('No pudimos completar la verificación de seguridad.');
+            return true;
+          }
+        });
+        send('ready');
+      } catch (err) {
+        fail(err?.message || 'No se pudo iniciar la verificación de seguridad.');
+      }
+    };
+
+    window.addEventListener('message', event => {
+      const data = event.data || {};
+      if (data.source !== PARENT_MESSAGE) return;
+      if (event.source !== window.parent) return;
+
+      if (data.type === 'reset') {
+        currentRequestId = '';
+        try {
+          if (window.turnstile && widgetId !== null) turnstile.reset(widgetId);
+        } catch (_) {}
+        send('interaction-end');
+        return;
+      }
+
+      if (data.type !== 'execute') return;
+      currentRequestId = String(data.requestId || '');
+
+      if (!currentRequestId || !window.turnstile || widgetId === null) {
+        fail('La verificación de seguridad todavía no está lista.');
+        return;
+      }
+
+      try {
+        // Cada token de Turnstile es de un solo uso.
+        turnstile.reset(widgetId);
+        setTimeout(() => turnstile.execute(widgetId), 20);
+      } catch (err) {
+        fail(err?.message || 'No se pudo iniciar la verificación de seguridad.');
+      }
+    });
+  </script>
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?onload=onTurnstileLoad&render=explicit" async defer></script>
+</head>
+<body>
+  <div id="turnstile"></div>
+</body>
+</html>
